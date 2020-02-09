@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Zend\View\Helper\AbstractHelper;
@@ -77,7 +77,7 @@ class IiifCollectionList extends AbstractHelper
         $translate = $this->getView()->plugin('translate');
 
         $identifier = $this->buildIdentifierForList($resources);
-        $route = 'iiifserver_presentation_collection_list';
+        $route = 'imageserver_presentation_collection_list';
         $url = $this->view->url(
             $route,
             ['id' => $identifier],
@@ -91,13 +91,13 @@ class IiifCollectionList extends AbstractHelper
 
         // TODO The dynamic list has no metadata. Use the query?
 
-        $license = $this->view->setting('iiifserver_manifest_license_default');
+        $license = $this->view->setting('imageserver_manifest_license_default');
         $manifest['license'] = $license;
 
-        $attribution = $this->view->setting('iiifserver_manifest_attribution_default');
+        $attribution = $this->view->setting('imageserver_manifest_attribution_default');
         $manifest['attribution'] = $attribution;
 
-        $manifest['logo'] = $this->view->setting('iiifserver_manifest_logo_default');
+        $manifest['logo'] = $this->view->setting('imageserver_manifest_logo_default');
 
         /*
         // Omeka api is a service, but not referenced in https://iiif.io/api/annex/services.
@@ -143,7 +143,7 @@ class IiifCollectionList extends AbstractHelper
         $type = 'collection_list';
         $triggerHelper = $this->view->plugin('trigger');
         $params = compact('manifest', 'resource', 'type');
-        $params = $triggerHelper('iiifserver.manifest', $params, true);
+        $params = $triggerHelper('imageserver.manifest', $params, true);
         $manifest = $params['manifest'];
 
         // Remove all empty values (there is no "0" or "null" at first level).
@@ -164,14 +164,14 @@ class IiifCollectionList extends AbstractHelper
         $manifest = [];
 
         if ($resourceName == 'item_sets') {
-            $url = $this->view->url('iiifserver_presentation_collection', [
+            $url = $this->view->url('imageserver_presentation_collection', [
                 'id' => $resource->id(),
             ]);
 
             $type = 'sc:Collection';
         } else {
             $url = $this->view->url(
-                'iiifserver_presentation_item',
+                'imageserver_presentation_item',
                 ['id' => $resource->id()],
                 ['force_canonical' => true]
             );
@@ -197,7 +197,7 @@ class IiifCollectionList extends AbstractHelper
      * than the collection itself.
      * In all cases the order of records is kept.
      *
-     * @todo Merge with IiifServer\View\Helper\UniversalViewer::buildIdentifierForList()
+     * @todo Merge with ImageServer\View\Helper\UniversalViewer::buildIdentifierForList()
      *
      * @param array $resources
      * @return string

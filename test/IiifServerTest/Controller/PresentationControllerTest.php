@@ -1,8 +1,8 @@
 <?php
 
-namespace IiifServerTest\Controller;
+namespace ImageServerTest\Controller;
 
-class PresentationControllerTest extends IiifServerControllerTestCase
+class PresentationControllerTest extends ImageServerControllerTestCase
 {
     public function testIndexActionCanBeAccessed()
     {

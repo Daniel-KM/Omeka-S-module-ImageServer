@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer;
+namespace ImageServer;
 
 /**
  * @var Module $this
@@ -25,22 +25,22 @@ $settings = $services->get('Omeka\Settings');
 if (version_compare($oldVersion, '3.5.1', '<')) {
     $this->createTilesMainDir($serviceLocator);
     $settings->set(
-        'iiifserver_image_tile_dir',
-        $defaultSettings['iiifserver_image_tile_dir']
+        'imageserver_image_tile_dir',
+        $defaultSettings['imageserver_image_tile_dir']
     );
     $settings->set(
-        'iiifserver_image_tile_type',
-        $defaultSettings['iiifserver_image_tile_type']
+        'imageserver_image_tile_type',
+        $defaultSettings['imageserver_image_tile_type']
     );
 }
 
 if (version_compare($oldVersion, '3.5.8', '<')) {
-    $forceHttps = $settings->get('iiifserver_manifest_force_https');
+    $forceHttps = $settings->get('imageserver_manifest_force_https');
     if ($forceHttps) {
-        $settings->set('iiifserver_manifest_force_url_from', 'http:');
-        $settings->set('iiifserver_manifest_force_url_to', 'https:');
+        $settings->set('imageserver_manifest_force_url_from', 'http:');
+        $settings->set('imageserver_manifest_force_url_to', 'https:');
     }
-    $settings->delete('iiifserver_manifest_force_https');
+    $settings->delete('imageserver_manifest_force_https');
 }
 
 if (version_compare($oldVersion, '3.5.9', '<')) {
@@ -62,24 +62,24 @@ if (version_compare($oldVersion, '3.5.9', '<')) {
 
 if (version_compare($oldVersion, '3.5.12', '<')) {
     $settings->set(
-        'iiifserver_manifest_media_metadata',
-        true || $defaultSettings['iiifserver_manifest_media_metadata']
+        'imageserver_manifest_media_metadata',
+        true || $defaultSettings['imageserver_manifest_media_metadata']
     );
 }
 
 if (version_compare($oldVersion, '3.5.14', '<')) {
     $settings->set(
-        'iiifserver_manifest_properties_collection',
-        $defaultSettings['iiifserver_manifest_properties_collection']
+        'imageserver_manifest_properties_collection',
+        $defaultSettings['imageserver_manifest_properties_collection']
     );
     $settings->set(
-        'iiifserver_manifest_properties_item',
-        $defaultSettings['iiifserver_manifest_properties_item']
+        'imageserver_manifest_properties_item',
+        $defaultSettings['imageserver_manifest_properties_item']
     );
-    $value = $settings->delete('iiifserver_manifest_media_metadata');
+    $value = $settings->delete('imageserver_manifest_media_metadata');
     $settings->set(
-        'iiifserver_manifest_properties_media',
-        $value === '0' ? ['none'] : $defaultSettings['iiifserver_manifest_properties_media']
+        'imageserver_manifest_properties_media',
+        $value === '0' ? ['none'] : $defaultSettings['imageserver_manifest_properties_media']
     );
-    $settings->delete('iiifserver_manifest_media_metadata');
+    $settings->delete('imageserver_manifest_media_metadata');
 }

@@ -1,7 +1,7 @@
 <?php
-namespace IiifServer\Service\Form;
+namespace ImageServer\Service\Form;
 
-use IiifServer\Form\ConfigForm;
+use ImageServer\Form\ConfigForm;
 use Zend\ServiceManager\Factory\FactoryInterface;
 use Interop\Container\ContainerInterface;
 

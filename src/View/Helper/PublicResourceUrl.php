@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Zend\View\Helper\AbstractHelper;

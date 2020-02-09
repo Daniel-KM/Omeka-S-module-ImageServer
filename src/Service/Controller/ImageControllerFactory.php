@@ -1,7 +1,7 @@
 <?php
-namespace IiifServer\Service\Controller;
+namespace ImageServer\Service\Controller;
 
-use IiifServer\Controller\ImageController;
+use ImageServer\Controller\ImageController;
 use Interop\Container\ContainerInterface;
 use Omeka\File\Thumbnailer\ImageMagick;
 use Omeka\Stdlib\Cli;

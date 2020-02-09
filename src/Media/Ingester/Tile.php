@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\Media\Ingester;
+namespace ImageServer\Media\Ingester;
 
 use Omeka\Api\Request;
 use Omeka\Entity\Media;
@@ -121,7 +121,7 @@ class Tile implements IngesterInterface
         $args['storagePath'] = $this->getStoragePath('original', $media->getFilename());
 
         $dispatcher = $this->dispatcher;
-        $job = $dispatcher->dispatch(\IiifServer\Job\Tiler::class, $args);
+        $job = $dispatcher->dispatch(\ImageServer\Job\Tiler::class, $args);
 
         $media->setData(['job' => $job->getId()]);
     }

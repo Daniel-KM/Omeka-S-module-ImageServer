@@ -1,7 +1,7 @@
 <?php
-namespace IiifServer\Service\ViewHelper;
+namespace ImageServer\Service\ViewHelper;
 
-use IiifServer\View\Helper\ImageSize;
+use ImageServer\View\Helper\ImageSize;
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
 

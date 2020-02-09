@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Zend\View\Helper\AbstractHelper;
@@ -46,9 +46,9 @@ class IiifUrl extends AbstractHelper
     public function __invoke(AbstractResourceEntityRepresentation $resource)
     {
         $mapRouteNames = [
-            'item_sets' => 'iiifserver_presentation_collection',
-            'items' => 'iiifserver_presentation_item',
-            'media' => 'iiifserver_image_info',
+            'item_sets' => 'imageserver_presentation_collection',
+            'items' => 'imageserver_presentation_item',
+            'media' => 'imageserver_image_info',
         ];
         $url = $this->view->url(
             $mapRouteNames[$resource->resourceName()],

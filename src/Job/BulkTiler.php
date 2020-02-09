@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\Job;
+namespace ImageServer\Job;
 
 use Omeka\Job\AbstractJob;
 use Omeka\Stdlib\Message;

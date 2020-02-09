@@ -1,7 +1,7 @@
 <?php
-namespace IiifServer\Service\Controller;
+namespace ImageServer\Service\Controller;
 
-use IiifServer\Controller\MediaController;
+use ImageServer\Controller\MediaController;
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
 

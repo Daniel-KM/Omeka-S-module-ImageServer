@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\Form;
+namespace ImageServer\Form;
 
 use Omeka\Form\Element\PropertySelect;
 use Zend\Form\Element;
@@ -17,20 +17,20 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         $processors = $this->listImageProcessors();
 
         $this->add([
-            'name' => 'iiifserver_manifest',
+            'name' => 'imageserver_manifest',
             'type' => Fieldset::class,
             'options' => [
                 'label' => 'IIIF manifests', // @translate
                 'info' => $this->translate('The module creates manifests with the properties from each resource (item set, item and media).') // @translate
                     . ' ' . $this->translate('The properties below are used when some metadata are missing.') // @translate
                     . ' ' . $this->translate('In all cases, empty properties are not set.') // @translate
-                    . ' ' . $this->translate('Futhermore, the event "iiifserver.manifest" is available to change any data.'), // @translate
+                    . ' ' . $this->translate('Futhermore, the event "imageserver.manifest" is available to change any data.'), // @translate
             ],
         ]);
-        $manifestFieldset = $this->get('iiifserver_manifest');
+        $manifestFieldset = $this->get('imageserver_manifest');
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_description_property',
+            'name' => 'imageserver_manifest_description_property',
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Property to use for Description', // @translate
@@ -40,14 +40,14 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-description-property',
+                'id' => 'imageserver-manifest-description-property',
                 'class' => 'chosen-select',
                 'data-placeholder' => 'Select a property…', // @translate
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_attribution_property',
+            'name' => 'imageserver_manifest_attribution_property',
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Property to use for Attribution', // @translate
@@ -56,14 +56,14 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-attribution-property',
+                'id' => 'imageserver-manifest-attribution-property',
                 'class' => 'chosen-select',
                 'data-placeholder' => 'Select a property…', // @translate
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_attribution_default',
+            'name' => 'imageserver_manifest_attribution_default',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Default attribution', // @translate
@@ -71,12 +71,12 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     . ' ' . $this->translate('It will be used as pop up in the Universal Viewer too, if enabled.'),  // @translate
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-attribution-default',
+                'id' => 'imageserver-manifest-attribution-default',
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_license_property',
+            'name' => 'imageserver_manifest_license_property',
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Property to use for license', // @translate
@@ -86,38 +86,38 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-license-property',
+                'id' => 'imageserver-manifest-license-property',
                 'class' => 'chosen-select',
                 'data-placeholder' => 'Select a property…', // @translate
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_license_default',
+            'name' => 'imageserver_manifest_license_default',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Default license', // @translate
                 'info' => 'If any, and if there is no metadata for the element above, this text will be added in all manifests and viewers to indicate the license.',  // @translate
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-license-default',
+                'id' => 'imageserver-manifest-license-default',
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_logo_default',
+            'name' => 'imageserver_manifest_logo_default',
             'type' => Element\Url::class,
             'options' => [
                 'label' => 'Logo', // @translate
                 'info' => 'If any, this url to an image will be used as logo and displayed in the right panel of the Universal Viewer.',  // @translate
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-logo-default',
+                'id' => 'imageserver-manifest-logo-default',
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_html_descriptive',
+            'name' => 'imageserver_manifest_html_descriptive',
             'type' => Element\Checkbox::class,
             'options' => [
                 'label' => 'Link for descriptive metadata', // @translate
@@ -125,12 +125,12 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'documentation' => 'https://iiif.io/api/presentation/2.1/#descriptive-properties',
             ],
             'attributes' => [
-                'id' => 'iiifserver_manifest_html_descriptive',
+                'id' => 'imageserver_manifest_html_descriptive',
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_properties_collection',
+            'name' => 'imageserver_manifest_properties_collection',
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Limit properties for collection in manifest', // @translate
@@ -142,7 +142,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'iiifserver_manifest_properties_collection',
+                'id' => 'imageserver_manifest_properties_collection',
                 'class' => 'chosen-select',
                 'multiple' => true,
                 'data-placeholder' => 'Select one or more properties…', // @translate
@@ -150,7 +150,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_properties_item',
+            'name' => 'imageserver_manifest_properties_item',
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Limit properties for item in manifest', // @translate
@@ -162,7 +162,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'iiifserver_manifest_properties_item',
+                'id' => 'imageserver_manifest_properties_item',
                 'class' => 'chosen-select',
                 'multiple' => true,
                 'data-placeholder' => 'Select one or more properties…', // @translate
@@ -170,7 +170,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_properties_media',
+            'name' => 'imageserver_manifest_properties_media',
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Limit properties for media in manifest', // @translate
@@ -182,7 +182,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'iiifserver_manifest_properties_media',
+                'id' => 'imageserver_manifest_properties_media',
                 'class' => 'chosen-select',
                 'multiple' => true,
                 'data-placeholder' => 'Select one or more properties…', // @translate
@@ -190,7 +190,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_force_url_from',
+            'name' => 'imageserver_manifest_force_url_from',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Force base of url (from)', // @translate
@@ -198,23 +198,23 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     . ' ' . $this->translate('For example, when the server is secured, the "http:" urls may be replaced by "https:".'), // @translate
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-force-url-from',
+                'id' => 'imageserver-manifest-force-url-from',
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_force_url_to',
+            'name' => 'imageserver_manifest_force_url_to',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Force base of url (to)', // @translate
             ],
             'attributes' => [
-                'id' => 'iiifserver-manifest-force-url-to',
+                'id' => 'imageserver-manifest-force-url-to',
             ],
         ]);
 
         $manifestFieldset->add([
-            'name' => 'iiifserver_manifest_service_iiifsearch',
+            'name' => 'imageserver_manifest_service_iiifsearch',
             'type' => Element\Url::class,
             'options' => [
                 'label' => 'IIIF Search url', // @translate
@@ -223,17 +223,17 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         ]);
 
         $this->add([
-            'name' => 'iiifserver_image',
+            'name' => 'imageserver_image',
             'type' => Fieldset::class,
             'options' => [
                 'label' => 'Image server', // @translate
                 'info' => 'Images may be processed internally before to be sent to browser.', // @translate
             ],
         ]);
-        $imageFieldset = $this->get('iiifserver_image');
+        $imageFieldset = $this->get('imageserver_image');
 
         $imageFieldset->add([
-            'name' => 'iiifserver_image_creator',
+            'name' => 'imageserver_image_creator',
             'type' => Element\Select::class,
             'options' => [
                 'label' => 'Image processor', // @translate
@@ -244,7 +244,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         ]);
 
         $imageFieldset->add([
-            'name' => 'iiifserver_image_max_size',
+            'name' => 'imageserver_image_max_size',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Max dynamic size for images', // @translate
@@ -253,7 +253,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     . ' ' . $this->translate('Let empty to allow processing of any image.'), // @translate
             ],
             'attributes' => [
-                'id' => 'iiifserver-image-max-size',
+                'id' => 'imageserver-image-max-size',
             ],
         ]);
 
@@ -262,7 +262,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'zoomify' => 'Zoomify', // @translate
         ];
         $imageFieldset->add([
-            'name' => 'iiifserver_image_tile_type',
+            'name' => 'imageserver_image_tile_type',
             'type' => Element\Select::class,
             'options' => [
                 'label' => 'Tiling type', // @translate
@@ -272,19 +272,19 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'value_options' => $valueOptions,
             ],
             'attributes' => [
-                'id' => 'iiifserver-image-tile-type',
+                'id' => 'imageserver-image-tile-type',
             ],
         ]);
 
         $this->add([
-            'name' => 'iiifserver_bulk_tiler',
+            'name' => 'imageserver_bulk_tiler',
             'type' => Fieldset::class,
             'options' => [
                 'label' => 'Bulk tiler', // @translate
                 'info' => 'Imported files can be tiled via a background job.', // @translate
             ],
         ]);
-        $bulkFieldset = $this->get('iiifserver_bulk_tiler');
+        $bulkFieldset = $this->get('imageserver_bulk_tiler');
 
         $bulkFieldset->add([
             'name' => 'query',
@@ -326,72 +326,72 @@ class ConfigForm extends Form implements TranslatorAwareInterface
 
         $inputFilter = $this->getInputFilter();
 
-        $manifestFilter = $inputFilter->get('iiifserver_manifest');
+        $manifestFilter = $inputFilter->get('imageserver_manifest');
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_description_property',
+            'name' => 'imageserver_manifest_description_property',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_attribution_property',
+            'name' => 'imageserver_manifest_attribution_property',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_attribution_default',
+            'name' => 'imageserver_manifest_attribution_default',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_license_property',
+            'name' => 'imageserver_manifest_license_property',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_license_default',
+            'name' => 'imageserver_manifest_license_default',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_properties_collection',
+            'name' => 'imageserver_manifest_properties_collection',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_properties_item',
+            'name' => 'imageserver_manifest_properties_item',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_properties_media',
+            'name' => 'imageserver_manifest_properties_media',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_logo_default',
+            'name' => 'imageserver_manifest_logo_default',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_force_url_from',
+            'name' => 'imageserver_manifest_force_url_from',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_force_url_to',
+            'name' => 'imageserver_manifest_force_url_to',
             'required' => false,
         ]);
         $manifestFilter->add([
-            'name' => 'iiifserver_manifest_service_iiifsearch',
+            'name' => 'imageserver_manifest_service_iiifsearch',
             'required' => false,
         ]);
 
 
-        $imageFilter = $inputFilter->get('iiifserver_image');
+        $imageFilter = $inputFilter->get('imageserver_image');
         $imageFilter->add([
-            'name' => 'iiifserver_image_creator',
+            'name' => 'imageserver_image_creator',
             'required' => false,
         ]);
         $imageFilter->add([
-            'name' => 'iiifserver_image_max_size',
+            'name' => 'imageserver_image_max_size',
             'required' => false,
         ]);
         $imageFilter->add([
-            'name' => 'iiifserver_image_tile_type',
+            'name' => 'imageserver_image_tile_type',
             'required' => false,
         ]);
 
-        $bulkFieldset = $inputFilter->get('iiifserver_bulk_tiler');
+        $bulkFieldset = $inputFilter->get('imageserver_bulk_tiler');
         $bulkFieldset->add([
             'name' => 'query',
             'required' => false,
@@ -411,7 +411,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
     /**
      * Check and return the list of available processors.
      *
-     * @todo Merge with IiifServer\Module::listImageProcessors()
+     * @todo Merge with ImageServer\Module::listImageProcessors()
      *
      * @return array Associative array of available processors.
      */

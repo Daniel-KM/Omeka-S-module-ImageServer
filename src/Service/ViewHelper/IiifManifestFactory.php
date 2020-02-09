@@ -1,8 +1,8 @@
 <?php
 
-namespace IiifServer\Service\ViewHelper;
+namespace ImageServer\Service\ViewHelper;
 
-use IiifServer\View\Helper\IiifManifest;
+use ImageServer\View\Helper\IiifManifest;
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
 

@@ -1,7 +1,7 @@
 <?php
-namespace IiifServer\Service\ControllerPlugin;
+namespace ImageServer\Service\ControllerPlugin;
 
-use IiifServer\Mvc\Controller\Plugin\ImageSize;
+use ImageServer\Mvc\Controller\Plugin\ImageSize;
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
 

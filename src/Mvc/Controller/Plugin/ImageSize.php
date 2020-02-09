@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\Mvc\Controller\Plugin;
+namespace ImageServer\Mvc\Controller\Plugin;
 
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\TempFileFactory;

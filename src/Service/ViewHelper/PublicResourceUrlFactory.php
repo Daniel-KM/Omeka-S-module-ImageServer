@@ -1,8 +1,8 @@
 <?php
-namespace IiifServer\Service\ViewHelper;
+namespace ImageServer\Service\ViewHelper;
 
 use Interop\Container\ContainerInterface;
-use IiifServer\View\Helper\PublicResourceUrl;
+use ImageServer\View\Helper\PublicResourceUrl;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
 /**

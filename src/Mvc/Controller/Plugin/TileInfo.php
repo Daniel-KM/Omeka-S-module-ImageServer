@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\Mvc\Controller\Plugin;
+namespace ImageServer\Mvc\Controller\Plugin;
 
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\Exception\ConfigException;
@@ -71,7 +71,7 @@ class TileInfo extends AbstractPlugin
      */
     public function __invoke(MediaRepresentation $media)
     {
-        // Quick check for possible issue when used outside of the Iiif Server.
+        // Quick check for possible issue when used outside of the Image Server.
         if (strpos($media->mediaType(), 'image/') !== 0) {
             return;
         }
@@ -81,7 +81,7 @@ class TileInfo extends AbstractPlugin
         $viewHelpers = $services->get('ViewHelperManager');
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
 
-        $tileDir = $settings->get('iiifserver_image_tile_dir');
+        $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             throw new ConfigException('The tile dir is not defined.');
         }

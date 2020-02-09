@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\Job;
+namespace ImageServer\Job;
 
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Job\AbstractJob;

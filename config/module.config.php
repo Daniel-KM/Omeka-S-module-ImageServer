@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer;
+namespace ImageServer;
 
 return [
     'view_manager' => [
@@ -86,8 +86,8 @@ return [
             // resources. The default letter is "i", so it is not required when all ids are
             // items (the most common case). If the list contains only one id, the comma is
             // required to avoid confusion with a normal collection.
-            // This route should be set before the "iiifserver_presentation_collection".
-            'iiifserver_presentation_collection_list' => [
+            // This route should be set before the "imageserver_presentation_collection".
+            'imageserver_presentation_collection_list' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif/collection/:id',
@@ -95,7 +95,7 @@ return [
                         'id' => '(?:[cim]?\-?\d+\,?)+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\PresentationController::class,
                         'action' => 'list',
                     ],
@@ -106,7 +106,7 @@ return [
             // Libraries use an empty name or "manifests", "manifest.json", "manifest",
             // "{id}.json", etc. Here, an empty name is used, and a second route is added.
             // Invert the names of the route to use the generic name for the manifest itself.
-            'iiifserver_presentation_collection' => [
+            'imageserver_presentation_collection' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif/collection/:id',
@@ -114,13 +114,13 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\PresentationController::class,
                         'action' => 'collection',
                     ],
                 ],
             ],
-            'iiifserver_presentation_collection_redirect' => [
+            'imageserver_presentation_collection_redirect' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif/collection/:id/manifest',
@@ -128,13 +128,13 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\PresentationController::class,
                         'action' => 'collection',
                     ],
                 ],
             ],
-            'iiifserver_presentation_item' => [
+            'imageserver_presentation_item' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif/:id/manifest',
@@ -142,14 +142,14 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\PresentationController::class,
                         'action' => 'item',
                     ],
                 ],
             ],
             // The redirection is not required for presentation, but a forward is possible.
-            'iiifserver_presentation_item_redirect' => [
+            'imageserver_presentation_item_redirect' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif/:id',
@@ -157,14 +157,14 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\PresentationController::class,
                         'action' => 'item',
                     ],
                 ],
             ],
             // A redirect to the info.json is required by the specification.
-            'iiifserver_image' => [
+            'imageserver_image' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif-img/:id',
@@ -172,13 +172,13 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\ImageController::class,
                         'action' => 'index',
                     ],
                 ],
             ],
-            'iiifserver_image_info' => [
+            'imageserver_image_info' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif-img/:id/info.json',
@@ -186,7 +186,7 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\ImageController::class,
                         'action' => 'info',
                     ],
@@ -194,10 +194,10 @@ return [
             ],
             // This route is a garbage collector that allows to return an error 400 or 501 to
             // invalid or not implemented requests, as required by specification.
-            // This route should be set before the iiifserver_image in order to be
+            // This route should be set before the imageserver_image in order to be
             // processed after it.
             // TODO Simplify to any number of sub elements.
-            'iiifserver_image_bad' => [
+            'imageserver_image_bad' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif-img/:id/:region/:size/:rotation/:quality:.:format',
@@ -210,14 +210,14 @@ return [
                         'format' => '.+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\ImageController::class,
                         'action' => 'bad',
                     ],
                 ],
             ],
             // Warning: the format is separated with a ".", not a "/".
-            'iiifserver_image_url' => [
+            'imageserver_image_url' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/iiif-img/:id/:region/:size/:rotation/:quality:.:format',
@@ -230,14 +230,14 @@ return [
                         'format' => 'jpg|png|gif',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\ImageController::class,
                         'action' => 'fetch',
                     ],
                 ],
             ],
             // A redirect to the info.json is required by the specification.
-            'iiifserver_media' => [
+            'imageserver_media' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/ixif-media/:id',
@@ -245,13 +245,13 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\MediaController::class,
                         'action' => 'index',
                     ],
                 ],
             ],
-            'iiifserver_media_info' => [
+            'imageserver_media_info' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/ixif-media/:id/info.json',
@@ -259,7 +259,7 @@ return [
                         'id' => '\d+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\MediaController::class,
                         'action' => 'info',
                     ],
@@ -267,9 +267,9 @@ return [
             ],
             // This route is a garbage collector that allows to return an error 400 or 501 to
             // invalid or not implemented requests, as required by specification.
-            // This route should be set before the iiifserver_media in order to be
+            // This route should be set before the imageserver_media in order to be
             // processed after it.
-            'iiifserver_media_bad' => [
+            'imageserver_media_bad' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/ixif-media/:id:.:format',
@@ -278,14 +278,14 @@ return [
                         'format' => '.+',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\MediaController::class,
                         'action' => 'bad',
                     ],
                 ],
             ],
             // Warning: the format is separated with a ".", not a "/".
-            'iiifserver_media_url' => [
+            'imageserver_media_url' => [
                 'type' => \Zend\Router\Http\Segment::class,
                 'options' => [
                     'route' => '/ixif-media/:id:.:format',
@@ -294,7 +294,7 @@ return [
                         'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
                     ],
                     'defaults' => [
-                        '__NAMESPACE__' => 'IiifServer\Controller',
+                        '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\MediaController::class,
                         'action' => 'fetch',
                     ],
@@ -303,13 +303,13 @@ return [
 
             // For IxIF, some json files should be available to describe media for context.
             // This is not used currently: the Wellcome uris are kept because they are set
-            // for main purposes in IiifServer.
+            // for main purposes in ImageServer.
             // @link https://gist.github.com/tomcrane/7f86ac08d3b009c8af7c
 
             // If really needed, the two next routes may be uncommented to keep
             // compatibility with the old schemes used by the plugin for Omeka 2
             // before the version 2.4.2.
-            // 'iiifserver_presentation_classic' => [
+            // 'imageserver_presentation_classic' => [
             //     'type' => \Zend\Router\Http\Segment::class,
             //     'options' => [
             //         'route' => '/:resourcename/presentation/:id',
@@ -318,13 +318,13 @@ return [
             //             'id' => '\d+',
             //         ],
             //         'defaults' => [
-            //             '__NAMESPACE__' => 'IiifServer\Controller',
+            //             '__NAMESPACE__' => 'ImageServer\Controller',
             //             'controller' => Controller\PresentationController::class,
             //             'action' => 'manifest',
             //         ],
             //     ],
             // ],
-            // 'iiifserver_presentation_manifest_classic' => [
+            // 'imageserver_presentation_manifest_classic' => [
             //     'type' => \Zend\Router\Http\Segment::class,
             //     'options' => [
             //         'route' => '/:resourcename/presentation/:id/manifest',
@@ -333,7 +333,7 @@ return [
             //             'id' => '\d+',
             //         ],
             //         'defaults' => [
-            //             '__NAMESPACE__' => 'IiifServer\Controller',
+            //             '__NAMESPACE__' => 'ImageServer\Controller',
             //             'controller' => Controller\PresentationController::class,
             //             'action' => 'manifest',
             //         ],
@@ -367,25 +367,25 @@ return [
             ],
         ],
     ],
-    'iiifserver' => [
+    'imageserver' => [
         'config' => [
-            'iiifserver_manifest_description_property' => 'dcterms:bibliographicCitation',
-            'iiifserver_manifest_attribution_property' => '',
-            'iiifserver_manifest_attribution_default' => 'Provided by Example Organization', // @translate
-            'iiifserver_manifest_license_property' => 'dcterms:license',
-            'iiifserver_manifest_license_default' => 'http://www.example.org/license.html',
-            'iiifserver_manifest_logo_default' => '',
-            'iiifserver_manifest_html_descriptive' => true,
-            'iiifserver_manifest_properties_collection' => [],
-            'iiifserver_manifest_properties_item' => [],
-            'iiifserver_manifest_properties_media' => [],
-            'iiifserver_manifest_force_url_from' => '',
-            'iiifserver_manifest_force_url_to' => '',
-            'iiifserver_image_creator' => 'Auto',
-            'iiifserver_image_max_size' => 10000000,
-            'iiifserver_image_tile_dir' => 'tile',
-            'iiifserver_image_tile_type' => 'deepzoom',
-            'iiifserver_manifest_service_iiifsearch' => '',
+            'imageserver_manifest_description_property' => 'dcterms:bibliographicCitation',
+            'imageserver_manifest_attribution_property' => '',
+            'imageserver_manifest_attribution_default' => 'Provided by Example Organization', // @translate
+            'imageserver_manifest_license_property' => 'dcterms:license',
+            'imageserver_manifest_license_default' => 'http://www.example.org/license.html',
+            'imageserver_manifest_logo_default' => '',
+            'imageserver_manifest_html_descriptive' => true,
+            'imageserver_manifest_properties_collection' => [],
+            'imageserver_manifest_properties_item' => [],
+            'imageserver_manifest_properties_media' => [],
+            'imageserver_manifest_force_url_from' => '',
+            'imageserver_manifest_force_url_to' => '',
+            'imageserver_image_creator' => 'Auto',
+            'imageserver_image_max_size' => 10000000,
+            'imageserver_image_tile_dir' => 'tile',
+            'imageserver_image_tile_type' => 'deepzoom',
+            'imageserver_manifest_service_iiifsearch' => '',
         ],
     ],
 ];

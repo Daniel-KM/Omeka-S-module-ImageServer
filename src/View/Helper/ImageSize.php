@@ -1,7 +1,7 @@
 <?php
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
-use IiifServer\Mvc\Controller\Plugin\ImageSize as ImageSizePlugin;
+use ImageServer\Mvc\Controller\Plugin\ImageSize as ImageSizePlugin;
 use Omeka\Api\Representation\MediaRepresentation;
 use Zend\View\Helper\AbstractHelper;
 use Omeka\Mvc\Exception\RuntimeException;

@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\Mvc\Controller\Plugin;
+namespace ImageServer\Mvc\Controller\Plugin;
 
 use DanielKm\Deepzoom\DeepzoomFactory;
 use DanielKm\Zoomify\ZoomifyFactory;

@@ -1,9 +1,9 @@
-IIIF Server (module for Omeka S)
+Image Server (module for Omeka S)
 ================================
 
-[![Build Status](https://travis-ci.org/Daniel-KM/Omeka-S-module-IiifServer.svg?branch=master)](https://travis-ci.org/Daniel-KM/Omeka-S-module-IiifServer)
+[![Build Status](https://travis-ci.org/Daniel-KM/Omeka-S-module-ImageServer.svg?branch=master)](https://travis-ci.org/Daniel-KM/Omeka-S-module-ImageServer)
 
-[IIIF Server] is a module for [Omeka S] that integrates the [IIIF specifications]
+[Image Server] is a module for [Omeka S] that integrates the [IIIF specifications]
 and a simple image server (similar to a basic [IIP Image]) to allow to process
 and share instantly images of any size and medias (pdf, audio, video, 3D…) in
 the desired formats.
@@ -18,7 +18,7 @@ They can be displayed directly in any viewer that support thes formats, or in
 any viewer that supports the IIIF protocol. Tiled images are displayed with
 [OpenSeadragon], the default viewer integrated in Omeka S.
 
-The [IIIF Server] supports the IXIF media extension too, so manifests can be
+The [Image Server] supports the IXIF media extension too, so manifests can be
 served for any type of file. For non-images files, it is recommended to use a
 specific viewer or the [Universal Viewer], a widget that can display books,
 images, maps, audio, movies, pdf, 3D, and anything else as long as the
@@ -26,7 +26,7 @@ appropriate extension is installed.
 
 This [Omeka S] module is a rewrite of the [Universal Viewer plugin for Omeka] by
 [BibLibre] with the same features as the original plugin, but separated into two
-modules (the IIIF server and the widget Universal Viewer). It integrates the
+modules (the Image server and the widget Universal Viewer). It integrates the
 tiler [Zoomify] that was used the plugin [OpenLayers Zoom] for [Omeka Classic]
 and another tiler to support the [Deep Zoom Image] tile format.
 
@@ -46,14 +46,14 @@ by default in most servers. If not, the image server will use the command line
 
 * From the zip
 
-Download the last release [`IiifServer.zip`] from the list of releases (the
+Download the last release [`ImageServer.zip`] from the list of releases (the
 master does not contain the dependencies), uncompress it in the `modules`
-directory, and rename the module folder `IiifServer`.
+directory, and rename the module folder `ImageServer`.
 
 * From the source and for development:
 
 If the module was installed from the source, check if the name of the folder of
-the module is `IiifServer`, go to the root of the module, and run either:
+the module is `ImageServer`, go to the root of the module, and run either:
 
 ```
     composer install
@@ -63,7 +63,7 @@ Then install it like any other Omeka module.
 
 * CORS (Cross-Origin Resource Sharing)
 
-To be able to share manifests and contents with other IIIF servers, the server
+To be able to share manifests and contents with other Image servers, the server
 should allow CORS. The header is automatically set for manifests, but you may
 have to allow access for files via the config of the server.
 
@@ -96,13 +96,13 @@ Notes
 -----
 
 Note: To keep old options from [Universal Viewer], upgrade it to version 3.4.3
-before enabling of IiifServer. Else, simply set them in the config form.
+before enabling of ImageServer. Else, simply set them in the config form.
 
 When you need to display big images (bigger than 10 to 50 MB according to your
 server), it is recommended to upload them as "Tile", so tiles will be
 automatically created (see below).
 
-Options for the IIIF server can be changed in the helpers "IiifCollection.php",
+Options for the Image server can be changed in the helpers "IiifCollection.php",
 "IiifManifest.php" and "IiifInfo.php" of the module, and via the events.
 
 See below the notes for more info.
@@ -124,7 +124,7 @@ viewer.
 * Customize data of manifests
 
 The module creates manifests with all the metadata of each record. The event
-`iiifserver.manifest` can be used to modify the exposed data of a manifest for
+`imageserver.manifest` can be used to modify the exposed data of a manifest for
 items, collections, collection lists (search results) and media (`info.json`).
 So, it is possible, for example, to modify the citation, to remove or to add
 some metadata or to change the thumbnail.
@@ -132,10 +132,10 @@ some metadata or to change the thumbnail.
 Note: with a collection list, the parameter `resource` is an array of resources.
 
 
-IIIF Server
+Image Server
 -----------
 
-All routes of the IIIF server are defined in `config/module.config.php`.
+All routes of the Image server are defined in `config/module.config.php`.
 They follow the recommandations of the [IIIF specifications].
 
 To view the json-ld manifests created for each resources of Omeka S, simply try
@@ -244,7 +244,7 @@ can’t be retrieved by the Universal Viewer.
 This module is not required when there is no external images or when these
 images are referenced in the json files with a full url.
 
-To share the `json` with other IIIF servers, the server may need to allow CORS
+To share the `json` with other Image servers, the server may need to allow CORS
 (see above).
 
 * Example
@@ -280,7 +280,7 @@ TODO / Bugs
 
 - When a item set contains non image items, the left panel with the index is
   displayed only when the first item contains an image.
-- Separate IIIF Server (creation of manifests and media infos) and image server
+- Separate Image Server (creation of manifests and media infos) and image server
   (tiling and display compliant with iiif specifications) ([#6]).
 - Create thumbnails from the tiled image, not from the original.
 - Support curl when allow_url_fopen and allow_url_include are forbidden.
@@ -339,7 +339,7 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [Mines ParisTech].
 
 
-[IIIF Server]: https://github.com/Daniel-KM/Omeka-S-module-IiifServer
+[Image Server]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer
 [Omeka S]: https://omeka.org/s
 [International Image Interoperability Framework]: http://iiif.io
 [IIIF specifications]: http://iiif.io/api/
@@ -355,7 +355,7 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [`GD`]: https://secure.php.net/manual/en/book.image.php
 [`Imagick`]: https://php.net/manual/en/book.imagick.php
 [ImageMagick]: https://www.imagemagick.org/
-[`IiifServer.zip`]: https://github.com/Daniel-KM/Omeka-S-module-IiifServer/releases
+[`ImageServer.zip`]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/releases
 [Universal Viewer]: https://github.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Ark]: https://github.com/BibLibre/omeka-s-module-Ark
 [Clean Url]: https://github.com/BibLibre/omeka-s-module-CleanUrl
@@ -369,8 +369,8 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [Deepzoom library]: https://github.com/Daniel-KM/LibraryDeepzoom
 [Zoomify library]: https://github.com/Daniel-KM/LibraryZoomify
 [Deepzoom]: https://github.com/jeremytubbs/deepzoom
-[#6]: https://github.com/Daniel-KM/Omeka-S-module-IiifServer/issues/6
-[module issues]: https://github.com/Daniel-KM/Omeka-S-module-IiifServer/issues
+[#6]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues/6
+[module issues]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org

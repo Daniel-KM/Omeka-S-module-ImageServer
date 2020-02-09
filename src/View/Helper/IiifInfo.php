@@ -28,9 +28,9 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
-use IiifServer\Mvc\Controller\Plugin\TileInfo;
+use ImageServer\Mvc\Controller\Plugin\TileInfo;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\TempFileFactory;
 use Zend\View\Helper\AbstractHelper;
@@ -87,7 +87,7 @@ class IiifInfo extends AbstractHelper
             $imageSize = $view->imageSize($media, $imageType);
             list($width, $height) = $imageSize ? array_values($imageSize) : [null, null];
             $imageUrl = $this->view->url(
-                'iiifserver_image',
+                'imageserver_image',
                 ['id' => $media->id()],
                 ['force_canonical' => true]
             );
@@ -152,7 +152,7 @@ class IiifInfo extends AbstractHelper
                 // WEB_ROOT . '/ld/ixif/0/context.json',
             ];
             $fileUrl = $this->view->url(
-                'iiifserver_media',
+                'imageserver_media',
                 ['id' => $media->id()],
                 ['force_canonical' => true]
             );
@@ -169,7 +169,7 @@ class IiifInfo extends AbstractHelper
         $type = 'file';
         $triggerHelper = $this->view->plugin('trigger');
         $params = compact('manifest', 'resource', 'type');
-        $params = $triggerHelper('iiifserver.manifest', $params, true);
+        $params = $triggerHelper('imageserver.manifest', $params, true);
         $info = $params['manifest'];
 
         $info = (object) $info;

@@ -28,9 +28,9 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\Controller;
+namespace ImageServer\Controller;
 
-use IiifServer\ImageServer;
+use ImageServer\ImageServer;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
@@ -44,7 +44,7 @@ use Zend\View\Model\ViewModel;
  *
  * @todo Move all image processing stuff in Image Server.
  *
- * @package IiifServer
+ * @package ImageServer
  */
 class ImageController extends AbstractActionController
 {
@@ -104,7 +104,7 @@ class ImageController extends AbstractActionController
     public function indexAction()
     {
         $id = $this->params('id');
-        $this->redirect()->toRoute('iiifserver_image_info', ['id' => $id]);
+        $this->redirect()->toRoute('imageserver_image_info', ['id' => $id]);
     }
 
     /**
@@ -116,7 +116,7 @@ class ImageController extends AbstractActionController
         $response->setStatusCode(400);
 
         $view = new ViewModel;
-        $view->setVariable('message', $this->translate('The IIIF server cannot fulfill the request: the arguments are incorrect.'));
+        $view->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'));
         $view->setTemplate('iiif-server/image/error');
         return $view;
     }
@@ -125,7 +125,7 @@ class ImageController extends AbstractActionController
      * Send "info.json" for the current file.
      *
      * The info is managed by the ImageControler because it indicates
-     * capabilities of the IIIF server for the request of a file.
+     * capabilities of the Image server for the request of a file.
      */
     public function infoAction()
     {
@@ -266,11 +266,11 @@ class ImageController extends AbstractActionController
 
                 // The image needs to be transformed dynamically.
                 else {
-                    $maxFileSize = $settings->get('iiifserver_image_max_size');
+                    $maxFileSize = $settings->get('imageserver_image_max_size');
                     if (!empty($maxFileSize) && $this->_mediaFileSize($media) > $maxFileSize) {
                         $response->setStatusCode(500);
                         $view = new ViewModel;
-                        $view->setVariable('message', $this->translate('The IIIF server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.'));
+                        $view->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.'));
                         $view->setTemplate('iiif-server/image/error');
                         return $view;
                     }
@@ -301,7 +301,7 @@ class ImageController extends AbstractActionController
             if (empty($output)) {
                 $response->setStatusCode(500);
                 $view = new ViewModel;
-                $view->setVariable('message', $this->translate('The IIIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.'));
+                $view->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.'));
                 $view->setTemplate('iiif-server/image/error');
                 return $view;
             }
@@ -321,7 +321,7 @@ class ImageController extends AbstractActionController
         else {
             $response->setStatusCode(500);
             $view = new ViewModel;
-            $view->setVariable('message', $this->translate('The IIIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.'));
+            $view->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.'));
             $view->setTemplate('iiif-server/image/error');
             return $view;
         }
@@ -391,7 +391,7 @@ class ImageController extends AbstractActionController
         elseif (strpos($region, 'pct:') === 0) {
             $regionValues = explode(',', substr($region, 4));
             if (count($regionValues) != 4) {
-                $this->_view->setVariable('message', sprintf($this->translate('The IIIF server cannot fulfill the request: the region "%s" is incorrect.'), $region));
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), $region));
                 return;
             }
             $regionValues = array_map('floatval', $regionValues);
@@ -422,7 +422,7 @@ class ImageController extends AbstractActionController
         else {
             $regionValues = explode(',', $region);
             if (count($regionValues) != 4) {
-                $this->_view->setVariable('message', sprintf($this->translate('The IIIF server cannot fulfill the request: the region "%s" is incorrect.'), $region));
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), $region));
                 return;
             }
             $regionValues = array_map('intval', $regionValues);
@@ -460,7 +460,7 @@ class ImageController extends AbstractActionController
         elseif (strpos($size, 'pct:') === 0) {
             $sizePercentage = floatval(substr($size, 4));
             if (empty($sizePercentage) || $sizePercentage > 100) {
-                $this->_view->setVariable('message', sprintf($this->translate('The IIIF server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
                 return;
             }
             // A quick check to avoid a possible transformation.
@@ -480,7 +480,7 @@ class ImageController extends AbstractActionController
             $destinationWidth = (int) substr($size, 1, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) || empty($destinationHeight)) {
-                $this->_view->setVariable('message', sprintf($this->translate('The IIIF server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
                 return;
             }
             // A quick check to avoid a possible transformation.
@@ -503,7 +503,7 @@ class ImageController extends AbstractActionController
             $destinationWidth = (int) substr($size, 0, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) && empty($destinationHeight)) {
-                $this->_view->setVariable('message', sprintf($this->translate('The IIIF server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
                 return;
             }
 
@@ -553,7 +553,7 @@ class ImageController extends AbstractActionController
 
             // Not supported.
             else {
-                $this->_view->setVariable('message', sprintf($this->translate('The IIIF server cannot fulfill the request: the size "%s" is not supported.'), $size));
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), $size));
                 return;
             }
 
@@ -561,7 +561,7 @@ class ImageController extends AbstractActionController
             if (isset($transform['size']['width']) && empty($transform['size']['width'])
                     || isset($transform['size']['height']) && empty($transform['size']['height'])
                 ) {
-                $this->_view->setVariable('message', sprintf($this->translate('The IIIF server cannot fulfill the request: the size "%s" is not supported.'), $size));
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), $size));
                 return;
             }
         }
@@ -745,7 +745,7 @@ class ImageController extends AbstractActionController
      * @param MediaRepresentation $media
      * @param string $derivativeType
      * @return string|null Null if not exists.
-     * @see \IiifServer\View\Helper\IiifInfo::_getImagePath()
+     * @see \ImageServer\View\Helper\IiifInfo::_getImagePath()
      */
     protected function _getImagePath(MediaRepresentation $media, $derivativeType = 'original')
     {

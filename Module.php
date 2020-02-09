@@ -28,9 +28,9 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer;
+namespace ImageServer;
 
-use IiifServer\Form\ConfigForm;
+use ImageServer\Form\ConfigForm;
 use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
 use Omeka\Mvc\Controller\Plugin\Messenger;
@@ -126,15 +126,15 @@ class Module extends AbstractModule
                 );
 
                 foreach ([
-                    'universalviewer_manifest_description_property' => 'iiifserver_manifest_description_property',
-                    'universalviewer_manifest_attribution_property' => 'iiifserver_manifest_attribution_property',
-                    'universalviewer_manifest_attribution_default' => 'iiifserver_manifest_attribution_default',
-                    'universalviewer_manifest_license_property' => 'iiifserver_manifest_license_property',
-                    'universalviewer_manifest_license_default' => 'iiifserver_manifest_license_default',
-                    'universalviewer_manifest_logo_default' => 'iiifserver_manifest_logo_default',
-                    'universalviewer_force_https' => 'iiifserver_manifest_force_https',
-                    'universalviewer_iiif_creator' => 'iiifserver_image_creator',
-                    'universalviewer_iiif_max_size' => 'iiifserver_image_max_size',
+                    'universalviewer_manifest_description_property' => 'imageserver_manifest_description_property',
+                    'universalviewer_manifest_attribution_property' => 'imageserver_manifest_attribution_property',
+                    'universalviewer_manifest_attribution_default' => 'imageserver_manifest_attribution_default',
+                    'universalviewer_manifest_license_property' => 'imageserver_manifest_license_property',
+                    'universalviewer_manifest_license_default' => 'imageserver_manifest_license_default',
+                    'universalviewer_manifest_logo_default' => 'imageserver_manifest_logo_default',
+                    'universalviewer_force_https' => 'imageserver_manifest_force_https',
+                    'universalviewer_iiif_creator' => 'imageserver_image_creator',
+                    'universalviewer_iiif_max_size' => 'imageserver_image_max_size',
                 ] as $uvSetting => $iiifSetting) {
                     $defaultSettings[$iiifSetting] = $settings->get($uvSetting);
                 }
@@ -167,7 +167,7 @@ class Module extends AbstractModule
 
         // Nuke all the tiles.
         $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $tileDir = $settings->get('iiifserver_image_tile_dir');
+        $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             $messenger = new Messenger();
             $messenger->addWarning('The tile dir is not defined and was not removed.'); // @translate
@@ -218,7 +218,7 @@ class Module extends AbstractModule
         $settings = $serviceLocator->get('Omeka\Settings');
 
         $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $tileDir = $settings->get('iiifserver_image_tile_dir');
+        $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             $message = new Message('The tile dir is not defined and won’t be removed.'); // @translate
         } else {
@@ -280,8 +280,8 @@ class Module extends AbstractModule
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($defaultSettings as $name => $value) {
             // Prepare the values to be set in two fieldsets.
-            $data['iiifserver_manifest'][$name] = $settings->get($name, $value);
-            $data['iiifserver_image'][$name] = $settings->get($name, $value);
+            $data['imageserver_manifest'][$name] = $settings->get($name, $value);
+            $data['imageserver_image'][$name] = $settings->get($name, $value);
         }
 
         $form->init();
@@ -309,13 +309,13 @@ class Module extends AbstractModule
 
         $params = $form->getData();
 
-        $bulk = $params['iiifserver_bulk_tiler'];
-        unset($params['iiifserver_bulk_tiler']);
+        $bulk = $params['imageserver_bulk_tiler'];
+        unset($params['imageserver_bulk_tiler']);
 
-        $params = $params['iiifserver_manifest'] + $params['iiifserver_image'];
+        $params = $params['imageserver_manifest'] + $params['imageserver_image'];
 
         // Specific options.
-        foreach (['iiifserver_manifest_collection_properties', 'iiifserver_manifest_item_properties', 'iiifserver_manifest_media_properties'] as $key) {
+        foreach (['imageserver_manifest_collection_properties', 'imageserver_manifest_item_properties', 'imageserver_manifest_media_properties'] as $key) {
             $params[$key] = empty($params[$key]) || in_array('', $params[$key])
                 ? []
                 : (in_array('none', $params[$key]) ? ['none'] : $params[$key]);
@@ -346,7 +346,7 @@ class Module extends AbstractModule
         unset($params['process']);
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        $job = $dispatcher->dispatch(\IiifServer\Job\BulkTiler::class, $params);
+        $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
         $message = new Message(
             'Creating tiles for images attached to specified items, in background (%sjob #%d%s)', // @translate
             sprintf('<a href="%s">',
@@ -388,7 +388,7 @@ class Module extends AbstractModule
         $config = include __DIR__ . '/config/module.config.php';
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $tileDir = $defaultSettings['iiifserver_image_tile_dir'];
+        $tileDir = $defaultSettings['imageserver_image_tile_dir'];
         if (empty($tileDir)) {
             throw new ModuleCannotInstallException(new Message(
                 'The tile dir is not defined.', // @translate
@@ -444,7 +444,7 @@ class Module extends AbstractModule
         $serviceLocator = $this->getServiceLocator();
         $settings = $serviceLocator->get('Omeka\Settings');
         $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $tileDir = $settings->get('iiifserver_image_tile_dir');
+        $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             $logger = $serviceLocator->get('Omeka\logger');
             $logger->err(new Message('Tile dir is not defined, so media tiles cannot be removed.')); // @translate

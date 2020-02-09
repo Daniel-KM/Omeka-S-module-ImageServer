@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\Controller;
+namespace ImageServer\Controller;
 
 use Omeka\File\Store\StoreInterface;
 use Zend\Mvc\Controller\AbstractActionController;
@@ -37,7 +37,7 @@ use Zend\View\Model\ViewModel;
 /**
  * The Media controller class.
  *
- * @package IiifServer
+ * @package ImageServer
  */
 class MediaController extends AbstractActionController
 {
@@ -67,7 +67,7 @@ class MediaController extends AbstractActionController
     public function indexAction()
     {
         $id = $this->params('id');
-        $this->redirect()->toRoute('iiifserver_media_info', ['id' => $id]);
+        $this->redirect()->toRoute('imageserver_media_info', ['id' => $id]);
     }
 
     /**
@@ -97,7 +97,7 @@ class MediaController extends AbstractActionController
         $response->setStatusCode(400);
 
         $view = new ViewModel;
-        $view->setVariable('message', $this->translate('The IIIF server cannot fulfill the request: the arguments are incorrect.'));
+        $view->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'));
         $view->setTemplate('iiif-server/image/error');
         return $view;
     }

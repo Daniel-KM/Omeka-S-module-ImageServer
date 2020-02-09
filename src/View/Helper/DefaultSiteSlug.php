@@ -1,5 +1,5 @@
 <?php
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
 

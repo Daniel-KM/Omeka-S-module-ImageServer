@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\ItemSetRepresentation;
@@ -81,31 +81,31 @@ class IiifCollection extends AbstractHelper
         $metadata = $this->iiifMetadata($itemSet);
         $manifest['metadata'] = $metadata;
 
-        $descriptionProperty = $this->view->setting('iiifserver_manifest_description_property');
+        $descriptionProperty = $this->view->setting('imageserver_manifest_description_property');
         if ($descriptionProperty) {
             $description = strip_tags($itemSet->value($descriptionProperty, ['type' => 'literal']));
         }
         $manifest['description'] = $description;
 
-        $licenseProperty = $this->view->setting('iiifserver_license_property');
+        $licenseProperty = $this->view->setting('imageserver_license_property');
         if ($licenseProperty) {
             $license = $itemSet->value($licenseProperty);
         }
         if (empty($license)) {
-            $license = $this->view->setting('iiifserver_manifest_license_default');
+            $license = $this->view->setting('imageserver_manifest_license_default');
         }
         $manifest['license'] = $license;
 
-        $attributionProperty = $this->view->setting('iiifserver_manifest_attribution_property');
+        $attributionProperty = $this->view->setting('imageserver_manifest_attribution_property');
         if ($attributionProperty) {
             $attribution = strip_tags($itemSet->value($attributionProperty, ['type' => 'literal']));
         }
         if (empty($attribution)) {
-            $attribution = $this->view->setting('iiifserver_manifest_attribution_default');
+            $attribution = $this->view->setting('imageserver_manifest_attribution_default');
         }
         $manifest['attribution'] = $attribution;
 
-        $manifest['logo'] = $this->view->setting('iiifserver_manifest_logo_default');
+        $manifest['logo'] = $this->view->setting('imageserver_manifest_logo_default');
 
         // TODO Use resource thumbnail (> Omeka 1.3).
         // $manifest['thumbnail'] = $thumbnail;
@@ -157,7 +157,7 @@ class IiifCollection extends AbstractHelper
         $type = 'collection';
         $triggerHelper = $this->view->plugin('trigger');
         $params = compact('manifest', 'resource', 'type');
-        $params = $triggerHelper('iiifserver.manifest', $params, true);
+        $params = $triggerHelper('imageserver.manifest', $params, true);
         $manifest = $params['manifest'];
 
         // Remove all empty values (there is no "0" or "null" at first level).
@@ -179,7 +179,7 @@ class IiifCollection extends AbstractHelper
 
         if ($resourceName == 'item_sets') {
             $url = $this->view->url(
-                'iiifserver_presentation_collection',
+                'imageserver_presentation_collection',
                 ['id' => $resource->id()],
                 ['force_canonical' => true]
             );
@@ -187,7 +187,7 @@ class IiifCollection extends AbstractHelper
             $type = 'sc:Collection';
         } else {
             $url = $this->view->url(
-                'iiifserver_presentation_item',
+                'imageserver_presentation_item',
                 ['id' => $resource->id()],
                 ['force_canonical' => true]
             );
@@ -215,7 +215,7 @@ class IiifCollection extends AbstractHelper
      */
     protected function iiifMetadata(AbstractResourceEntityRepresentation $resource)
     {
-        $properties = $this->view->setting('iiifserver_manifest_properties_collection');
+        $properties = $this->view->setting('imageserver_manifest_properties_collection');
         if ($properties === ['none']) {
             return [];
         }

@@ -28,16 +28,16 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\ImageServer;
+namespace ImageServer\ImageServer;
 
-use IiifServer\AbstractImageServer;
+use ImageServer\AbstractImageServer;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
  *
- * @package IiifServer
+ * @package ImageServer
  */
 class Auto extends AbstractImageServer
 {

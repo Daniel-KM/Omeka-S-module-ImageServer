@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
 
@@ -56,8 +56,8 @@ class IiifForceBaseUrlIfRequired extends AbstractHelper
     public function __invoke($absoluteUrl)
     {
         if (is_null($this->forceFrom)) {
-            $this->forceFrom = (string) $this->view->setting('iiifserver_manifest_force_url_from');
-            $this->forceTo = (string) $this->view->setting('iiifserver_manifest_force_url_to');
+            $this->forceFrom = (string) $this->view->setting('imageserver_manifest_force_url_from');
+            $this->forceTo = (string) $this->view->setting('imageserver_manifest_force_url_to');
         }
 
         return $this->forceFrom && (strpos($absoluteUrl, $this->forceFrom) === 0)

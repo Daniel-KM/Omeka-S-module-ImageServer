@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\Mvc\Controller\Plugin;
+namespace ImageServer\Mvc\Controller\Plugin;
 
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
@@ -483,7 +483,7 @@ class TileServer extends AbstractPlugin
     /**
      * Helper to get width and height of an image.
      *
-     * @see \IiifServer\View\Helper\IiifInfo::getWidthAndHeight()
+     * @see \ImageServer\View\Helper\IiifInfo::getWidthAndHeight()
      *
      * @param string $filepath This should be an image (no check here).
      * @return array Associative array of width and height of the image file.

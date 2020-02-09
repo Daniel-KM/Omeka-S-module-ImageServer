@@ -1,11 +1,11 @@
 <?php
-namespace IiifServer\Media\Renderer;
+namespace ImageServer\Media\Renderer;
 
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Media\Renderer\RendererInterface;
 use Omeka\Stdlib\Message;
 use Zend\View\Renderer\PhpRenderer;
-use IiifServer\Mvc\Controller\Plugin\TileInfo;
+use ImageServer\Mvc\Controller\Plugin\TileInfo;
 
 class Tile implements RendererInterface
 {
@@ -157,7 +157,7 @@ OUTPUT;
     protected function getDataIiif(MediaRepresentation $media, PhpRenderer $view, array $tileInfo)
     {
         $url = $view->url(
-            'iiifserver_image_info',
+            'imageserver_image_info',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );
@@ -188,7 +188,7 @@ OUTPUT;
         }
 
         $url = $view->url(
-            'iiifserver_image',
+            'imageserver_image',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );

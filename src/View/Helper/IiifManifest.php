@@ -28,10 +28,10 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer\View\Helper;
+namespace ImageServer\View\Helper;
 
 use IiifSearch\View\Helper\IiifSearch;
-use IiifServer\Mvc\Controller\Plugin\TileInfo;
+use ImageServer\Mvc\Controller\Plugin\TileInfo;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
@@ -116,7 +116,7 @@ class IiifManifest extends AbstractHelper
         ];
 
         $url = $this->view->url(
-            'iiifserver_presentation_item',
+            'imageserver_presentation_item',
             ['id' => $item->id()],
             ['force_canonical' => true]
         );
@@ -132,7 +132,7 @@ class IiifManifest extends AbstractHelper
         $label = $item->displayTitle('') ?: $this->view->iiifUrl($item);
         $manifest['label'] = $label;
 
-        $descriptionProperty = $this->view->setting('iiifserver_manifest_description_property');
+        $descriptionProperty = $this->view->setting('imageserver_manifest_description_property');
         if ($descriptionProperty) {
             $description = strip_tags($item->value($descriptionProperty, ['type' => 'literal']));
         } else {
@@ -140,27 +140,27 @@ class IiifManifest extends AbstractHelper
         }
         $manifest['description'] = $description;
 
-        $licenseProperty = $this->view->setting('iiifserver_license_property');
+        $licenseProperty = $this->view->setting('imageserver_license_property');
         if ($licenseProperty) {
             $license = $item->value($licenseProperty);
         }
         if (empty($license)) {
-            $license = $this->view->setting('iiifserver_manifest_license_default');
+            $license = $this->view->setting('imageserver_manifest_license_default');
         }
         $manifest['license'] = $license;
 
-        $attributionProperty = $this->view->setting('iiifserver_manifest_attribution_property');
+        $attributionProperty = $this->view->setting('imageserver_manifest_attribution_property');
         if ($attributionProperty) {
             $attribution = strip_tags($item->value($attributionProperty, ['type' => 'literal']));
         }
         if (empty($attribution)) {
-            $attribution = $this->view->setting('iiifserver_manifest_attribution_default');
+            $attribution = $this->view->setting('imageserver_manifest_attribution_default');
         }
         $manifest['attribution'] = $attribution;
 
-        $manifest['logo'] = $this->view->setting('iiifserver_manifest_logo_default');
+        $manifest['logo'] = $this->view->setting('imageserver_manifest_logo_default');
 
-        $iiifSearch = $this->view->setting('iiifserver_manifest_service_iiifsearch');
+        $iiifSearch = $this->view->setting('imageserver_manifest_service_iiifsearch');
 
         if ( $iiifSearch ) {
             $searchServiceAvailable = true;
@@ -224,7 +224,7 @@ class IiifManifest extends AbstractHelper
         $withins = [];
         foreach ($item->itemSets() as $itemSet) {
             $within = $this->view->url(
-                'iiifserver_presentation_collection',
+                'imageserver_presentation_collection',
                 ['id' => $itemSet->id()],
                 ['force_canonical' => true]
             );
@@ -455,7 +455,7 @@ class IiifManifest extends AbstractHelper
             if (empty($rendering)) {
                 $placeholder = 'img/placeholder-default.jpg';
                 $render = [];
-                $render['@id'] = $this->view->assetUrl($placeholder, 'IiifServer');
+                $render['@id'] = $this->view->assetUrl($placeholder, 'ImageServer');
                 $render['format'] = 'image/jpeg';
                 $render['label'] = $translate('Unsupported content.');
                 $render = (object) $render;
@@ -501,7 +501,7 @@ class IiifManifest extends AbstractHelper
         $type = 'item';
         $triggerHelper = $this->view->plugin('trigger');
         $params = compact('manifest', 'resource', 'type');
-        $params = $triggerHelper('iiifserver.manifest', $params, true);
+        $params = $triggerHelper('imageserver.manifest', $params, true);
         $manifest = $params['manifest'];
 
         // Remove all empty values (there is no "0" or "null" at first level).
@@ -523,9 +523,9 @@ class IiifManifest extends AbstractHelper
     {
         $jsonLdType = $resource->getResourceJsonLdType();
         $map = [
-            'o:ItemSet' => 'iiifserver_manifest_properties_collection',
-            'o:Item' => 'iiifserver_manifest_properties_item',
-            'o:Media' => 'iiifserver_manifest_properties_media',
+            'o:ItemSet' => 'imageserver_manifest_properties_collection',
+            'o:Item' => 'imageserver_manifest_properties_item',
+            'o:Media' => 'imageserver_manifest_properties_media',
         ];
         if (!isset($map[$jsonLdType])) {
             return [];
@@ -538,7 +538,7 @@ class IiifManifest extends AbstractHelper
 
         $values = $properties ? array_intersect_key($resource->values(), array_flip($properties)) : $resource->values();
 
-        return $this->view->setting('iiifserver_manifest_html_descriptive')
+        return $this->view->setting('imageserver_manifest_html_descriptive')
             ? $this->valuesAsHtml($values)
             : $this->valuesAsPlainText($values);
     }
@@ -612,7 +612,7 @@ class IiifManifest extends AbstractHelper
         $thumbnail = [];
 
         $imageUrl = $this->view->url(
-            'iiifserver_image_url',
+            'imageserver_image_url',
             [
                 'id' => $media->id(),
                 'region' => 'full',
@@ -629,7 +629,7 @@ class IiifManifest extends AbstractHelper
         $thumbnailService = [];
         $thumbnailService['@context'] = 'http://iiif.io/api/image/2/context.json';
         $thumbnailServiceUrl = $this->view->url(
-            'iiifserver_image',
+            'imageserver_image',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );
@@ -678,7 +678,7 @@ class IiifManifest extends AbstractHelper
         $imageSize = $view->imageSize($media, 'large');
         list($widthLarge, $heightLarge) = $imageSize ? array_values($imageSize) : [null, null];
         $imageUrl = $this->view->url(
-            'iiifserver_image_url',
+            'imageserver_image_url',
             [
                 'id' => $media->id(),
                 'region' => 'full',
@@ -698,7 +698,7 @@ class IiifManifest extends AbstractHelper
         $imageResource['height'] = $height;
 
         $imageUrlService = $this->view->url(
-            'iiifserver_image',
+            'imageserver_image',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );
@@ -789,9 +789,9 @@ class IiifManifest extends AbstractHelper
         $canvas['label'] = $translate('Placeholder image');
 
         $placeholder = 'img/thumbnails/placeholder-image.png';
-        $canvas['thumbnail'] = $this->view->assetUrl($placeholder, 'IiifServer');
+        $canvas['thumbnail'] = $this->view->assetUrl($placeholder, 'ImageServer');
 
-        $imageSize = $this->getWidthAndHeight(OMEKA_PATH . '/modules/IiifServer/asset/' . $placeholder) ?: ['width' => null, 'height' => null];
+        $imageSize = $this->getWidthAndHeight(OMEKA_PATH . '/modules/ImageServer/asset/' . $placeholder) ?: ['width' => null, 'height' => null];
         $canvas['width'] = $imageSize['width'];
         $canvas['height'] = $imageSize['height'];
 
@@ -847,7 +847,7 @@ class IiifManifest extends AbstractHelper
         }
         $mediaSequencesService = [];
         $mseUrl = $this->view->url(
-            'iiifserver_media',
+            'imageserver_media',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );
@@ -890,7 +890,7 @@ class IiifManifest extends AbstractHelper
         // A place holder is recommended for media.
         if (empty($mediaSequenceElement['thumbnail'])) {
             // $placeholder = 'img/placeholder-audio.jpg';
-            // $mediaSequenceElement['thumbnail'] = $this->view->assetUrl($placeholder, 'IiifServer');
+            // $mediaSequenceElement['thumbnail'] = $this->view->assetUrl($placeholder, 'ImageServer');
             $mediaSequenceElement['thumbnail'] = '';
         }
 
@@ -908,7 +908,7 @@ class IiifManifest extends AbstractHelper
 
         $mediaSequencesService = [];
         $mseUrl = $this->view->url(
-            'iiifserver_media',
+            'imageserver_media',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );
@@ -951,7 +951,7 @@ class IiifManifest extends AbstractHelper
         // A place holder is recommended for medias.
         if (empty($mediaSequenceElement['thumbnail'])) {
             // $placeholder = 'img/placeholder-video.jpg';
-            // $mediaSequenceElement['thumbnail'] = $this->view->assetUrl($placeholder, 'IiifServer');
+            // $mediaSequenceElement['thumbnail'] = $this->view->assetUrl($placeholder, 'ImageServer');
             $mediaSequenceElement['thumbnail'] = '';
         }
 
@@ -969,7 +969,7 @@ class IiifManifest extends AbstractHelper
 
         $mediaSequencesService = [];
         $mseUrl = $this->view->url(
-            'iiifserver_media',
+            'imageserver_media',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );

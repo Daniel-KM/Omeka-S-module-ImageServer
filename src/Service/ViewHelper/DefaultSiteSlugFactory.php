@@ -1,8 +1,8 @@
 <?php
-namespace IiifServer\Service\ViewHelper;
+namespace ImageServer\Service\ViewHelper;
 
 use Interop\Container\ContainerInterface;
-use IiifServer\View\Helper\DefaultSiteSlug;
+use ImageServer\View\Helper\DefaultSiteSlug;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
 /**

@@ -1,10 +1,10 @@
 <?php
 
-namespace IiifServerTest\Controller;
+namespace ImageServerTest\Controller;
 
 use OmekaTestHelper\Controller\OmekaControllerTestCase;
 
-abstract class IiifServerControllerTestCase extends OmekaControllerTestCase
+abstract class ImageServerControllerTestCase extends OmekaControllerTestCase
 {
     protected $item;
     protected $itemSet;

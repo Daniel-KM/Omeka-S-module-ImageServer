@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace IiifServer;
+namespace ImageServer;
 
 use Zend\Log\LoggerAwareInterface;
 use Zend\Log\LoggerAwareTrait;
@@ -38,7 +38,7 @@ use Zend\I18n\Translator\TranslatorAwareTrait;
 /**
  * Abstract  to manage strategies used to create an image.
  *
- * @package IiifServer
+ * @package ImageServer
  */
 abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAwareInterface
 {
