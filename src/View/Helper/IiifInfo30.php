@@ -1,8 +1,7 @@
 <?php
 
 /*
- * Copyright 2015-2020 Daniel Berthereau
- * Copyright 2016-2017 BibLibre
+ * Copyright 2020 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -31,36 +30,45 @@
 namespace ImageServer\View\Helper;
 
 use Omeka\Api\Representation\MediaRepresentation;
+use Omeka\File\TempFileFactory;
 use Zend\View\Helper\AbstractHelper;
 
 /**
  * Helper to get a IIIF info.json for a file.
  */
-class IiifInfo extends AbstractHelper
+class IiifInfo30 extends AbstractHelper
 {
+    /**
+     * @var TempFileFactory
+     */
+    protected $tempFileFactory;
+
+    /**
+     * Full path to the files.
+     *
+     * @var string
+     */
+    protected $basePath;
+
+    public function __construct(TempFileFactory $tempFileFactory, $basePath)
+    {
+        $this->tempFileFactory = $tempFileFactory;
+        $this->basePath = $basePath;
+    }
+
     /**
      * Get the IIIF info for the specified record.
      *
-     * @todo Replace all data by standard classes.
-     *
-     * @see https://iiif.io/api/image/2.1
+     * @see https://iiif.io/api/image/3.0
      *
      * @param MediaRepresentation|null $media
-     * @param string $version
      * @return Object|null
      */
-    public function __invoke(MediaRepresentation $media, $version = null)
+    public function __invoke(MediaRepresentation $media)
     {
-        $view = $this->getView();
-
-        if (is_null($version)) {
-            $version = $view->setting('imageserver_info_version', '2.1');
-        } else {
-            $version = $version === '3.0' ? '3.0' : '2.1';
-        }
-
-        return $version === '3.0'
-            ? $view->iiifInfo30($media)
-            : $view->iiifInfo21($media);
+        $info = [];
+        $info['@context'] = 'http://iiif.io/api/image/3/context.json';
+        $info['@id'] = 'TODO';
+        return (object) $info;
     }
 }

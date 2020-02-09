@@ -11,8 +11,12 @@ return [
         ],
     ],
     'view_helpers' => [
+        'invokables' => [
+            'iiifInfo' => View\Helper\IiifInfo::class,
+        ],
         'factories' => [
-            'iiifInfo' => Service\ViewHelper\IiifInfoFactory::class,
+            'iiifInfo21' => Service\ViewHelper\IiifInfo21Factory::class,
+            'iiifInfo30' => Service\ViewHelper\IiifInfo30Factory::class,
         ],
     ],
     'form_elements' => [
@@ -245,6 +249,7 @@ return [
     ],
     'imageserver' => [
         'config' => [
+            'imageserver_info_version' => '2.1',
             'imageserver_image_creator' => 'Auto',
             'imageserver_image_max_size' => 10000000,
             'imageserver_image_tile_dir' => 'tile',

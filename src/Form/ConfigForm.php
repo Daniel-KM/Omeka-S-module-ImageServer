@@ -15,6 +15,22 @@ class ConfigForm extends Form implements TranslatorAwareInterface
     {
         $this
             ->add([
+                'name' => 'imageserver_info_version',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Default api version (info)', // @translate
+                    'info' => 'Set the version of the manifest to provide.', // @translate
+                    'value_options' => [
+                        '2.1' => '2.1', // @translate
+                        '3.0' => '3.0', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_info_version',
+                ],
+            ])
+
+            ->add([
                 'name' => 'imageserver_image_creator',
                 'type' => Element\Select::class,
                 'options' => [
