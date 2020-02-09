@@ -104,7 +104,7 @@ class ImageController extends AbstractActionController
     public function indexAction()
     {
         $id = $this->params('id');
-        $this->redirect()->toRoute('imageserver_image_info', ['id' => $id]);
+        $this->redirect()->toRoute('imageserver/info', ['id' => $id]);
     }
 
     /**

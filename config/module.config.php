@@ -53,84 +53,88 @@ return [
             // @link http://iiif.io/api/image/2.0
             // Image          {scheme}://{server}{/prefix}/{identifier}
 
-            // A redirect to the info.json is required by the specification.
-            'imageserver_image' => [
-                'type' => \Zend\Router\Http\Segment::class,
+            'imageserver' => [
+                'type' => \Zend\Router\Http\Literal::class,
                 'options' => [
-                    'route' => '/iiif-img/:id',
-                    'constraints' => [
-                        'id' => '\d+',
-                    ],
+                    'route' => '/iiif-img',
                     'defaults' => [
                         '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\ImageController::class,
                         'action' => 'index',
                     ],
                 ],
-            ],
-            'imageserver_image_info' => [
-                'type' => \Zend\Router\Http\Segment::class,
-                'options' => [
-                    'route' => '/iiif-img/:id/info.json',
-                    'constraints' => [
-                        'id' => '\d+',
+                // This should be false, but we need the default url.
+                'may_terminate' => true,
+                'child_routes' => [
+                    // A redirect to the info.json is required by the specification.
+                    'id' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id',
+                            'constraints' => [
+                                'id' => '\d+',
+                            ],
+                        ],
                     ],
-                    'defaults' => [
-                        '__NAMESPACE__' => 'ImageServer\Controller',
-                        'controller' => Controller\ImageController::class,
-                        'action' => 'info',
+                    'info' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id/info.json',
+                            'constraints' => [
+                                'id' => '\d+',
+                            ],
+                            'defaults' => [
+                                'action' => 'info',
+                            ],
+                        ],
+                    ],
+                    // This route is a garbage collector that allows to return an error 400 or 501 to
+                    // invalid or not implemented requests, as required by specification.
+                    // This route should be set before the imageserver/media in order to be
+                    // processed after it.
+                    // TODO Simplify to any number of sub elements.
+                    'media-bad' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id/:region/:size/:rotation/:quality:.:format',
+                            'constraints' => [
+                                'id' => '\d+',
+                                'region' => '.+',
+                                'size' => '.+',
+                                'rotation' => '.+',
+                                'quality' => '.+',
+                                'format' => '.+',
+                            ],
+                            'defaults' => [
+                                'action' => 'bad',
+                            ],
+                        ],
+                    ],
+                    // Warning: the format is separated with a ".", not a "/".
+                    'media' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id/:region/:size/:rotation/:quality:.:format',
+                            'constraints' => [
+                                'id' => '\d+',
+                                'region' => 'full|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
+                                'size' => 'full|\d+,\d*|\d*,\d+|pct:\d+\.?\d*|!\d+,\d+',
+                                'rotation' => '\!?(?:(?:[0-2]?[0-9]?[0-9]|3[0-5][0-9])(?:\.\d*)?|360)',
+                                'quality' => 'default|color|gray|bitonal',
+                                'format' => 'jpg|png|gif',
+                            ],
+                            'defaults' => [
+                                'action' => 'fetch',
+                            ],
+                        ],
                     ],
                 ],
             ],
-            // This route is a garbage collector that allows to return an error 400 or 501 to
-            // invalid or not implemented requests, as required by specification.
-            // This route should be set before the imageserver_image in order to be
-            // processed after it.
-            // TODO Simplify to any number of sub elements.
-            'imageserver_image_bad' => [
-                'type' => \Zend\Router\Http\Segment::class,
+
+            'mediaserver' => [
+                'type' => \Zend\Router\Http\Literal::class,
                 'options' => [
-                    'route' => '/iiif-img/:id/:region/:size/:rotation/:quality:.:format',
-                    'constraints' => [
-                        'id' => '\d+',
-                        'region' => '.+',
-                        'size' => '.+',
-                        'rotation' => '.+',
-                        'quality' => '.+',
-                        'format' => '.+',
-                    ],
-                    'defaults' => [
-                        '__NAMESPACE__' => 'ImageServer\Controller',
-                        'controller' => Controller\ImageController::class,
-                        'action' => 'bad',
-                    ],
-                ],
-            ],
-            // Warning: the format is separated with a ".", not a "/".
-            'imageserver_image_url' => [
-                'type' => \Zend\Router\Http\Segment::class,
-                'options' => [
-                    'route' => '/iiif-img/:id/:region/:size/:rotation/:quality:.:format',
-                    'constraints' => [
-                        'id' => '\d+',
-                        'region' => 'full|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
-                        'size' => 'full|\d+,\d*|\d*,\d+|pct:\d+\.?\d*|!\d+,\d+',
-                        'rotation' => '\!?(?:(?:[0-2]?[0-9]?[0-9]|3[0-5][0-9])(?:\.\d*)?|360)',
-                        'quality' => 'default|color|gray|bitonal',
-                        'format' => 'jpg|png|gif',
-                    ],
-                    'defaults' => [
-                        '__NAMESPACE__' => 'ImageServer\Controller',
-                        'controller' => Controller\ImageController::class,
-                        'action' => 'fetch',
-                    ],
-                ],
-            ],
-            // A redirect to the info.json is required by the specification.
-            'imageserver_media' => [
-                'type' => \Zend\Router\Http\Segment::class,
-                'options' => [
-                    'route' => '/ixif-media/:id',
+                    'route' => '/ixif-media',
                     'constraints' => [
                         'id' => '\d+',
                     ],
@@ -140,53 +144,61 @@ return [
                         'action' => 'index',
                     ],
                 ],
-            ],
-            'imageserver_media_info' => [
-                'type' => \Zend\Router\Http\Segment::class,
-                'options' => [
-                    'route' => '/ixif-media/:id/info.json',
-                    'constraints' => [
-                        'id' => '\d+',
+                // This should be false, but we need the default url.
+                'may_terminate' => true,
+                'child_routes' => [
+                    // A redirect to the info.json is required by the specification.
+                    'id' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id',
+                            'constraints' => [
+                                'id' => '\d+',
+                            ],
+                        ],
                     ],
-                    'defaults' => [
-                        '__NAMESPACE__' => 'ImageServer\Controller',
-                        'controller' => Controller\MediaController::class,
-                        'action' => 'info',
+                    'info' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id/info.json',
+                            'constraints' => [
+                                'id' => '\d+',
+                            ],
+                            'defaults' => [
+                                'action' => 'info',
+                            ],
+                        ],
                     ],
-                ],
-            ],
-            // This route is a garbage collector that allows to return an error 400 or 501 to
-            // invalid or not implemented requests, as required by specification.
-            // This route should be set before the imageserver_media in order to be
-            // processed after it.
-            'imageserver_media_bad' => [
-                'type' => \Zend\Router\Http\Segment::class,
-                'options' => [
-                    'route' => '/ixif-media/:id:.:format',
-                    'constraints' => [
-                        'id' => '\d+',
-                        'format' => '.+',
+                    // This route is a garbage collector that allows to return an error 400 or 501 to
+                    // invalid or not implemented requests, as required by specification.
+                    // This route should be set before the mediaserver/media in order to be
+                    // processed after it.
+                    'media-bad' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id:.:format',
+                            'constraints' => [
+                                'id' => '\d+',
+                                'format' => '.+',
+                            ],
+                            'defaults' => [
+                                'action' => 'bad',
+                            ],
+                        ],
                     ],
-                    'defaults' => [
-                        '__NAMESPACE__' => 'ImageServer\Controller',
-                        'controller' => Controller\MediaController::class,
-                        'action' => 'bad',
-                    ],
-                ],
-            ],
-            // Warning: the format is separated with a ".", not a "/".
-            'imageserver_media_url' => [
-                'type' => \Zend\Router\Http\Segment::class,
-                'options' => [
-                    'route' => '/ixif-media/:id:.:format',
-                    'constraints' => [
-                        'id' => '\d+',
-                        'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
-                    ],
-                    'defaults' => [
-                        '__NAMESPACE__' => 'ImageServer\Controller',
-                        'controller' => Controller\MediaController::class,
-                        'action' => 'fetch',
+                    // Warning: the format is separated with a ".", not a "/".
+                    'media' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/:id:.:format',
+                            'constraints' => [
+                                'id' => '\d+',
+                                'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
+                            ],
+                            'defaults' => [
+                                'action' => 'fetch',
+                            ],
+                        ],
                     ],
                 ],
             ],

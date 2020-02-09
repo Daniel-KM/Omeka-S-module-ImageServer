@@ -157,14 +157,14 @@ OUTPUT;
     protected function getDataIiif(MediaRepresentation $media, PhpRenderer $view, array $tileInfo)
     {
         $url = $view->url(
-            'imageserver_image_info',
+            'imageserver/info',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );
         $args = [];
         $args['id'] = 'iiif-' . $media->id();
         $args['prefixUrl'] = '';
-        $args['tileSources'] = $url;
+        $args['tileSources'] = $view->iiifForceBaseUrlIfRequired($url);
         return $args;
     }
 
@@ -188,7 +188,7 @@ OUTPUT;
         }
 
         $url = $view->url(
-            'imageserver_image',
+            'imageserver/id',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );
@@ -204,7 +204,7 @@ OUTPUT;
 
         $tileSource = [];
         $tileSource['@context'] = 'http://iiif.io/api/image/2/context.json';
-        $tileSource['@id'] = $url;
+        $tileSource['@id'] = $view->iiifForceBaseUrlIfRequired($url);
         $tileSource['protocol'] = 'http://iiif.io/api/image';
         $tileSource['profile'] = 'http://iiif.io/api/image/2/level2.json';
         $tileSource += $data;

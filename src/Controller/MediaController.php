@@ -67,7 +67,7 @@ class MediaController extends AbstractActionController
     public function indexAction()
     {
         $id = $this->params('id');
-        $this->redirect()->toRoute('imageserver_media_info', ['id' => $id]);
+        $this->redirect()->toRoute('mediaserver/info', ['id' => $id]);
     }
 
     /**
