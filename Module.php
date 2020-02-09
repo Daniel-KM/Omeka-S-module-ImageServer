@@ -30,8 +30,13 @@
 
 namespace ImageServer;
 
-use ImageServer\Form\ConfigForm;
-use Omeka\Module\AbstractModule;
+if (!class_exists(\Generic\AbstractModule::class)) {
+    require file_exists(dirname(__DIR__) . '/Generic/AbstractModule.php')
+        ? dirname(__DIR__) . '/Generic/AbstractModule.php'
+        : __DIR__ . '/src/Generic/AbstractModule.php';
+}
+
+use Generic\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Stdlib\Message;
@@ -41,18 +46,17 @@ use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
-use Zend\View\Renderer\PhpRenderer;
 
 class Module extends AbstractModule
 {
+    const NAMESPACE = __NAMESPACE__;
+
+    // TODO Remove dependency to IIIF Server.
+    protected $dependency = 'IiifServer';
+
     public function init(ModuleManager $moduleManager)
     {
         require_once __DIR__ . '/vendor/autoload.php';
-    }
-
-    public function getConfig()
-    {
-        return include __DIR__ . '/config/module.config.php';
     }
 
     public function onBootstrap(MvcEvent $event)
@@ -64,17 +68,17 @@ class Module extends AbstractModule
             ->allow(
                 null,
                 [
-                    Controller\ImageController::class,
-                    Controller\MediaController::class,
+                    \ImageServer\Controller\ImageController::class,
+                    \ImageServer\Controller\MediaController::class,
                 ]
             );
     }
 
-    public function install(ServiceLocatorInterface $serviceLocator)
+    protected function preInstall()
     {
-        $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
-        $settings = $serviceLocator->get('Omeka\Settings');
-        $t = $serviceLocator->get('MvcTranslator');
+        $services = $this->getServiceLocator();
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $t = $services->get('MvcTranslator');
 
         $checkDeepzoom = __DIR__
             . DIRECTORY_SEPARATOR . 'vendor'
@@ -95,16 +99,13 @@ class Module extends AbstractModule
             );
         }
 
-        $processors = $this->listImageProcessors($serviceLocator);
+        $processors = $this->listImageProcessors($services);
         if (empty($processors)) {
             throw new ModuleCannotInstallException(
                 $t->translate('The module requires an image processor (ImageMagick, Imagick or GD).') // @translate
                     . ' ' . $t->translate('See module’s installation documentation.') // @translate
             );
         }
-
-        $config = include __DIR__ . '/config/module.config.php';
-        $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
 
         $module = $moduleManager->getModule('ArchiveRepertory');
         if ($module) {
@@ -118,20 +119,21 @@ class Module extends AbstractModule
                 );
             }
         }
-
-        $this->createTilesMainDir($serviceLocator);
-
-        foreach ($defaultSettings as $name => $value) {
-            $settings->set($name, $value);
-        }
     }
 
-    public function uninstall(ServiceLocatorInterface $serviceLocator)
+    protected function postInstall()
     {
-        $settings = $serviceLocator->get('Omeka\Settings');
+        $services = $this->getServiceLocator();
+        $this->createTilesMainDir($services);
+    }
+
+    protected function postUninstall()
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
 
         // Nuke all the tiles.
-        $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             $messenger = new Messenger();
@@ -149,24 +151,6 @@ class Module extends AbstractModule
                     'The tile dir "%s" is not a real path and was not removed.', // @translate
                     $tileDir
                 );
-            }
-        }
-
-        $this->manageSettings($serviceLocator->get('Omeka\Settings'), 'uninstall');
-    }
-
-    protected function manageSettings($settings, $process, $key = 'config')
-    {
-        $config = require __DIR__ . '/config/module.config.php';
-        $defaultSettings = $config[strtolower(__NAMESPACE__)][$key];
-        foreach ($defaultSettings as $name => $value) {
-            switch ($process) {
-                case 'install':
-                    $settings->set($name, $value);
-                    break;
-                case 'uninstall':
-                    $settings->delete($name);
-                    break;
             }
         }
     }
@@ -229,57 +213,15 @@ class Module extends AbstractModule
         );
     }
 
-    public function getConfigForm(PhpRenderer $renderer)
-    {
-        $services = $this->getServiceLocator();
-        $config = $services->get('Config');
-        $settings = $services->get('Omeka\Settings');
-        $form = $services->get('FormElementManager')->get(ConfigForm::class);
-
-        $data = [];
-        $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
-        foreach ($defaultSettings as $name => $value) {
-            // Prepare the values to be set in two fieldsets.
-            $data['imageserver_image'][$name] = $settings->get($name, $value);
-        }
-
-        $form->init();
-        $form->setData($data);
-        return $renderer->render('image-server/module/config', [
-            'form' => $form,
-        ]);
-    }
-
     public function handleConfigForm(AbstractController $controller)
     {
-        $services = $this->getServiceLocator();
-        $config = $services->get('Config');
-        $settings = $services->get('Omeka\Settings');
-        $form = $services->get('FormElementManager')->get(ConfigForm::class);
-
-        $params = $controller->getRequest()->getPost();
-
-        $form->init();
-        $form->setData($params);
-        if (!$form->isValid()) {
-            $controller->messenger()->addErrors($form->getMessages());
+        if (!parent::handleConfigForm($controller)) {
             return false;
         }
 
-        $params = $form->getData();
-
-        $bulk = $params['imageserver_bulk_tiler'];
-        unset($params['imageserver_bulk_tiler']);
-
-        $params = $params['imageserver_image'];
-
-        $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
-        $params = array_intersect_key($params, $defaultSettings);
-        foreach ($params as $name => $value) {
-            $settings->set($name, $value);
-        }
-
-        $params = $bulk;
+        // Form is already validated in parent.
+        $params = (array) $controller->getRequest()->getPost();
+        $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'process' => null]);
         if (empty($params['process']) || $params['process'] !== $controller->translate('Process')) {
             return;
         }
@@ -297,6 +239,7 @@ class Module extends AbstractModule
 
         unset($params['process']);
 
+        $services = $this->getServiceLocator();
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
         $message = new Message(
@@ -324,13 +267,13 @@ class Module extends AbstractModule
         $processors = [];
         $processors['Auto'] = $translator->translate('Automatic'); // @translate
         if (extension_loaded('gd')) {
-            $processors['GD'] = 'GD';
+            $processors['GD'] = 'GD (php extension)'; // @translate
         }
         if (extension_loaded('imagick')) {
-            $processors['Imagick'] = 'Imagick';
+            $processors['Imagick'] = 'Imagick (php extension)'; // @translate
         }
         // TODO Check if ImageMagick cli is available.
-        $processors['ImageMagick'] = 'ImageMagick';
+        $processors['ImageMagick'] = 'ImageMagick (command line)'; // @translate
         return $processors;
     }
 
