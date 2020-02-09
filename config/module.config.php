@@ -74,6 +74,9 @@ return [
                             'constraints' => [
                                 'id' => '\d+',
                             ],
+                            'defaults' => [
+                                '__API__' => true,
+                            ],
                         ],
                     ],
                     'info' => [
@@ -84,6 +87,7 @@ return [
                                 'id' => '\d+',
                             ],
                             'defaults' => [
+                                '__API__' => true,
                                 'action' => 'info',
                             ],
                         ],
@@ -155,6 +159,9 @@ return [
                             'constraints' => [
                                 'id' => '\d+',
                             ],
+                            'defaults' => [
+                                '__API__' => true,
+                            ],
                         ],
                     ],
                     'info' => [
@@ -165,6 +172,7 @@ return [
                                 'id' => '\d+',
                             ],
                             'defaults' => [
+                                '__API__' => true,
                                 'action' => 'info',
                             ],
                         ],
