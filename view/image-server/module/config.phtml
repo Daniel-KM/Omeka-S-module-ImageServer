@@ -4,7 +4,7 @@ $form->prepare();
 $fieldsets = $form->getFieldsets();
 foreach ($fieldsets as $fieldset):
 ?>
-<fieldset id="fieldset-imageserver-<?php echo $fieldset->getAttribute('name'); ?>">
+<fieldset id="fieldset-iiifserver-<?php echo $fieldset->getAttribute('name'); ?>">
     <legend><?php echo $fieldset->getLabel(); ?></legend>
     <p class="explanation">
         <?php echo $fieldset->getOption('info'); ?>

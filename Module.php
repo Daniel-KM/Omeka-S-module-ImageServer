@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright 2015-2019 Daniel Berthereau
+ * Copyright 2015-2020 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -60,14 +60,14 @@ class Module extends AbstractModule
         parent::onBootstrap($event);
 
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(
-            null,
-            [
-                Controller\PresentationController::class,
-                Controller\ImageController::class,
-                Controller\MediaController::class,
-            ]
-        );
+        $acl
+            ->allow(
+                null,
+                [
+                    Controller\ImageController::class,
+                    Controller\MediaController::class,
+                ]
+            );
     }
 
     public function install(ServiceLocatorInterface $serviceLocator)
@@ -75,7 +75,6 @@ class Module extends AbstractModule
         $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
         $settings = $serviceLocator->get('Omeka\Settings');
         $t = $serviceLocator->get('MvcTranslator');
-        $messenger = new Messenger();
 
         $checkDeepzoom = __DIR__
             . DIRECTORY_SEPARATOR . 'vendor'
@@ -106,40 +105,6 @@ class Module extends AbstractModule
 
         $config = include __DIR__ . '/config/module.config.php';
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
-
-        // Convert settings from old releases of Universal Viewer, if installed.
-        $module = $moduleManager->getModule('UniversalViewer');
-        if ($module) {
-            $version = $module->getDb('version');
-            // Check if installed.
-            if (empty($version)) {
-                // Nothing to do.
-            } elseif (version_compare($version, '3.4.3', '<')) {
-                $messenger->addWarning(
-                    $t->translate('Warning: The module Universal Viewer was not upgraded to version 3.4.3.') // @translate
-                    . ' ' . $t->translate('The settings are set to default.') // @translate
-                );
-            } elseif (version_compare($version, '3.4.3', '=')) {
-                $messenger->addSuccess(
-                    $t->translate('The settings were upgraded from Universal Viewer 3.4.3.') // @translate
-                    . ' ' . $t->translate('You can now upgrade Universal Viewer to 3.5.') // @translate
-                );
-
-                foreach ([
-                    'universalviewer_manifest_description_property' => 'imageserver_manifest_description_property',
-                    'universalviewer_manifest_attribution_property' => 'imageserver_manifest_attribution_property',
-                    'universalviewer_manifest_attribution_default' => 'imageserver_manifest_attribution_default',
-                    'universalviewer_manifest_license_property' => 'imageserver_manifest_license_property',
-                    'universalviewer_manifest_license_default' => 'imageserver_manifest_license_default',
-                    'universalviewer_manifest_logo_default' => 'imageserver_manifest_logo_default',
-                    'universalviewer_force_https' => 'imageserver_manifest_force_https',
-                    'universalviewer_iiif_creator' => 'imageserver_image_creator',
-                    'universalviewer_iiif_max_size' => 'imageserver_image_max_size',
-                ] as $uvSetting => $iiifSetting) {
-                    $defaultSettings[$iiifSetting] = $settings->get($uvSetting);
-                }
-            }
-        }
 
         $module = $moduleManager->getModule('ArchiveRepertory');
         if ($module) {
@@ -249,11 +214,6 @@ class Module extends AbstractModule
         echo $html;
     }
 
-    public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator)
-    {
-        require_once 'data/scripts/upgrade.php';
-    }
-
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $sharedEventManager->attach(
@@ -280,13 +240,12 @@ class Module extends AbstractModule
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($defaultSettings as $name => $value) {
             // Prepare the values to be set in two fieldsets.
-            $data['imageserver_manifest'][$name] = $settings->get($name, $value);
             $data['imageserver_image'][$name] = $settings->get($name, $value);
         }
 
         $form->init();
         $form->setData($data);
-        return $renderer->render('iiif-server/module/config', [
+        return $renderer->render('image-server/module/config', [
             'form' => $form,
         ]);
     }
@@ -312,14 +271,7 @@ class Module extends AbstractModule
         $bulk = $params['imageserver_bulk_tiler'];
         unset($params['imageserver_bulk_tiler']);
 
-        $params = $params['imageserver_manifest'] + $params['imageserver_image'];
-
-        // Specific options.
-        foreach (['imageserver_manifest_collection_properties', 'imageserver_manifest_item_properties', 'imageserver_manifest_media_properties'] as $key) {
-            $params[$key] = empty($params[$key]) || in_array('', $params[$key])
-                ? []
-                : (in_array('none', $params[$key]) ? ['none'] : $params[$key]);
-        }
+        $params = $params['imageserver_image'];
 
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         $params = array_intersect_key($params, $defaultSettings);
