@@ -59,7 +59,7 @@ class IiifInfo30 extends AbstractHelper
     /**
      * Get the IIIF info for the specified record.
      *
-     * @see https://iiif.io/api/image/3.0
+     * @link https://iiif.io/api/image/3.0
      *
      * @param MediaRepresentation|null $media
      * @return Object|null

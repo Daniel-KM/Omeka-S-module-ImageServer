@@ -81,8 +81,8 @@ class TileServer extends AbstractPlugin
      * Retrieve the data for a transformation.
      *
      * @internal See a client implementation of the converter in OpenSeadragon.
-     * @see https://github.com/openseadragon/openseadragon/blob/master/src/iiiftilesource.js
-     * @see https://gist.github.com/jpstroop/4624253#file-dzi_to_iiif_2-py
+     * @link https://github.com/openseadragon/openseadragon/blob/master/src/iiiftilesource.js
+     * @link https://gist.github.com/jpstroop/4624253#file-dzi_to_iiif_2-py
      * @see /src/libraries/Deepzoom/Deepzoom.php
      *
      * @param array $tileInfo

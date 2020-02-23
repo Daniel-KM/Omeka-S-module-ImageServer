@@ -63,7 +63,7 @@ class IiifInfo21 extends AbstractHelper
      *
      * @todo Replace all data by standard classes.
      *
-     * @see https://iiif.io/api/image/2.1
+     * @link https://iiif.io/api/image/2.1
      *
      * @param MediaRepresentation|null $media
      * @return Object|null
