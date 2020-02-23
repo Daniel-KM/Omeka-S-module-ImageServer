@@ -400,12 +400,11 @@ abstract class AbstractModule extends \Omeka\Module\AbstractModule
                 break;
         }
 
-        $this->initDataToPopulate($settings, $settingsType, $id);
-
         // Allow to use a form without an id, for example to create a user.
         if ($settingsType !== 'settings' && !$id) {
             $data = [];
         } else {
+            $this->initDataToPopulate($settings, $settingsType, $id);
             $data = $this->prepareDataToPopulate($settings, $settingsType);
             if (is_null($data)) {
                 return;
@@ -646,9 +645,7 @@ abstract class AbstractModule extends \Omeka\Module\AbstractModule
      */
     public function stringToList($string)
     {
-        return array_filter(array_map('trim', explode("\n", $this->fixEndOfLine($string))), function ($v) {
-            return (bool) strlen($v);
-        });
+        return array_filter(array_map('trim', explode("\n", $this->fixEndOfLine($string))), 'strlen');
     }
 
     /**
