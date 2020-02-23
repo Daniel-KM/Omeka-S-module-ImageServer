@@ -32,6 +32,7 @@ return [
     ],
     'controller_plugins' => [
         'invokables' => [
+            'iiifImageJsonLd' => Mvc\Controller\Plugin\IiifImageJsonLd::class,
             'tileBuilder' => Mvc\Controller\Plugin\TileBuilder::class,
             'tileInfo' => Mvc\Controller\Plugin\TileInfo::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,

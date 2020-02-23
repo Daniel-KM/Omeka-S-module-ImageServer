@@ -85,7 +85,7 @@ class MediaController extends AbstractActionController
         $iiifInfo = $this->viewHelpers()->get('iiifInfo');
         $info = $iiifInfo($media);
 
-        return $this->jsonLd($info);
+        return $this->iiifImageJsonLd($info);
     }
 
     /**
