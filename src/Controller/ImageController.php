@@ -133,10 +133,12 @@ class ImageController extends AbstractActionController
         $id = $this->params('id');
         $media = $this->api()->read('media', $id)->getContent();
 
-        $iiifInfo = $this->viewHelpers()->get('iiifInfo');
-        $info = $iiifInfo($media);
+        $version = $this->requestedVersion();
 
-        return $this->iiifImageJsonLd($info);
+        $iiifInfo = $this->viewHelpers()->get('iiifInfo');
+        $info = $iiifInfo($media, $version);
+
+        return $this->iiifImageJsonLd($info, $version);
     }
 
     /**
@@ -778,5 +780,24 @@ class ImageController extends AbstractActionController
     protected function getStoragePath($prefix, $name, $extension = null)
     {
         return sprintf('%s/%s%s', $prefix, $name, $extension ? ".$extension" : null);
+    }
+
+    /**
+     * Get the requested version from the headers.
+     *
+     * @todo Factorize with MediaController::requestedVersion()
+     *
+     * @return string|null
+     */
+    protected function requestedVersion()
+    {
+        $accept = $this->getRequest()->getHeaders()->get('Accept')->toString();
+        if (strpos($accept, 'iiif.io/api/image/3/context.json')) {
+            return '3.0';
+        }
+        if (strpos($accept, 'iiif.io/api/image/2/context.json')) {
+            return '2.1';
+        }
+        return null;
     }
 }
