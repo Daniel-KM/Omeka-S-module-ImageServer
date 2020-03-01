@@ -35,6 +35,8 @@ class Tile implements RendererInterface
      */
     public function render(PhpRenderer $view, MediaRepresentation $media, array $options = [])
     {
+        static $firstTile = true;
+
         $tileInfo = new TileInfo();
         $tileInfo = $tileInfo($media);
         if (empty($tileInfo)) {
@@ -86,19 +88,29 @@ class Tile implements RendererInterface
 
         $args = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        $view->headScript()->appendFile($view->assetUrl('vendor/openseadragon/openseadragon.min.js', 'Omeka'));
+        $fullId = $prefixId . '-' . $media->id();
+        if ($firstTile) {
+            $firstTile = false;
+            $view->headScript()
+                ->appendFile($view->assetUrl('vendor/openseadragon/openseadragon.min.js', 'Omeka'), 'text/javascript', ['defer' => 'defer'])
+                ->appendFile($view->assetUrl('js/openseadragon.js', 'ImageServer'), 'text/javascript', ['defer' => 'defer']);
+            $js = 'var iiifViewerOpenSeaDragonArgs = {};';
+        } else {
+            $js = '';
+        }
+        $js .= "iiifViewerOpenSeaDragonArgs['$fullId'] = $args;";
+        $view->headScript()
+            ->appendScript($js);
 
         $noscript = 'OpenSeadragon is not available unless JavaScript is enabled.'; // @translate
         $image = <<<OUTPUT
-<div class="openseadragon" id="{$prefixId}-{$media->id()}" style="height: 800px;"></div>
-<script type="text/javascript">
-    var viewer = OpenSeadragon({$args});
-</script>
+<div class="openseadragon" id="$fullId" style="height: 800px;"></div>
 <noscript>
     <p>{$noscript}</p>
     <img src="{$media->thumbnailUrl('large')}" height="800px" />
 </noscript>
 OUTPUT;
+
         return $image;
     }
 
