@@ -30,6 +30,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
 
+            // Limits for all versions.
             ->add([
                 'name' => 'imageserver_image_creator',
                 'type' => Element\Select::class,
