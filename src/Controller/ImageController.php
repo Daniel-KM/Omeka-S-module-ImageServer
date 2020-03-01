@@ -119,10 +119,9 @@ class ImageController extends AbstractActionController
         $response = $this->getResponse();
         $response->setStatusCode(400);
 
-        $view = new ViewModel;
-        $view->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'));
-        $view->setTemplate('iiif-server/image/error');
-        return $view;
+        return (new ViewModel)
+            ->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'))
+            ->setTemplate('image-server/image/error');
     }
 
     /**
@@ -162,7 +161,7 @@ class ImageController extends AbstractActionController
             $view = new ViewModel;
             return $view
                 ->setVariable('message', $this->translate('The source file is not an image.'))
-                ->setTemplate('iiif-server/image/error');
+                ->setTemplate('image-server/image/error');
         }
 
         // Check, clean and optimize and fill values according to the request.
@@ -172,7 +171,7 @@ class ImageController extends AbstractActionController
             // The message is set in view.
             $response->setStatusCode(400);
             return $this->_view
-                ->setTemplate('iiif-server/image/error');
+                ->setTemplate('image-server/image/error');
         }
 
         $settings = $this->settings();
@@ -275,10 +274,9 @@ class ImageController extends AbstractActionController
                     $maxFileSize = $settings->get('imageserver_image_max_size');
                     if (!empty($maxFileSize) && $this->_mediaFileSize($media) > $maxFileSize) {
                         $response->setStatusCode(500);
-                        $view = new ViewModel;
-                        $view->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.'));
-                        $view->setTemplate('iiif-server/image/error');
-                        return $view;
+                        return (new ViewModel)
+                            ->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.'))
+                            ->setTemplate('image-server/image/error');
                     }
                     $imagePath = $this->_transformImage($transform);
                 }
@@ -306,10 +304,9 @@ class ImageController extends AbstractActionController
 
             if (empty($output)) {
                 $response->setStatusCode(500);
-                $view = new ViewModel;
-                $view->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.'));
-                $view->setTemplate('iiif-server/image/error');
-                return $view;
+                return (new ViewModel)
+                    ->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.'))
+                    ->setTemplate('image-server/image/error');
             }
 
             $response->getHeaders()
@@ -326,10 +323,9 @@ class ImageController extends AbstractActionController
         // No result.
         else {
             $response->setStatusCode(500);
-            $view = new ViewModel;
-            $view->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.'));
-            $view->setTemplate('iiif-server/image/error');
-            return $view;
+            return (new ViewModel)
+                ->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.'))
+                ->setTemplate('image-server/image/error');
         }
     }
 

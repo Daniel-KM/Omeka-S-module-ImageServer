@@ -99,13 +99,11 @@ class MediaController extends AbstractActionController
      */
     public function badAction()
     {
-        $response = $this->getResponse();
-        $response->setStatusCode(400);
-
-        $view = new ViewModel;
-        return $view
+        $this->getResponse()
+            ->setStatusCode(400);
+        return (new ViewModel)
             ->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'))
-            ->setTemplate('iiif-server/image/error');
+            ->setTemplate('image-server/media/error');
     }
 
     /**
@@ -128,7 +126,7 @@ class MediaController extends AbstractActionController
             $view = new viewModel;
             return $view
                 ->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.'))
-                ->setTemplate('iiif-server/image/error');
+                ->setTemplate('image-server/media/error');
         }
 
         // A check is added if the file is local: the source can be a local file
@@ -140,10 +138,9 @@ class MediaController extends AbstractActionController
                 if (!file_exists($filepath) || filesize($filepath) == 0) {
                     $response->setStatusCode(500);
 
-                    $view = new ViewModel;
-                    return $view
+                    $view = (new ViewModel)
                         ->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.'))
-                        ->setTemplate('iiif-server/image/error');
+                        ->setTemplate('image-server/media/error');
                 }
                 break;
         }
@@ -152,7 +149,7 @@ class MediaController extends AbstractActionController
         // Header for CORS, required for access of IXIF.
         $response->getHeaders()
             ->addHeaderLine('access-control-allow-origin', '*')
-            ->getHeaders()->addHeaderLine('Content-Type', $media->mediaType());
+            ->addHeaderLine('Content-Type', $media->mediaType());
 
         // TODO This is a local file (normal server): use 200.
 
