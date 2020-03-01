@@ -56,6 +56,7 @@ return [
             // @todo It is recommended to use a true identifier (ark, urn…], not an internal id.
 
             // @link http://iiif.io/api/image/2.0
+            // @link http://iiif.io/api/image/3.0
             // Image          {scheme}://{server}{/prefix}/{identifier}
 
             'imageserver' => [
@@ -63,6 +64,7 @@ return [
                 'options' => [
                     'route' => '/iiif-img',
                     'defaults' => [
+                        '__API__' => true,
                         '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\ImageController::class,
                         'action' => 'index',
@@ -71,16 +73,13 @@ return [
                 // This should be false, but we need the default url.
                 'may_terminate' => true,
                 'child_routes' => [
-                    // A redirect to the info.json is required by the specification.
+                    // The specification requires a 303 redirect to the info.json.
                     'id' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
                             'route' => '/:id',
                             'constraints' => [
                                 'id' => '\d+',
-                            ],
-                            'defaults' => [
-                                '__API__' => true,
                             ],
                         ],
                     ],
@@ -92,7 +91,6 @@ return [
                                 'id' => '\d+',
                             ],
                             'defaults' => [
-                                '__API__' => true,
                                 'action' => 'info',
                             ],
                         ],
@@ -120,6 +118,12 @@ return [
                         ],
                     ],
                     // Warning: the format is separated with a ".", not a "/".
+                    // The specification is the same for versions 2.0 and 3.0, except for size,
+                    // where 3.0 rejects "full", but allows upscaling with "^". Furthermore, the
+                    // pct number should be lower than 100, except for upscaling.
+                    // Only one route is used for simplicity. The controller checks differences
+                    // between version 2 and 3 and may return error, or return the image with
+                    // the canonical url.
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
@@ -127,9 +131,15 @@ return [
                             'constraints' => [
                                 'id' => '\d+',
                                 'region' => 'full|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
-                                'size' => 'full|\d+,\d*|\d*,\d+|pct:\d+\.?\d*|!\d+,\d+',
+                                // Version 2.0 allows "max", but version 3.0 rejects "full".
+                                // Version 3.0 adds upscalling: "^max", "^w,", "^,h", "^pct:n"; "^w,h", and "^!w,h".
+                                // Old version 2.1.
+                                // 'size' => 'full|\d+,\d*|\d*,\d+|pct:\d+\.?\d*|!\d+,\d+',
+                                // New multi-version.
+                                'size' => 'full|\^?max|\^?\d+,|\^?,\d+|\^?pct:\d+\.?\d*|\^?!?\d+,\d+',
                                 'rotation' => '\!?(?:(?:[0-2]?[0-9]?[0-9]|3[0-5][0-9])(?:\.\d*)?|360)',
                                 'quality' => 'default|color|gray|bitonal',
+                                // TODO Support other formats: tif, jp2, pdf, and webp. May requires additional packages.
                                 'format' => 'jpg|png|gif',
                             ],
                             'defaults' => [
