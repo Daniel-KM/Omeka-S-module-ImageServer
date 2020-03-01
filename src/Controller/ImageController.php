@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright 2015-2018 Daniel Berthereau
+ * Copyright 2015-2020 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -104,7 +104,11 @@ class ImageController extends AbstractActionController
     public function indexAction()
     {
         $id = $this->params('id');
-        $this->redirect()->toRoute('imageserver/info', ['id' => $id]);
+        $url = $this->url()->fromRoute('imageserver/info', ['id' => $id], ['force_canonical' => true]);
+        return $this->getResponse()
+            // TODO The iiif image api specification recommands 303, not 302.
+            ->setStatusCode(\Zend\Http\Response::STATUS_CODE_303)
+            ->getHeaders()->addHeaderLine('Location', $url);
     }
 
     /**
