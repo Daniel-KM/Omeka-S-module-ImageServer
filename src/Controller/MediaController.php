@@ -103,9 +103,9 @@ class MediaController extends AbstractActionController
         $response->setStatusCode(400);
 
         $view = new ViewModel;
-        $view->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'));
-        $view->setTemplate('iiif-server/image/error');
-        return $view;
+        return $view
+            ->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'))
+            ->setTemplate('iiif-server/image/error');
     }
 
     /**
@@ -126,9 +126,9 @@ class MediaController extends AbstractActionController
             $response->setStatusCode(500);
 
             $view = new viewModel;
-            $view->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.'));
-            $view->setTemplate('iiif-server/image/error');
-            return $view;
+            return $view
+                ->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.'))
+                ->setTemplate('iiif-server/image/error');
         }
 
         // A check is added if the file is local: the source can be a local file
@@ -141,17 +141,18 @@ class MediaController extends AbstractActionController
                     $response->setStatusCode(500);
 
                     $view = new ViewModel;
-                    $view->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.'));
-                    $view->setTemplate('iiif-server/image/error');
-                    return $view;
+                    return $view
+                        ->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.'))
+                        ->setTemplate('iiif-server/image/error');
                 }
                 break;
         }
         // TODO Check if the external url is not empty.
 
         // Header for CORS, required for access of IXIF.
-        $response->getHeaders()->addHeaderLine('access-control-allow-origin', '*');
-        $response->getHeaders()->addHeaderLine('Content-Type', $media->mediaType());
+        $response->getHeaders()
+            ->addHeaderLine('access-control-allow-origin', '*')
+            ->getHeaders()->addHeaderLine('Content-Type', $media->mediaType());
 
         // TODO This is a local file (normal server): use 200.
 

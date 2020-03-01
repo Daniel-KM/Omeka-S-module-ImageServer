@@ -160,9 +160,9 @@ class ImageController extends AbstractActionController
         if (strpos($media->mediaType(), 'image/') !== 0) {
             $response->setStatusCode(501);
             $view = new ViewModel;
-            $view->setVariable('message', $this->translate('The source file is not an image.'));
-            $view->setTemplate('iiif-server/image/error');
-            return $view;
+            return $view
+                ->setVariable('message', $this->translate('The source file is not an image.'))
+                ->setTemplate('iiif-server/image/error');
         }
 
         // Check, clean and optimize and fill values according to the request.
@@ -171,8 +171,8 @@ class ImageController extends AbstractActionController
         if (empty($transform)) {
             // The message is set in view.
             $response->setStatusCode(400);
-            $this->_view->setTemplate('iiif-server/image/error');
-            return $this->_view;
+            return $this->_view
+                ->setTemplate('iiif-server/image/error');
         }
 
         $settings = $this->settings();
@@ -398,7 +398,7 @@ class ImageController extends AbstractActionController
             $regionValues = explode(',', substr($region, 4));
             if (count($regionValues) != 4) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), $region));
-                return;
+                return null;
             }
             $regionValues = array_map('floatval', $regionValues);
             // A quick check to avoid a possible transformation.
@@ -429,7 +429,7 @@ class ImageController extends AbstractActionController
             $regionValues = explode(',', $region);
             if (count($regionValues) != 4) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), $region));
-                return;
+                return null;
             }
             $regionValues = array_map('intval', $regionValues);
             // A quick check to avoid a possible transformation.
@@ -467,7 +467,7 @@ class ImageController extends AbstractActionController
             $sizePercentage = floatval(substr($size, 4));
             if (empty($sizePercentage) || $sizePercentage > 100) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
-                return;
+                return null;
             }
             // A quick check to avoid a possible transformation.
             if ($sizePercentage == 100) {
@@ -487,7 +487,7 @@ class ImageController extends AbstractActionController
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) || empty($destinationHeight)) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
-                return;
+                return null;
             }
             // A quick check to avoid a possible transformation.
             if ($destinationWidth == $transform['region']['width']
@@ -510,7 +510,7 @@ class ImageController extends AbstractActionController
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) && empty($destinationHeight)) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
-                return;
+                return null;
             }
 
             // "w,h": sizeByWhListed or sizeByForcedWh.
@@ -560,7 +560,7 @@ class ImageController extends AbstractActionController
             // Not supported.
             else {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), $size));
-                return;
+                return null;
             }
 
             // A quick check to avoid a possible transformation.
@@ -568,7 +568,7 @@ class ImageController extends AbstractActionController
                     || isset($transform['size']['height']) && empty($transform['size']['height'])
                 ) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), $size));
-                return;
+                return null;
             }
         }
 
@@ -648,7 +648,7 @@ class ImageController extends AbstractActionController
     {
         // Some requirements to get tiles.
         if ($transform['region']['feature'] != 'full') {
-            return;
+            return null;
         }
 
         // Check size. Here, the "full" is already checked.
@@ -695,7 +695,7 @@ class ImageController extends AbstractActionController
             case 'full':
                 // Not possible to use a derivative, because the region is full.
             default:
-                return;
+                return null;
         }
 
         if ($useDerivativePath) {
@@ -725,8 +725,7 @@ class ImageController extends AbstractActionController
     {
         $tileInfo = $this->tileInfo($media);
         if ($tileInfo) {
-            $tile = $this->tileServer($tileInfo, $transform);
-            return $tile;
+            return $this->tileServer($tileInfo, $transform);
         }
     }
 
@@ -739,10 +738,10 @@ class ImageController extends AbstractActionController
     protected function _transformImage($args)
     {
         $imageServer = new ImageServer($this->tempFileFactory, $this->store, $this->commandLineArgs, $this->settings());
-        $imageServer->setLogger($this->logger());
-        $imageServer->setTranslator($this->translator);
-
-        return $imageServer->transform($args);
+        return $imageServer
+            ->setLogger($this->logger())
+            ->setTranslator($this->translator)
+            ->transform($args);
     }
 
     /**
@@ -762,13 +761,11 @@ class ImageController extends AbstractActionController
             if (file_exists($filepath)) {
                 return $filepath;
             }
+
             // Use the web url when an external storage is used. No check can be
             // done.
             // TODO Load locally the external path? It will be done later.
-            else {
-                $filepath = $media->thumbnailUrl($derivativeType);
-                return $filepath;
-            }
+            return $media->thumbnailUrl($derivativeType);
         }
     }
 

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright 2015-2017 Daniel Berthereau
+ * Copyright 2015-2020 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -91,11 +91,13 @@ class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
         } catch (\Exception $e) {
             throw $e;
         }
+        return $this;
     }
 
     public function setArgs($args)
     {
         $this->_args = $args;
+        return $this;
     }
 
     /**
@@ -112,8 +114,9 @@ class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
             $this->setArgs($args);
         }
 
-        $this->_creator->setLogger($this->getLogger());
-        $this->_creator->setTranslator($this->getTranslator());
-        return $this->_creator->transform($this->_args);
+        return $this->_creator
+            ->setLogger($this->getLogger())
+            ->setTranslator($this->getTranslator())
+            ->transform($this->_args);
     }
 }
