@@ -193,4 +193,18 @@ class Info extends AbstractResourceType
 
         return $tiles;
     }
+
+    /**
+     * The preferred format is jpeg, since the image server uses it by default.
+     *
+     * @todo Allow to create tiles with webp, gif, and png and add them here.
+     *
+     * @return array
+     */
+    public function getPreferredFormats()
+    {
+        return [
+            'jpg',
+        ];
+    }
 }
