@@ -30,7 +30,6 @@
 namespace ImageServer\Iiif;
 
 use IiifServer\Iiif\AbstractResourceType;
-use IiifServer\Iiif\TraitImage;
 use IiifServer\Iiif\TraitRights;
 use Omeka\Api\Representation\MediaRepresentation;
 use ImageServer\Mvc\Controller\Plugin\TileInfo;
@@ -94,6 +93,11 @@ class Info extends AbstractResourceType
         parent::__construct($resource, $options);
         // TODO Use subclass to manage image or media. Currently, only image.
         $this->initImage();
+    }
+
+    public function isImage()
+    {
+        return true;
     }
 
     /**

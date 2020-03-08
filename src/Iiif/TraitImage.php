@@ -29,57 +29,67 @@
 
 namespace ImageServer\Iiif;
 
-use IiifServer\Iiif\AbstractType;
-use Omeka\Api\Representation\MediaRepresentation;
+use IiifServer\Iiif\TraitThumbnail;
 
-/**
- *@link https://iiif.io/api/image/3.0/#53-sizes
- */
-class Size extends AbstractType
+trait TraitImage
 {
-    use TraitImage;
-
-    protected $type = 'Size';
-
-    protected $keys = [
-        'type' => self::OPTIONAL,
-        'width' => self::REQUIRED,
-        'height' => self::REQUIRED,
-    ];
+    use TraitThumbnail;
 
     /**
-     * @var \Omeka\Api\Representation\MediaRepresentation
+     * @var \IiifServer\View\Helper\ImageSize
      */
-    protected $resource;
+    protected $imageSizeHelper;
 
     /**
-     * @var array
+     * @var \IiifServer\View\Helper\IiifImageUrl
      */
-    protected $options;
+    protected $iiifImageUrl;
 
-    public function __construct(MediaRepresentation $resource, array $options = null)
+    protected function initImage()
     {
-        $this->resource = $resource;
-        $this->options = $options ?: [];
-        if (empty($this->options['image_type'])) {
-            $this->options['image_type'] = 'original';
-        }
-        $this->initImage();
+        $viewHelpers = $this->resource->getServiceLocator()->get('ViewHelperManager');
+        $this->imageSizeHelper = $viewHelpers->get('imageSize');
+        $this->iiifImageUrl = $viewHelpers->get('iiifImageUrl');
     }
 
     public function isImage()
     {
-        return true;
+        return $this->type === 'Image';
     }
 
-    public function hasSize()
+    /**
+     * @return int|null
+     */
+    public function getHeight()
     {
-        $size = $this->imageSize($this->imageType());
-        return !empty($size);
+        $size = $this->imageSize();
+        return $size ? $size['height'] : null;
     }
 
-    protected function imageType()
+    /**
+     * @return int|null
+     */
+    public function getWidth()
     {
-        return $this->options['image_type'];
+        $size = $this->imageSize();
+        return $size ? $size['width'] : null;
+    }
+
+    protected function imageSize($type = 'original')
+    {
+        if (!$this->isImage()) {
+            return null;
+        }
+
+        if (!array_key_exists('image_sizes', $this->_storage)) {
+            $this->_storage['image_sizes'] = [];
+        }
+
+        if (!array_key_exists($type, $this->_storage['image_sizes'])) {
+            $helper = $this->imageSizeHelper;
+            $this->_storage['image_sizes'][$type] = $helper($this->resource->primaryMedia(), $type) ?: null;
+        }
+
+        return $this->_storage['image_sizes'][$type];
     }
 }

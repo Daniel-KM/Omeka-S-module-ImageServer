@@ -68,6 +68,11 @@ class Tile extends AbstractType
         $this->prepareTilingInfo();
     }
 
+    public function isImage()
+    {
+        return true;
+    }
+
     public function getWidth()
     {
         return empty($this->tilingInfo)
