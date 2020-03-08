@@ -256,4 +256,41 @@ class Info extends AbstractResourceType
 
         return null;
     }
+
+    public function getExtraQualities()
+    {
+        return null;
+    }
+
+    public function getExtraFormats()
+    {
+        return null;
+    }
+
+    public function getExtraFeatures()
+    {
+        // See https://iiif.io/api/image/3/context.json.
+        /*
+        $support = [
+            'baseUriRedirect',
+            'canonicalLinkHeader',
+            'cors',
+            'jsonldMediaType',
+            'mirroring',
+            'profileLinkHeader',
+            'regionByPct',
+            'regionByPx',
+            'regionSquare',
+            'rotationArbitrary',
+            'rotationBy90s',
+            'sizeByConfinedWh',
+            'sizeByH',
+            'sizeByPct',
+            'sizeByW',
+            'sizeByWh',
+            'sizeUpscaling',
+        ];
+        */
+        return null;
+    }
 }
