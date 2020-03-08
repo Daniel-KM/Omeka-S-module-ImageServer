@@ -262,6 +262,9 @@ return [
     'imageserver' => [
         'config' => [
             'imageserver_info_version' => '2.1',
+            'imageserver_info_rights' => 'property_or_url',
+            'imageserver_info_rights_property' => 'dcterms:license',
+            'imageserver_info_rights_url' => '',
             'imageserver_image_creator' => 'Auto',
             'imageserver_image_max_size' => 10000000,
             'imageserver_image_tile_dir' => 'tile',

@@ -31,6 +31,7 @@ namespace ImageServer\Iiif;
 
 use IiifServer\Iiif\AbstractResourceType;
 use IiifServer\Iiif\TraitImage;
+use IiifServer\Iiif\TraitRights;
 use Omeka\Api\Representation\MediaRepresentation;
 use ImageServer\Mvc\Controller\Plugin\TileInfo;
 
@@ -40,6 +41,7 @@ use ImageServer\Mvc\Controller\Plugin\TileInfo;
 class Info extends AbstractResourceType
 {
     use TraitImage;
+    use TraitRights;
 
     protected $type = 'Info';
 
@@ -206,5 +208,52 @@ class Info extends AbstractResourceType
         return [
             'jpg',
         ];
+    }
+
+    public function getRights()
+    {
+        $helper = $this->setting;
+        $url = null;
+        $orUrl = false;
+
+        $param = $helper('imageserver_info_rights');
+        switch ($param) {
+            case 'url':
+                $url = $helper('imageserver_info_rights_url');
+                break;
+            case 'property_or_url':
+                $orUrl = true;
+                // no break.
+            case 'property':
+                $property = $helper('imageserver_info_rights_property');
+                $url = (string) $this->resource->value($property);
+                break;
+            case 'item_or_url':
+                $orUrl = true;
+                // no break.
+            case 'item':
+                $url = $this->rightsResource($this->resource->item());
+                if ($url || !$orUrl) {
+                    return $url;
+                }
+                break;
+            case 'none':
+            default:
+                return null;
+        }
+
+        if (!$url && $orUrl) {
+            $url = $helper('imageserver_info_rights_url');
+        }
+
+        if ($url) {
+            foreach ($this->rightUrls as $rightUrl) {
+                if (strpos($url, $rightUrl) === 0) {
+                    return $url;
+                }
+            }
+        }
+
+        return null;
     }
 }

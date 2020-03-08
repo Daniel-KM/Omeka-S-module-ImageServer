@@ -1,6 +1,7 @@
 <?php
 namespace ImageServer\Form;
 
+use Omeka\Form\Element\PropertySelect;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
@@ -27,6 +28,51 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
                 'attributes' => [
                     'id' => 'imageserver_info_version',
+                ],
+            ])
+
+            ->add([
+                'name' => 'imageserver_info_rights',
+                'type' => Element\Select::class,
+                'options' => [
+                    'label' => 'Rights', // @translate
+                    'value_options' => [
+                        'none' => 'No mention', // @translate
+                        'url' => 'Specified license url below', // @translate
+                        'property' => 'Specified property below', // @translate
+                        'property_or_url' => 'Property if any, else specified license', // @translate
+                        'item' => 'Url specified by the iiif server for the item', // @translate
+                        'item_or_url' => 'Item rights url if any, else specified license', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_info_rights',
+                    'class' => 'chosen-select',
+                ],
+            ])
+            ->add([
+                'name' => 'imageserver_info_rights_property',
+                'type' => PropertySelect::class,
+                'options' => [
+                    'label' => 'Property to use for rights (license)', // @translate
+                    'empty_option' => '',
+                    'term_as_value' => true,
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_info_rights_property',
+                    'class' => 'chosen-select',
+                    'data-placeholder' => 'Select a media property…', // @translate
+                ],
+            ])
+            ->add([
+                'name' => 'imageserver_info_rights_url',
+                'type' => Element\Url::class,
+                'options' => [
+                    'label' => 'Url of the license of the media', // @translate
+                    'info' => 'The license for the media must be an url from https://creativecommons.org or https://rightsstatements.org.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_info_rights_url',
                 ],
             ])
 
@@ -120,8 +166,15 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ])
         ;
 
-        $inputFilter = $this->getInputFilter();
-        $inputFilter
+        $this->getInputFilter()
+            ->add([
+                'name' => 'imageserver_info_rights',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'imageserver_info_rights_property',
+                'required' => false,
+            ])
             ->add([
                 'name' => 'imageserver_image_creator',
                 'required' => false,
