@@ -83,15 +83,6 @@ class Info extends AbstractResourceType
     ];
 
     /**
-     * @link https://iiif.io/api/image/3.0/#59-complete-response
-     *
-     * Don't use: it's nearly the same than the keys.
-     *
-     * @var array
-     */
-    protected $orderedKeys = [];
-
-    /**
      * @var \Omeka\Api\Representation\MediaRepresentation
      */
     protected $resource;
