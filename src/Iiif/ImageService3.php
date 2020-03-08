@@ -37,12 +37,12 @@ use ImageServer\Mvc\Controller\Plugin\TileInfo;
 /**
  *@link https://iiif.io/api/image/3.0/
  */
-class Info extends AbstractResourceType
+class ImageService3 extends AbstractResourceType
 {
     use TraitImage;
     use TraitRights;
 
-    protected $type = 'Info';
+    protected $type = 'ImageService3';
 
     protected $keys = [
         '@context' => self::REQUIRED,
@@ -74,7 +74,7 @@ class Info extends AbstractResourceType
 
         // Extra functionality.
         'extraQualities' => self::OPTIONAL,
-        'extraFormats'	 => self::OPTIONAL,
+        'extraFormats' => self::OPTIONAL,
         'extraFeatures' => self::OPTIONAL,
 
         // Linking properties.

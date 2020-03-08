@@ -29,7 +29,7 @@
 
 namespace ImageServer\View\Helper;
 
-use ImageServer\Iiif\Info;
+use ImageServer\Iiif\ImageService3;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\TempFileFactory;
 use Zend\View\Helper\AbstractHelper;
@@ -67,7 +67,7 @@ class IiifInfo30 extends AbstractHelper
      */
     public function __invoke(MediaRepresentation $media)
     {
-        $info = new Info($media, ['version' => '3.0']);
+        $info = new ImageService3($media, ['version' => '3.0']);
 
         // Give possibility to customize the manifest.
         $resource = $media;
