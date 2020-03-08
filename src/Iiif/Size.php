@@ -27,56 +27,55 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace ImageServer\View\Helper;
+namespace ImageServer\Iiif;
 
-use ImageServer\Iiif\Info;
+use IiifServer\Iiif\AbstractType;
+use IiifServer\Iiif\TraitImage;
 use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\File\TempFileFactory;
-use Zend\View\Helper\AbstractHelper;
 
 /**
- * Helper to get a IIIF info.json for a file.
+ *@link https://iiif.io/api/image/3.0/#53-sizes
  */
-class IiifInfo30 extends AbstractHelper
+class Size extends AbstractType
 {
-    /**
-     * @var TempFileFactory
-     */
-    protected $tempFileFactory;
+    use TraitImage;
+
+    protected $type = 'Size';
+
+    protected $keys = [
+        'type' => self::OPTIONAL,
+        'width' => self::REQUIRED,
+        'height' => self::REQUIRED,
+    ];
 
     /**
-     * Full path to the files.
-     *
-     * @var string
+     * @var \Omeka\Api\Representation\MediaRepresentation
      */
-    protected $basePath;
+    protected $resource;
 
-    public function __construct(TempFileFactory $tempFileFactory, $basePath)
+    /**
+     * @var array
+     */
+    protected $options;
+
+    public function __construct(MediaRepresentation $resource, array $options = null)
     {
-        $this->tempFileFactory = $tempFileFactory;
-        $this->basePath = $basePath;
+        $this->resource = $resource;
+        $this->options = $options ?: [];
+        if (empty($this->options['image_type'])) {
+            $this->options['image_type'] = 'original';
+        }
+        $this->initImage();
     }
 
-    /**
-     * Get the IIIF info for the specified record.
-     *
-     * @link https://iiif.io/api/image/3.0
-     *
-     * @param MediaRepresentation|null $media
-     * @return Object|null
-     */
-    public function __invoke(MediaRepresentation $media)
+    public function hasSize()
     {
-        $info = new Info($media, ['version' => '3.0']);
+        $size = $this->imageSize($this->imageType());
+        return !empty($size);
+    }
 
-        // Give possibility to customize the manifest.
-        $resource = $media;
-        $format = 'info';
-        $type = 'image';
-        $triggerHelper = $this->getView()->plugin('trigger');
-        $params = compact('', 'format', 'info', 'resource', 'type');
-        $params = $triggerHelper('iiifserver.manifest', $params, true);
-
-        return $info->jsonSerialize();
+    protected function imageType()
+    {
+        return $this->options['image_type'];
     }
 }
