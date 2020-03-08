@@ -63,7 +63,8 @@ class IiifInfo30 extends AbstractHelper
      * @link https://iiif.io/api/image/3.0
      *
      * @param MediaRepresentation|null $media
-     * @return Object|null
+     * @throws \IiifServer\Iiif\Exception\RuntimeException
+     * @return ImageService3
      */
     public function __invoke(MediaRepresentation $media)
     {
@@ -74,9 +75,10 @@ class IiifInfo30 extends AbstractHelper
         $format = 'info';
         $type = 'image';
         $triggerHelper = $this->getView()->plugin('trigger');
-        $params = compact('', 'format', 'info', 'resource', 'type');
+        $params = compact('format', 'info', 'resource', 'type');
         $params = $triggerHelper('iiifserver.manifest', $params, true);
 
-        return $info->jsonSerialize();
+        $info->isValid(true);
+        return $info;
     }
 }

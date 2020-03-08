@@ -31,12 +31,15 @@
 namespace ImageServer\Controller;
 
 use ImageServer\ImageServer;
+use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 use Omeka\Module\Manager as ModuleManager;
+use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
 use Zend\I18n\Translator\TranslatorInterface;
 use Zend\Mvc\Controller\AbstractActionController;
+use Zend\View\Model\JsonModel;
 use Zend\View\Model\ViewModel;
 
 /**
@@ -116,12 +119,8 @@ class ImageController extends AbstractActionController
      */
     public function badAction()
     {
-        $response = $this->getResponse();
-        $response->setStatusCode(400);
-
-        return (new ViewModel)
-            ->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'))
-            ->setTemplate('image-server/image/error');
+        $message = 'The Image server cannot fulfill the request: the arguments are incorrect.'; // @translate
+        return $this->viewError(new BadRequestException($message), \Zend\Http\Response::STATUS_CODE_400);
     }
 
     /**
@@ -134,12 +133,20 @@ class ImageController extends AbstractActionController
     {
         // Not found exception is automatically thrown.
         $id = $this->params('id');
-        $media = $this->api()->read('media', $id)->getContent();
+        try {
+            $media = $this->api()->read('media', $id)->getContent();
+        } catch (\Omeka\Api\Exception\NotFoundException $e) {
+            return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_404);
+        }
 
         $version = $this->requestedVersion();
 
         $iiifInfo = $this->viewHelpers()->get('iiifInfo');
-        $info = $iiifInfo($media, $version);
+        try {
+            $info = $iiifInfo($media, $version);
+        } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
+            return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_400);
+        }
 
         return $this->iiifImageJsonLd($info, $version);
     }
@@ -157,11 +164,10 @@ class ImageController extends AbstractActionController
 
         // Check if the original file is an image.
         if (strpos($media->mediaType(), 'image/') !== 0) {
-            $response->setStatusCode(501);
-            $view = new ViewModel;
-            return $view
-                ->setVariable('message', $this->translate('The source file is not an image.'))
-                ->setTemplate('image-server/image/error');
+            return $this->viewError(new UnsupportedMediaTypeException(
+                sprintf('The media "%d" is not an image', $media->id()), // @translate
+                \Zend\Http\Response::STATUS_CODE_501
+            ));
         }
 
         // Check, clean and optimize and fill values according to the request.
@@ -273,10 +279,10 @@ class ImageController extends AbstractActionController
                 else {
                     $maxFileSize = $settings->get('imageserver_image_max_size');
                     if (!empty($maxFileSize) && $this->_mediaFileSize($media) > $maxFileSize) {
-                        $response->setStatusCode(500);
-                        return (new ViewModel)
-                            ->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.'))
-                            ->setTemplate('image-server/image/error');
+                        return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
+                            'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.', // @translate
+                            \Zend\Http\Response::STATUS_CODE_500
+                        ));
                     }
                     $imagePath = $this->_transformImage($transform);
                 }
@@ -303,10 +309,10 @@ class ImageController extends AbstractActionController
             unlink($imagePath);
 
             if (empty($output)) {
-                $response->setStatusCode(500);
-                return (new ViewModel)
-                    ->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.'))
-                    ->setTemplate('image-server/image/error');
+                return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
+                    'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.', // @translate
+                    \Zend\Http\Response::STATUS_CODE_500
+                ));
             }
 
             $response->getHeaders()
@@ -322,10 +328,10 @@ class ImageController extends AbstractActionController
 
         // No result.
         else {
-            $response->setStatusCode(500);
-            return (new ViewModel)
-                ->setVariable('message', $this->translate('The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.'))
-                ->setTemplate('image-server/image/error');
+            return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
+                'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.', // @translate
+                \Zend\Http\Response::STATUS_CODE_500
+            ));
         }
     }
 
@@ -802,5 +808,23 @@ class ImageController extends AbstractActionController
             return '2.1';
         }
         return null;
+    }
+
+    protected function jsonError(\Exception $exception, $statusCode = 500)
+    {
+        $this->getResponse()->setStatusCode($statusCode);
+        return new JsonModel([
+            'status' => 'error',
+            'message' => $exception->getMessage(),
+        ]);
+    }
+
+    protected function viewError(\Exception $exception, $statusCode = 500)
+    {
+        $this->getResponse()->setStatusCode($statusCode);
+        $view = new ViewModel;
+        return $view
+            ->setTemplate('image-server/image/error')
+            ->setVariable($exception->getMessage());
     }
 }

@@ -47,6 +47,7 @@ class IiifInfo extends AbstractHelper
      *
      * @param MediaRepresentation|null $media
      * @param string $version
+     * @throws \IiifServer\Iiif\Exception\RuntimeException
      * @return Object|null
      */
     public function __invoke(MediaRepresentation $media, $version = null)

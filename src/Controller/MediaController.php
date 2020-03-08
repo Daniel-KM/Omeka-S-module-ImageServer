@@ -30,9 +30,12 @@
 
 namespace ImageServer\Controller;
 
+use Omeka\Api\Exception\BadRequestException;
 use Omeka\File\Store\StoreInterface;
+use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\View\Model\JsonModel;
 
 /**
  * The Media controller class.
@@ -75,6 +78,15 @@ class MediaController extends AbstractActionController
     }
 
     /**
+     * Returns an error 400 to requests that are invalid.
+     */
+    public function badAction()
+    {
+        $message = 'The Image server cannot fulfill the request: the arguments are incorrect.'; // @translate
+        return $this->viewError(new BadRequestException($message), \Zend\Http\Response::STATUS_CODE_400);
+    }
+
+    /**
      * Send "info.json" for the current file.
      *
      * The info is managed by the MediaControler because it indicates
@@ -84,26 +96,23 @@ class MediaController extends AbstractActionController
     {
         // Not found exception is automatically thrown.
         $id = $this->params('id');
-        $media = $this->api()->read('media', $id)->getContent();
+        try {
+            $media = $this->api()->read('media', $id)->getContent();
+        } catch (\Omeka\Api\Exception\NotFoundException $e) {
+            return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_404);
+        }
 
         $version = $this->requestedVersion();
 
         $iiifInfo = $this->viewHelpers()->get('iiifInfo');
-        $info = $iiifInfo($media, $version);
+        try {
+            $info = $iiifInfo($media, $version);
+            $info->isValid(true);
+        } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
+            return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_400);
+        }
 
         return $this->iiifImageJsonLd($info, $version);
-    }
-
-    /**
-     * Returns an error 400 to requests that are invalid.
-     */
-    public function badAction()
-    {
-        $this->getResponse()
-            ->setStatusCode(400);
-        return (new ViewModel)
-            ->setVariable('message', $this->translate('The Image server cannot fulfill the request: the arguments are incorrect.'))
-            ->setTemplate('image-server/media/error');
     }
 
     /**
@@ -121,12 +130,10 @@ class MediaController extends AbstractActionController
         // checked.
         $format = strtolower($this->params('format'));
         if (pathinfo($media->filename(), PATHINFO_EXTENSION) != $format) {
-            $response->setStatusCode(500);
-
-            $view = new viewModel;
-            return $view
-                ->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.'))
-                ->setTemplate('image-server/media/error');
+            return $this->viewError(new UnsupportedMediaTypeException(
+                'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.', // @translate
+                \Zend\Http\Response::STATUS_CODE_500
+            ));
         }
 
         // A check is added if the file is local: the source can be a local file
@@ -136,11 +143,10 @@ class MediaController extends AbstractActionController
                 $filepath = $this->basePath
                     . DIRECTORY_SEPARATOR . $this->getStoragePath('original', $media->filename());
                 if (!file_exists($filepath) || filesize($filepath) == 0) {
-                    $response->setStatusCode(500);
-
-                    $view = (new ViewModel)
-                        ->setVariable('message', $this->translate('The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.'))
-                        ->setTemplate('image-server/media/error');
+                    return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
+                        'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.', // @translate
+                        \Zend\Http\Response::STATUS_CODE_500
+                    ));
                 }
                 break;
         }
@@ -189,5 +195,25 @@ class MediaController extends AbstractActionController
             return '2.1';
         }
         return null;
+    }
+
+    protected function jsonError(\Exception $exception, $statusCode = 500)
+    {
+        /* @var \Zend\Http\Response $response */
+        $this->getResponse()->setStatusCode($statusCode);
+        return new JsonModel([
+            'status' => 'error',
+            'message' => $exception->getMessage(),
+        ]);
+    }
+
+    protected function viewError(\Exception $exception, $statusCode = 500)
+    {
+        /* @var \Zend\Http\Response $response */
+        $this->getResponse()->setStatusCode($statusCode);
+        $view = new ViewModel;
+        return $view
+            ->setTemplate('image-server/media/error')
+            ->setVariable($exception->getMessage());
     }
 }
