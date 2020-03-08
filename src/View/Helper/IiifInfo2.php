@@ -38,7 +38,7 @@ use Zend\View\Helper\AbstractHelper;
 /**
  * Helper to get a IIIF info.json for a file.
  */
-class IiifInfo21 extends AbstractHelper
+class IiifInfo2 extends AbstractHelper
 {
     /**
      * @var TempFileFactory

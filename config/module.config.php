@@ -15,8 +15,8 @@ return [
             'iiifInfo' => View\Helper\IiifInfo::class,
         ],
         'factories' => [
-            'iiifInfo21' => Service\ViewHelper\IiifInfo21Factory::class,
-            'iiifInfo30' => Service\ViewHelper\IiifInfo30Factory::class,
+            'iiifInfo2' => Service\ViewHelper\IiifInfo2Factory::class,
+            'iiifInfo3' => Service\ViewHelper\IiifInfo3Factory::class,
         ],
     ],
     'form_elements' => [
@@ -261,7 +261,7 @@ return [
     ],
     'imageserver' => [
         'config' => [
-            'imageserver_info_version' => '2.1',
+            'imageserver_info_version' => '2',
             'imageserver_info_rights' => 'property_or_url',
             'imageserver_info_rights_property' => 'dcterms:license',
             'imageserver_info_rights_url' => '',

@@ -802,10 +802,10 @@ class ImageController extends AbstractActionController
     {
         $accept = $this->getRequest()->getHeaders()->get('Accept')->toString();
         if (strpos($accept, 'iiif.io/api/image/3/context.json')) {
-            return '3.0';
+            return '3';
         }
         if (strpos($accept, 'iiif.io/api/image/2/context.json')) {
-            return '2.1';
+            return '2';
         }
         return null;
     }

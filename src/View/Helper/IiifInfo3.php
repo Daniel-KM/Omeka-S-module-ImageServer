@@ -37,7 +37,7 @@ use Zend\View\Helper\AbstractHelper;
 /**
  * Helper to get a IIIF info.json for a file.
  */
-class IiifInfo30 extends AbstractHelper
+class IiifInfo3 extends AbstractHelper
 {
     /**
      * @var TempFileFactory
@@ -68,7 +68,7 @@ class IiifInfo30 extends AbstractHelper
      */
     public function __invoke(MediaRepresentation $media)
     {
-        $info = new ImageService3($media, ['version' => '3.0']);
+        $info = new ImageService3($media, ['version' => '3']);
 
         // Give possibility to customize the manifest.
         $resource = $media;

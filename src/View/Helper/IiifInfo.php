@@ -55,13 +55,13 @@ class IiifInfo extends AbstractHelper
         $view = $this->getView();
 
         if (is_null($version)) {
-            $version = $view->setting('imageserver_info_version', '2.1');
+            $version = $view->setting('imageserver_info_version', '2');
         } else {
-            $version = $version === '3.0' ? '3.0' : '2.1';
+            $version = $version === '2' ? '2' : '3';
         }
 
-        return $version === '3.0'
-            ? $view->iiifInfo30($media)
-            : $view->iiifInfo21($media);
+        return $version === '2'
+            ? $view->iiifInfo2($media)
+            : $view->iiifInfo3($media);
     }
 }
