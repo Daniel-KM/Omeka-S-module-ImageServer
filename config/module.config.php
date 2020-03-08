@@ -139,8 +139,8 @@ return [
                                 'size' => 'full|\^?max|\^?\d+,|\^?,\d+|\^?pct:\d+\.?\d*|\^?!?\d+,\d+',
                                 'rotation' => '\!?(?:(?:[0-2]?[0-9]?[0-9]|3[0-5][0-9])(?:\.\d*)?|360)',
                                 'quality' => 'default|color|gray|bitonal',
-                                // TODO Support other formats: tif, jp2, pdf, and webp. May requires additional packages.
-                                'format' => 'jpg|png|gif',
+                                // May requires additional packages. Checked in controller.
+                                'format' => 'jpg|png|gif|webp|tif|jp2|pdf',
                             ],
                             'defaults' => [
                                 'action' => 'fetch',
@@ -210,6 +210,7 @@ return [
                         ],
                     ],
                     // Warning: the format is separated with a ".", not a "/".
+                    // TODO pdf is not an audio video media.
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [

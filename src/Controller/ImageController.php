@@ -623,6 +623,12 @@ class ImageController extends AbstractActionController
             'jp2' => 'image/jp2',
             'webp' => 'image/webp',
         ];
+        // TODO Check if the tiler support it. Here, the rule is for gd. Manage other libraries.
+        // @see https://www.php.net/manual/fr/function.imagetypes.php
+        if (in_array($format, ['pdf', 'jp2', 'tif'])) {
+            $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), $format));
+            return null;
+        }
         $transform['format']['feature'] = $mediaTypes[$format];
 
         return $transform;
