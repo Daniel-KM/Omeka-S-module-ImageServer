@@ -78,6 +78,24 @@ class Size extends AbstractType
         return !empty($size);
     }
 
+    /**
+     * @return int|null
+     */
+    public function getHeight()
+    {
+        $size = $this->imageSize($this->imageType());
+        return $size ? $size['height'] : null;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getWidth()
+    {
+        $size = $this->imageSize($this->imageType());
+        return $size ? $size['width'] : null;
+    }
+
     protected function imageType()
     {
         return $this->options['image_type'];
