@@ -19,7 +19,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'name' => 'imageserver_info_version',
                 'type' => Element\Radio::class,
                 'options' => [
-                    'label' => 'Default api version (info)', // @translate
+                    'label' => 'Default IIIF api version (info)', // @translate
                     'info' => 'Set the version of the manifest to provide.', // @translate
                     'value_options' => [
                         '2' => '2', // @translate
@@ -169,6 +169,10 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         $this->getInputFilter()
             ->add([
                 'name' => 'imageserver_info_rights',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'imageserver_info_rights_url',
                 'required' => false,
             ])
             ->add([
