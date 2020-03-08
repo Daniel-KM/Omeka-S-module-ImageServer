@@ -1,12 +1,13 @@
 Image Server (module for Omeka S)
-================================
+=================================
 
 [![Build Status](https://travis-ci.org/Daniel-KM/Omeka-S-module-ImageServer.svg?branch=master)](https://travis-ci.org/Daniel-KM/Omeka-S-module-ImageServer)
 
 [Image Server] is a module for [Omeka S] that integrates the [IIIF specifications]
 and a simple image server (similar to a basic [IIP Image]) to allow to process
 and share instantly images of any size and medias (pdf, audio, video, 3D…) in
-the desired formats.
+the desired formats. It works with the module [Iiif Server], that provides main
+manifests for items.
 
 The full specifications of the [International Image Interoperability Framework]
 standard are supported (level 2), so any widget that supports it can use it.
@@ -43,6 +44,11 @@ images. This is the case for all major distributions and providers. At least one
 of the php extensions [`GD`] or [`Imagick`] are recommended. They are installed
 by default in most servers. If not, the image server will use the command line
 [ImageMagick] tool `convert`.
+
+The module [Iiif Server] is currently required and should be installed first.
+
+Note: To keep old options from [Universal Viewer], upgrade it to version 3.4.3
+before enabling of ImageServer. Else, simply set them in the config form.
 
 * From the zip
 
@@ -95,45 +101,15 @@ directive `<Directory>`.
 Notes
 -----
 
-Note: To keep old options from [Universal Viewer], upgrade it to version 3.4.3
-before enabling of ImageServer. Else, simply set them in the config form.
-
 When you need to display big images (bigger than 10 to 50 MB according to your
 server), it is recommended to upload them as "Tile", so tiles will be
 automatically created (see below).
 
-Options for the Image server can be changed in the helpers "IiifCollection.php",
-"IiifManifest.php" and "IiifInfo.php" of the module, and via the events.
-
-See below the notes for more info.
-
-* Using externally supplied IIIF manifest and images
-
-If you are harvesting data (via OAI-PMH, for instance) from another system where
-images are hosted and exposed via IIIF, you can use a configurable metadata
-field to supply the manifest to the viewer (Universal Viewer, Mirador or Diva).
-In this case, no images are hosted in the Omeka record, but one of the metadata
-fields has the URL of the manifest hosted on another server.
-
-For example, you could set the alternative manifest element to "Dublin Core:Has Format"
-in the module configuration, and then put a URL like "https://example.com/iiif/HI-SK20161207-0009/manifest"
-in the specified element of a record. The viewer included on that record’s
-display page will use that manifest URL to retrieve images and metadata for the
-viewer.
-
-* Customize data of manifests
-
-The module creates manifests with all the metadata of each record. The event
-`imageserver.manifest` can be used to modify the exposed data of a manifest for
-items, collections, collection lists (search results) and media (`info.json`).
-So, it is possible, for example, to modify the citation, to remove or to add
-some metadata or to change the thumbnail.
-
-Note: with a collection list, the parameter `resource` is an array of resources.
-
 
 Image Server
 -----------
+
+### Routes
 
 All routes of the Image server are defined in `config/module.config.php`.
 They follow the recommandations of the [IIIF specifications].
@@ -141,12 +117,9 @@ They follow the recommandations of the [IIIF specifications].
 To view the json-ld manifests created for each resources of Omeka S, simply try
 these urls (replace :id by a true id):
 
-- https://example.org/iiif/collection/:id for item sets;
-- https://example.org/iiif/collection/:id,:id,:id,:id… for multiple resources;
-- https://example.org/iiif/:id/manifest for items;
 - https://example.org/iiif-img/:id/info.json for images files;
 - https://example.org/iiif-img/:id/:region/:size/:rotation/:quality.:format for
-  images, for example: https://example.org/iiif-img/1/full/full/270/gray.png;
+images, for example: https://example.org/iiif-img/1/full/full/270/gray.png;
 - https://example.org/ixif-media/:id/info.json for other files;
 - https://example.org/ixif-media/:id.:format for the files.
 
@@ -158,12 +131,7 @@ named number like in a library or a museum, isbn for books, or random id like
 with ark, noid, doi, etc. They can be displayed in the public url with the
 modules [Ark] and/or [Clean Url].
 
-If item sets are organized hierarchically with the plugin [Collection Tree], it
-will be used to build manifests for item sets.
-
-
-Image Server
-------------
+### Features
 
 The image server has two roles.
 
@@ -226,64 +194,17 @@ in an attached media of type "IIIF" or use it directly in your viewer. The id is
 the one of the media, not the item.
 
 
-3D models
----------
-
-The creation of manifests for 3D models is fully supported by the widget and
-natively managed since the release 2.3 of [Universal Viewer] via the [threejs]
-library. The other viewers integrated in Omeka doesn’t support 3D.
-
-* Possible requirement
-
-The module [Archive Repertory] must be installed when the json files that
-represent the 3D models use files that are identified by a basename and not a
-full url. This is generally the case, because the model contains an external
-image for texture. Like Omeka hashes filenames when it ingests files, the file
-can’t be retrieved by the Universal Viewer.
-
-This module is not required when there is no external images or when these
-images are referenced in the json files with a full url.
-
-To share the `json` with other Image servers, the server may need to allow CORS
-(see above).
-
-* Example
-
-  - Allow the extension `json` and the media type `application/json` in the
-    global settings.
-  - Install the module [Archive Repertory].
-  - Download (or add via urls) the next three files from the official examples:
-    - http://files.universalviewer.io/manifests/foundobjects/thekiss/thumb.jpg
-    - http://files.universalviewer.io/manifests/foundobjects/thekiss/thekiss.jpg
-    - http://files.universalviewer.io/manifests/foundobjects/thekiss/thekiss.json
-  - Add a new item with these three files, in this order, and the following
-  metadata:
-    - Title: The Kiss
-    - Date: 2015-11-27
-    - Description: Soap stone statuette of Rodin’s The Kiss. Found at Snooper’s Paradise in Brighton UK.
-    - Rights: 3D model produced by Sophie Dixon
-    - License (or Rights): by-nc-nd
-  - Go to the public page of the item and watch it!
-
-*Important*: When using [Archive Repertory] and when two files have the same
-base name (here "thekiss.jpg" and "thekiss.json"), the image, that is referenced
-inside the json, must be uploaded before the json.
-Furthermore, the name of the thumbnail must be `thumb.jpg` and it is recommended
-to upload it first.
-
-Finally, note that 3D models are often heavy, so the user has to wait some
-seconds that the browser loads all files and prepares them to be displayed.
-
-
 TODO / Bugs
 -----------
 
-- When a item set contains non image items, the left panel with the index is
-  displayed only when the first item contains an image.
-- Separate Image Server (creation of manifests and media infos) and image server
-  (tiling and display compliant with iiif specifications) ([#6]).
 - Create thumbnails from the tiled image, not from the original.
 - Support curl when allow_url_fopen and allow_url_include are forbidden.
+- Automatically manage pdf as a list of canvas and images (extract size and
+  page number, then manage it by the image server)
+- Support a different route for iiif version 2 and iiif version 3, plus the
+  default one.
+
+See module [Iiif Server].
 
 
 Warning
@@ -332,7 +253,7 @@ The module uses the [Deepzoom library] and [Zoomify library], the first based on
 Copyright
 ---------
 
-* Copyright Daniel Berthereau, 2015-2019 (see [Daniel-KM])
+* Copyright Daniel Berthereau, 2015-2020 (see [Daniel-KM])
 * Copyright BibLibre, 2016-2017
 
 First version of this plugin was built for the [Bibliothèque patrimoniale] of
@@ -344,6 +265,7 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [International Image Interoperability Framework]: http://iiif.io
 [IIIF specifications]: http://iiif.io/api/
 [IIP Image]: http://iipimage.sourceforge.net
+[Iiif Server]: https://github.com/Daniel-KM/Omeka-S-module-IiifServer
 [OpenSeadragon]: https://openseadragon.github.io
 [Universal Viewer plugin for Omeka]: https://github.com/Daniel-KM/Omeka-plugin-UniversalViewer
 [BibLibre]: https://github.com/biblibre
