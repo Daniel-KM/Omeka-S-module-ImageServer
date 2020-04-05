@@ -104,10 +104,10 @@ class MediaController extends AbstractActionController
 
         $version = $this->requestedVersion();
 
+        /** @var \ImageServer\View\Helper\IiifInfo $iiifInfo */
         $iiifInfo = $this->viewHelpers()->get('iiifInfo');
         try {
             $info = $iiifInfo($media, $version);
-            $info->isValid(true);
         } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
             return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_400);
         }
