@@ -38,6 +38,7 @@ return [
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
         ],
         'factories' => [
+            'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,
             'tiler' => Service\ControllerPlugin\TilerFactory::class,
         ],
     ],
