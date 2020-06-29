@@ -200,7 +200,7 @@ OUTPUT;
         }
 
         $url = $view->url(
-            'imageserver/id',
+            'imageserver/info',
             ['id' => $media->id()],
             ['force_canonical' => true]
         );

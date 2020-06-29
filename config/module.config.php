@@ -53,6 +53,8 @@ return [
         ],
     ],
     'router' => [
+        // In order to use clean urls, the identifier "id" can be any string without "/", not only Omeka id.
+        // A specific config file is used is used to manage identifiers with "/", like arks.
         'routes' => [
             // @todo It is recommended to use a true identifier (ark, urn…], not an internal id.
 
@@ -85,7 +87,8 @@ return [
                             'route' => '[/v:version]/:id',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                // 'id' => '\d+',
+                                'id' => '[^\/]+',
                             ],
                         ],
                     ],
@@ -95,7 +98,7 @@ return [
                             'route' => '[/v:version]/:id/info.json',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                'id' => '[^\/]+',
                             ],
                             'defaults' => [
                                 'action' => 'info',
@@ -113,7 +116,7 @@ return [
                             'route' => '[/v:version]/:id/:region/:size/:rotation/:quality:.:format',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                'id' => '[^\/]+',
                                 'region' => '.+',
                                 'size' => '.+',
                                 'rotation' => '.+',
@@ -138,7 +141,7 @@ return [
                             'route' => '[/v:version]/:id/:region/:size/:rotation/:quality:.:format',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                'id' => '[^\/]+',
                                 'region' => 'full|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
                                 // Version 2.0 allows "max", but version 3.0 rejects "full".
                                 // Version 3.0 adds upscalling: "^max", "^w,", "^,h", "^pct:n"; "^w,h", and "^!w,h".
@@ -163,9 +166,6 @@ return [
                 'type' => \Zend\Router\Http\Literal::class,
                 'options' => [
                     'route' => '/ixif-media',
-                    'constraints' => [
-                        'id' => '\d+',
-                    ],
                     'defaults' => [
                         '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\MediaController::class,
@@ -182,7 +182,7 @@ return [
                             'route' => '[/v:version]/:id',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                'id' => '[^\/]+',
                             ],
                             'defaults' => [
                                 '__API__' => true,
@@ -195,7 +195,7 @@ return [
                             'route' => '[/v:version]/:id/info.json',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                'id' => '[^\/]+',
                             ],
                             'defaults' => [
                                 '__API__' => true,
@@ -213,7 +213,7 @@ return [
                             'route' => '[/v:version]/:id:.:format',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                'id' => '[^\/]+',
                                 'format' => '.+',
                             ],
                             'defaults' => [
@@ -229,7 +229,7 @@ return [
                             'route' => '[/v:version]/:id:.:format',
                             'constraints' => [
                                 'version' => '2|3',
-                                'id' => '\d+',
+                                'id' => '[^\/]+',
                                 'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
                             ],
                             'defaults' => [

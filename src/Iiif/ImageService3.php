@@ -119,12 +119,11 @@ class ImageService3 extends AbstractResourceType
 
     public function getId()
     {
+        $cleanIdentifiers = $this->iiifCleanIdentifiers;
         $helper = $this->urlHelper;
         $url = $helper(
             'imageserver/id',
-            [
-                'id' => $this->resource->id(),
-            ],
+            ['version' => '3', 'id' => $cleanIdentifiers($this->resource->id())],
             ['force_canonical' => true]
         );
         $helper = $this->iiifForceBaseUrlIfRequired;

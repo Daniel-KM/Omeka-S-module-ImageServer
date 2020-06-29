@@ -88,7 +88,7 @@ class IiifInfo2 extends AbstractHelper
             list($width, $height) = $imageSize ? array_values($imageSize) : [null, null];
             $imageUrl = $this->view->iiifImageUrl(
                 'imageserver/id',
-                ['id' => $media->id()]
+                ['version' => '2', 'id' => $this->view->iiifCleanIdentifiers($media->id())]
             );
 
             $tiles = [];
@@ -151,7 +151,7 @@ class IiifInfo2 extends AbstractHelper
             ];
             $fileUrl = $this->view->url(
                 'mediaserver/id',
-                ['id' => $media->id()]
+                ['version' => '2', 'id' => $this->view->iiifCleanIdentifiers($media->id())]
             );
             $info['@id'] = $fileUrl;
             // See MediaController::contextAction()

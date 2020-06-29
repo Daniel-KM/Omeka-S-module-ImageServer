@@ -31,6 +31,7 @@
 namespace ImageServer\Controller;
 
 use Omeka\Api\Exception\BadRequestException;
+use Omeka\Api\Exception\NotFoundException;
 use Omeka\File\Store\StoreInterface;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
 use Zend\Mvc\Controller\AbstractActionController;
@@ -94,12 +95,9 @@ class MediaController extends AbstractActionController
      */
     public function infoAction()
     {
-        // Not found exception is automatically thrown.
-        $id = $this->params('id');
-        try {
-            $media = $this->api()->read('media', $id)->getContent();
-        } catch (\Omeka\Api\Exception\NotFoundException $e) {
-            return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_404);
+        $resource = $this->fetchResource('media');
+        if (!$resource) {
+            return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
         }
 
         $version = $this->requestedVersion();
@@ -107,7 +105,7 @@ class MediaController extends AbstractActionController
         /** @var \ImageServer\View\Helper\IiifInfo $iiifInfo */
         $iiifInfo = $this->viewHelpers()->get('iiifInfo');
         try {
-            $info = $iiifInfo($media, $version);
+            $info = $iiifInfo($resource, $version);
         } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
             return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_400);
         }
@@ -120,9 +118,10 @@ class MediaController extends AbstractActionController
      */
     public function fetchAction()
     {
-        // Not found exception is automatically thrown.
-        $id = $this->params('id');
-        $media = $this->api()->read('media', $id)->getContent();
+        $media = $this->fetchResource('media');
+        if (!$media) {
+            return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
+        }
 
         $response = $this->getResponse();
 
@@ -176,6 +175,35 @@ class MediaController extends AbstractActionController
     protected function getStoragePath($prefix, $name, $extension = null)
     {
         return sprintf('%s/%s%s', $prefix, $name, $extension ? ".$extension" : null);
+    }
+
+    /**
+     * @todo Factorize with \IiifServer\Controller\PresentationController::fetchResource()
+     *
+     * @param string $resourceType
+     * @return \Omeka\Api\Representation\AbstractResourceEntityRepresentation|null
+     */
+    protected function fetchResource($resourceType)
+    {
+        $id = $this->params('id');
+
+        $useCleanIdentifier = $this->useCleanIdentifier();
+        if ($useCleanIdentifier) {
+            $getResourceFromIdentifier = $this->viewHelpers()->get('getResourceFromIdentifier');
+            return $getResourceFromIdentifier($id, false, $resourceType);
+        }
+
+        try {
+            return $this->api()->read($resourceType, $id)->getContent();
+        } catch (\Omeka\Api\Exception\NotFoundException $e) {
+            return null;
+        }
+    }
+
+    protected function useCleanIdentifier()
+    {
+        return $this->viewHelpers()->has('getResourcesFromIdentifiers')
+            && $this->settings()->get('iiifserver_manifest_clean_identifier');
     }
 
     /**
