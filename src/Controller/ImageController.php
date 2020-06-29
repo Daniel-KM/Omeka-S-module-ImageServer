@@ -84,6 +84,11 @@ class ImageController extends AbstractActionController
      */
     protected $basePath;
 
+    /**
+     * @var string
+     */
+    protected $version;
+
     public function __construct(
         TempFileFactory $tempFileFactory,
         $store,
@@ -137,16 +142,16 @@ class ImageController extends AbstractActionController
             return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
         }
 
-        $version = $this->requestedVersion();
+        $this->requestedVersion();
 
         $iiifInfo = $this->viewHelpers()->get('iiifInfo');
         try {
-            $info = $iiifInfo($resource, $version);
+            $info = $iiifInfo($resource, $this->version);
         } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
             return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_400);
         }
 
-        return $this->iiifImageJsonLd($info, $version);
+        return $this->iiifImageJsonLd($info, $this->version);
     }
 
     /**
@@ -169,6 +174,8 @@ class ImageController extends AbstractActionController
             ));
         }
 
+        $this->requestedVersion();
+
         // Check, clean and optimize and fill values according to the request.
         $this->_view = new ViewModel;
         $transform = $this->_cleanRequest($media);
@@ -184,7 +191,6 @@ class ImageController extends AbstractActionController
         // Now, process the requested transformation if needed.
         $imageUrl = '';
         $imagePath = '';
-        $version = $this->requestedVersion();
 
         // A quick check when there is no transformation.
         if ($transform['region']['feature'] == 'full'
@@ -295,7 +301,7 @@ class ImageController extends AbstractActionController
                 // Header for CORS, required for access of IIIF.
                 ->addHeaderLine('access-control-allow-origin', '*')
                 // Recommanded by feature "profileLinkHeader".
-                ->addHeaderLine('Link', version_compare($version, '3', '<')
+                ->addHeaderLine('Link', version_compare($this->version, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
                     : '<http://iiif.io/api/image/3/>;rel="profile"'
                 )
@@ -322,7 +328,7 @@ class ImageController extends AbstractActionController
                 // Header for CORS, required for access of IIIF.
                 ->addHeaderLine('access-control-allow-origin', '*')
                 // Recommanded by feature "profileLinkHeader".
-                ->addHeaderLine('Link', version_compare($version, '3', '<')
+                ->addHeaderLine('Link', version_compare($this->version, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
                     : '<http://iiif.io/api/image/3/>;rel="profile"'
                 )
@@ -832,24 +838,25 @@ class ImageController extends AbstractActionController
      *
      * @todo Factorize with MediaController::requestedVersion()
      *
-     * @return string|null
+     * @return string
      */
     protected function requestedVersion()
     {
         // Check the version from the url first.
-        $version = $this->params('version');
-        if ($version === '2' || $version === '3') {
-            return $version;
+        $this->version = $this->params('version');
+        if ($this->version === '2' || $this->version === '3') {
+            return $this->version;
         }
 
         $accept = $this->getRequest()->getHeaders()->get('Accept')->toString();
         if (strpos($accept, 'iiif.io/api/image/3/context.json')) {
-            return '3';
+            $this->version = '3';
+        } elseif (strpos($accept, 'iiif.io/api/image/2/context.json')) {
+            $this->version = '2';
+        } else {
+            $this->version = $this->settings()->get('imageserver_info_version', '2') ?: '2';
         }
-        if (strpos($accept, 'iiif.io/api/image/2/context.json')) {
-            return '2';
-        }
-        return null;
+        return $this->version;
     }
 
     protected function jsonError(\Exception $exception, $statusCode = 500)
