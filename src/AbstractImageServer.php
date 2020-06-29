@@ -134,6 +134,7 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
         // The size is checked against the region, not the source.
         switch ($args['size']['feature']) {
             case 'full':
+            case 'max':
                 $destinationWidth = $sourceWidth;
                 $destinationHeight = $sourceHeight;
                 break;

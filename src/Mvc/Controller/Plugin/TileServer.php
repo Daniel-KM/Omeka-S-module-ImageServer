@@ -61,7 +61,7 @@ class TileServer extends AbstractPlugin
 
         // Quick check of supported transformation of tiles.
         if (!in_array($transform['region']['feature'], ['regionByPx', 'full'])
-            || !in_array($transform['size']['feature'], ['sizeByW', 'sizeByH', 'sizeByWh', 'sizeByWhListed', 'full'])
+            || !in_array($transform['size']['feature'], ['sizeByW', 'sizeByH', 'sizeByWh', 'sizeByWhListed', 'full', 'max'])
         ) {
             return;
         }
@@ -297,6 +297,7 @@ class TileServer extends AbstractPlugin
                     break;
 
                 case 'full':
+                case 'max':
                     // TODO To be checked.
                     // Normalize the size, but they can be cropped.
                     $size['width'] = $region['width'];

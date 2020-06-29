@@ -194,7 +194,7 @@ class ImageController extends AbstractActionController
 
         // A quick check when there is no transformation.
         if ($transform['region']['feature'] == 'full'
-                && $transform['size']['feature'] == 'full'
+                && $transform['size']['feature'] == 'max'
                 && $transform['mirror']['feature'] == 'default'
                 && $transform['rotation']['feature'] == 'noRotation'
                 && $transform['quality']['feature'] == 'default'
@@ -209,7 +209,7 @@ class ImageController extends AbstractActionController
             $pretiled = $this->_useOmekaDerivative($media, $transform);
             if ($pretiled) {
                 // Check if a light transformation is needed.
-                if ($transform['size']['feature'] != 'full'
+                if ($transform['size']['feature'] != 'max'
                         || $transform['mirror']['feature'] != 'default'
                         || $transform['rotation']['feature'] != 'noRotation'
                         || $transform['quality']['feature'] != 'default'
@@ -272,7 +272,7 @@ class ImageController extends AbstractActionController
                             $args['region']['width'] = $pretiled['width'];
                             $args['region']['height'] = $pretiled['height'];
                         }
-                        $args['size']['feature'] = 'full';
+                        $args['size']['feature'] = 'max';
                         $imagePath = $this->_transformImage($args);
                     }
                     // No transformation.
@@ -490,8 +490,22 @@ class ImageController extends AbstractActionController
         // Determine the size.
 
         // Full image.
-        if ($size == 'full') {
-            $transform['size']['feature'] = 'full';
+        if ($size === 'full') {
+            // This value is not allowed in version 3.
+            if (version_compare($this->version, '3', '>=')) {
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                return null;
+            }
+            $transform['size']['feature'] = 'max';
+        }
+
+        // Max image (but below the max of the server).
+        // Note: Currently, the module doesn't set any max size, so max is full.
+        elseif ($size === 'max') {
+            $transform['size']['feature'] = 'max';
+        }
+        elseif ($size === '^max') {
+            $transform['size']['feature'] = 'max';
         }
 
         // "pct:x": sizeByPct
@@ -503,7 +517,7 @@ class ImageController extends AbstractActionController
             }
             // A quick check to avoid a possible transformation.
             if ($sizePercentage == 100) {
-                $transform['size']['feature'] = 'full';
+                $transform['size']['feature'] = 'max';
             }
             // Normal size.
             else {
@@ -525,7 +539,7 @@ class ImageController extends AbstractActionController
             if ($destinationWidth == $transform['region']['width']
                     && $destinationHeight == $transform['region']['width']
                 ) {
-                $transform['size']['feature'] = 'full';
+                $transform['size']['feature'] = 'max';
             }
             // Normal size.
             else {
@@ -556,7 +570,7 @@ class ImageController extends AbstractActionController
                             $imageSize = $this->imageSize($media, $imageType);
                             list($testWidth, $testHeight) = $imageSize ? array_values($imageSize) : [null, null];
                             if ($destinationWidth == $testWidth && $destinationHeight == $testHeight) {
-                                $transform['size']['feature'] = 'full';
+                                $transform['size']['feature'] = 'max';
                                 // Change the source file to avoid a transformation.
                                 // TODO Check the format?
                                 if ($imageType != 'original') {
@@ -732,7 +746,8 @@ class ImageController extends AbstractActionController
                 break;
 
             case 'full':
-                // Not possible to use a derivative, because the region is full.
+            case 'max':
+                // Not possible to use a derivative, because the region is max/full.
             default:
                 return null;
         }
