@@ -184,6 +184,7 @@ class ImageController extends AbstractActionController
         // Now, process the requested transformation if needed.
         $imageUrl = '';
         $imagePath = '';
+        $version = $this->requestedVersion();
 
         // A quick check when there is no transformation.
         if ($transform['region']['feature'] == 'full'
@@ -294,7 +295,10 @@ class ImageController extends AbstractActionController
                 // Header for CORS, required for access of IIIF.
                 ->addHeaderLine('access-control-allow-origin', '*')
                 // Recommanded by feature "profileLinkHeader".
-                ->addHeaderLine('Link', '<http://iiif.io/api/image/2/level2.json>;rel="profile"')
+                ->addHeaderLine('Link', version_compare($version, '3', '<')
+                    ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
+                    : '<http://iiif.io/api/image/3/>;rel="profile"'
+                )
                 ->addHeaderLine('Content-Type', $transform['format']['feature']);
 
             // Redirect (302/307) to the url of the file.
@@ -318,7 +322,10 @@ class ImageController extends AbstractActionController
                 // Header for CORS, required for access of IIIF.
                 ->addHeaderLine('access-control-allow-origin', '*')
                 // Recommanded by feature "profileLinkHeader".
-                ->addHeaderLine('Link', '<http://iiif.io/api/image/2/level2.json>;rel="profile"')
+                ->addHeaderLine('Link', version_compare($version, '3', '<')
+                    ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
+                    : '<http://iiif.io/api/image/3/>;rel="profile"'
+                )
                 ->addHeaderLine('Content-Type', $transform['format']['feature']);
 
             $response->setContent($output);

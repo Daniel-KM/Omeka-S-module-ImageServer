@@ -42,9 +42,9 @@ class IiifImageJsonLd extends AbstractPlugin
 
         $headers = $response->getHeaders();
 
-        if ($version === '3.0') {
+        if (version_compare($version, '3', '>=')) {
             $headers
-                ->addHeaderLine('Content-Type', 'Content-Type: application/ld+json;profile="http://iiif.io/api/image/3/context.json"', true);
+                ->addHeaderLine('Content-Type', 'application/ld+json;profile="http://iiif.io/api/image/3/context.json"', true);
         } else {
             // According to specification for 2.1, the response should be json,
             // except if client asks json-ld.
