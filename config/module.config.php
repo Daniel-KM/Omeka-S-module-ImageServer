@@ -131,11 +131,11 @@ return [
                             'constraints' => [
                                 'version' => '2|3',
                                 'id' => '[^\/]+',
-                                'region' => '.+',
-                                'size' => '.+',
-                                'rotation' => '.+',
-                                'quality' => '.+',
-                                'format' => '.+',
+                                'region' => '[^\/]+',
+                                'size' => '[^\/]+',
+                                'rotation' => '[^\/]+',
+                                'quality' => '[^\/]+',
+                                'format' => '[^\/]+',
                             ],
                             'defaults' => [
                                 'version' => $version,
