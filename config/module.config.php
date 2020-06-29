@@ -260,6 +260,11 @@ return [
             ],
         ],
     ],
+    'csv_import' => [
+        'media_ingester_adapter' => [
+            'tile' => MediaIngesterAdapter\TileMediaIngesterAdapter::class,
+        ],
+    ],
     'imageserver' => [
         'config' => [
             'imageserver_info_version' => '2',
