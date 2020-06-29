@@ -21,10 +21,12 @@ class TileFactory implements FactoryInterface
             throw new ConfigException('The tile dir is not defined.');
         }
 
+        $downloader = $services->get('Omeka\File\Downloader');
         $validator = $services->get('Omeka\File\Validator');
         $uploader = $services->get('Omeka\File\Uploader');
         $jobDispatcher = $services->get('Omeka\Job\Dispatcher');
         return new Tile(
+            $downloader,
             $validator,
             $uploader,
             $jobDispatcher

@@ -29,7 +29,7 @@ class Tiler extends AbstractJob
         $tiler = $services->get('ControllerPluginManager')->get('tiler');
         $result = $tiler($media);
 
-        $this->endJob($result);
+        $this->endJob($result, $sourcePath);
     }
 
     /**
@@ -39,7 +39,7 @@ class Tiler extends AbstractJob
      */
     protected function getMedia()
     {
-        // If no media, the default process may be not finished, so wait 120 sec.
+        // If no media, the default process may be not finished, so wait 180 sec.
         $mediaId = $this->getMediaIdViaSql();
         if (empty($mediaId)) {
             sleep(30);
@@ -54,7 +54,15 @@ class Tiler extends AbstractJob
                         sleep(30);
                         $mediaId = $this->getMediaIdViaSql();
                         if (empty($mediaId)) {
-                            return;
+                            sleep(30);
+                            $mediaId = $this->getMediaIdViaSql();
+                            if (empty($mediaId)) {
+                                sleep(30);
+                                $mediaId = $this->getMediaIdViaSql();
+                                if (empty($mediaId)) {
+                                    return;
+                                }
+                            }
                         }
                     }
                 }
@@ -76,7 +84,7 @@ class Tiler extends AbstractJob
         $jobId = (int) $this->job->getId();
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
         $sql = <<<SQL
-SELECT id FROM media WHERE data = '{"job":$jobId}' LIMIT 1
+SELECT id FROM media WHERE data = '{"job":$jobId}' LIMIT 1;
 SQL;
         return $connection->fetchColumn($sql);
     }
@@ -85,8 +93,9 @@ SQL;
      * Check if the media still exists and clean data of the media.
      *
      * @param array|null $result
+     * @param string $sourcePath
      */
-    protected function endJob($result = null)
+    protected function endJob($result = null, $sourcePath = null)
     {
         $mediaId = $this->getMediaIdViaSql();
 
@@ -102,12 +111,22 @@ SQL;
             return;
         }
 
+        if ($this->getArg('storeOriginal', true) && $sourcePath) {
+            $storeOriginal = '';
+        } else {
+            $storeOriginal = ', has_original = 0';
+            unlink($sourcePath);
+        }
+
         // Clean media data. They cannot be updated via api, so use a query.
         // TODO Use doctrine repository.
         $mediaId = (int) $mediaId;
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
         $sql = <<<SQL
-UPDATE media SET data = NULL WHERE id = $mediaId
+UPDATE media
+SET data = NULL
+$storeOriginal
+WHERE id = $mediaId;
 SQL;
         $connection->exec($sql);
 

@@ -3,6 +3,7 @@ namespace ImageServer\Media\Ingester;
 
 use Omeka\Api\Request;
 use Omeka\Entity\Media;
+use Omeka\File\Downloader;
 use Omeka\File\TempFile;
 use Omeka\File\Uploader;
 use Omeka\File\Validator;
@@ -10,11 +11,18 @@ use Omeka\Job\Dispatcher;
 use Omeka\Media\Ingester\IngesterInterface;
 use Omeka\Stdlib\ErrorStore;
 use Zend\Form\Element\File;
+use Zend\Form\Element\Url as UrlElement;
+use Zend\Uri\Http as HttpUri;
 use Zend\Validator\File\IsImage;
 use Zend\View\Renderer\PhpRenderer;
 
 class Tile implements IngesterInterface
 {
+    /**
+     * @var Downloader
+     */
+    protected $downloader;
+
     /**
      * @var Validator
      */
@@ -31,15 +39,18 @@ class Tile implements IngesterInterface
     protected $dispatcher;
 
     /**
+     * @param Downloader $downloader
      * @param Validator $validator
      * @param Uploader $uploader
      * @param Dispatcher $dispatcher
      */
     public function __construct(
+        Downloader $downloader,
         Validator $validator,
         Uploader $uploader,
         Dispatcher $dispatcher
     ) {
+        $this->downloader = $downloader;
         $this->validator = $validator;
         $this->uploader = $uploader;
         $this->dispatcher = $dispatcher;
@@ -56,27 +67,88 @@ class Tile implements IngesterInterface
     }
 
     /**
+     * Create a tiled image from a uri or a uploaded file (like core Url and
+     * Upload ingesters).
+     *
      * {@inheritDoc}
-     * @see \Omeka\Media\Ingester\IngesterInterface::ingest()
-     * @see \Omeka\Media\Ingester\Upload::ingest()
      */
     public function ingest(Media $media, Request $request, ErrorStore $errorStore)
     {
-        $data = $request->getContent();
-        $fileData = $request->getFileData();
-        if (!isset($fileData['tile'])) {
-            $errorStore->addError('error', 'No files were uploaded for tiling');
+        if ($request->getValue('ingest_url')) {
+            $this->ingestFromUrl($media, $request, $errorStore);
             return;
         }
 
+        $fileData = $request->getValue('fileData');
+        if (isset($fileData['tile'])) {
+            $this->ingestFromFile($media, $request, $errorStore);
+            return;
+        }
+
+        $errorStore->addError('error', 'No url and no file was submitted for tiling'); // @translate
+    }
+
+    /**
+     * Accepts the following non-prefixed keys (like core Url):
+     *
+     * + ingest_url: (required) The URL to ingest. The idea is that some URLs
+     *   contain sensitive data that should not be saved to the database, such
+     *   as private keys. To preserve the URL, remove sensitive data from the
+     *   URL and set it to o:source.
+     * + store_original: (optional, default true) Whether to store an original
+     *   file. This is helpful when you want the media to have thumbnails but do
+     *   not need the original file.
+     *
+     * @param Media $media
+     * @param Request $request
+     * @param ErrorStore $errorStore
+     * @see \Omeka\Media\Ingester\Url::ingest()
+     */
+    protected function ingestFromUrl(Media $media, Request $request, ErrorStore $errorStore)
+    {
+        $data = $request->getContent();
+        $uri = new HttpUri($data['ingest_url']);
+        if (!($uri->isValid() && $uri->isAbsolute())) {
+            $errorStore->addError('ingest_url', 'Invalid ingest URL'); // @translate
+            return;
+        }
+
+        $tempFile = $this->downloader->download($uri, $errorStore);
+        if (!$tempFile) {
+            return;
+        }
+
+        $tempFile->setSourceName($uri->getPath());
+        if (!array_key_exists('o:source', $data)) {
+            $media->setSource($uri);
+        }
+
+        if (!$this->validatorFileIsImage($tempFile, $errorStore)) {
+            return;
+        }
+
+        $this->mediaIngestFinalize($media, $request, $errorStore, $tempFile, 'url');
+    }
+
+    /**
+     * @param Media $media
+     * @param Request $request
+     * @param ErrorStore $errorStore
+     * @see \Omeka\Media\Ingester\Upload::ingest()
+     */
+    protected function ingestFromFile(Media $media, Request $request, ErrorStore $errorStore)
+    {
+        $data = $request->getContent();
+        $fileData = $request->getFileData();
+
         if (!isset($data['tile_index'])) {
-            $errorStore->addError('error', 'No tiling index was specified');
+            $errorStore->addError('error', 'No tiling index was specified'); // @translate
             return;
         }
 
         $index = $data['tile_index'];
         if (!isset($fileData['tile'][$index])) {
-            $errorStore->addError('error', 'No file uploaded for tiling for the specified index');
+            $errorStore->addError('error', 'No file uploaded for tiling for the specified index'); // @translate
             return;
         }
 
@@ -86,6 +158,10 @@ class Tile implements IngesterInterface
         }
 
         $tempFile->setSourceName($fileData['tile'][$index]['name']);
+        if (!array_key_exists('o:source', $data)) {
+            $media->setSource($fileData['file'][$index]['name']);
+        }
+
         if (!$this->validator->validate($tempFile, $errorStore)) {
             return;
         }
@@ -94,18 +170,50 @@ class Tile implements IngesterInterface
             return;
         }
 
+        $this->mediaIngestFinalize($media, $request, $errorStore, $tempFile, 'file');
+    }
+
+    /**
+     * @param Media $media
+     * @param Request $request
+     * @param ErrorStore $errorStore
+     * @param TempFile $tempFile
+     * @param string $type
+     * @see \Omeka\File\TempFile::mediaIngestFile()
+     */
+    protected function mediaIngestFinalize(
+        Media $media,
+        Request $request,
+        ErrorStore $errorStore,
+        TempFile $tempFile,
+        $type
+    ) {
+        $data = $request->getContent();
+
+        $storeOriginal = (!isset($data['store_original']) || $data['store_original']);
+        $storeThumbnails = true;
+        $deleteTempFile = true;
+        $hydrateFileMetadataOnStoreOriginalFalse = true;
+
         $media->setStorageId($tempFile->getStorageId());
-        $media->setExtension($tempFile->getExtension());
-        $media->setMediaType($tempFile->getMediaType());
-        $media->setSha256($tempFile->getSha256());
-        $hasThumbnails = $tempFile->storeThumbnails();
-        $media->setHasThumbnails($hasThumbnails);
-        $media->setHasOriginal(true);
-        if (!array_key_exists('o:source', $data)) {
-            $media->setSource($fileData['tile'][$index]['name']);
+        if ($storeOriginal || $hydrateFileMetadataOnStoreOriginalFalse) {
+            $media->setExtension($tempFile->getExtension());
+            $media->setMediaType($tempFile->getMediaType());
+            $media->setSha256($tempFile->getSha256());
+            $media->setSize($tempFile->getSize());
         }
+
+        if ($storeThumbnails) {
+            $hasThumbnails = $tempFile->storeThumbnails();
+            $media->setHasThumbnails($hasThumbnails);
+        }
+
+        // The original is temporary saved, and may be removed if the original
+        // is not wanted.
+        $media->setHasOriginal(true);
         $tempFile->storeOriginal();
-        if (file_exists($tempFile->getTempPath())) {
+
+        if (file_exists($tempFile->getTempPath()) && $deleteTempFile) {
             $tempFile->delete();
         }
 
@@ -119,27 +227,39 @@ class Tile implements IngesterInterface
         $args = [];
         $args['storageId'] = $media->getStorageId();
         $args['storagePath'] = $this->getStoragePath('original', $media->getFilename());
+        $args['storeOriginal'] = $storeOriginal;
+        $args['type'] = $type;
 
-        $dispatcher = $this->dispatcher;
-        $job = $dispatcher->dispatch(\ImageServer\Job\Tiler::class, $args);
+        $job = $this->dispatcher->dispatch(\ImageServer\Job\Tiler::class, $args);
 
         $media->setData(['job' => $job->getId()]);
     }
 
     public function form(PhpRenderer $view, array $options = [])
     {
+        $urlInput = new UrlElement('o:media[__index__][ingest_url]');
+        $urlInput
+            ->setOptions([
+                'label' => 'Either a URL', // @translate
+                'info' => 'A URL to the image.', // @translate
+            ])
+            ->setAttributes([
+                'id' => 'media-tile-ingest-url-__index__',
+                'required' => false,
+            ]);
         $fileInput = new File('tile[__index__]');
-        $fileInput->setOptions([
-            'label' => 'Upload image to tile in background', // @translate
-            'info' => $view->uploadLimit()
-                . ' ' . $view->translate('The tiling will be built in the background: check jobs.'),
-        ]);
-        $fileInput->setAttributes([
-            'id' => 'media-tile-input-__index__',
-            'required' => true,
-        ]);
-        $field = $view->formRow($fileInput);
-        return $field . '<input type="hidden" name="o:media[__index__][tile_index]" value="__index__">';
+        $fileInput
+            ->setOptions([
+                'label' => 'Or a file', // @translate
+                'info' => $view->uploadLimit(),
+            ])
+            ->setAttributes([
+                'id' => 'media-tile-input-__index__',
+                'required' => false,
+            ]);
+        return $view->formRow($urlInput)
+            . $view->formRow($fileInput)
+            . '<input type="hidden" name="o:media[__index__][tile_index]" value="__index__">';
     }
 
     /**
