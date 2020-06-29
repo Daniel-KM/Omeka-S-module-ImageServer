@@ -32,6 +32,18 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ])
 
             ->add([
+                'name' => 'imageserver_info_version_append',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Append the version to the url (to be set inside module.config.php currently)', // @translate
+                    'info' => 'If set, the version will be appended to the url of the server: "iiif-img/v3".', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_info_version_append',
+                ],
+            ])
+
+            ->add([
                 'name' => 'imageserver_info_rights',
                 'type' => Element\Select::class,
                 'options' => [

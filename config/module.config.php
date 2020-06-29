@@ -1,6 +1,16 @@
 <?php
 namespace ImageServer;
 
+// Write the default verseion ("2" or "3") here (and in iiif server if needed).
+if (!isset($defaultVersion)) {
+    $defaultVersion = '';
+}
+if (!isset($versionAppend)) {
+    $versionAppend = false;
+}
+// If the version is set here, the route will skip it.
+$version = $versionAppend ? '' : $defaultVersion;
+
 return [
     'view_manager' => [
         'template_path_stack' => [
@@ -90,6 +100,9 @@ return [
                                 // 'id' => '\d+',
                                 'id' => '[^\/]+',
                             ],
+                            'defauls' => [
+                                'version' => $version,
+                            ],
                         ],
                     ],
                     'info' => [
@@ -101,6 +114,7 @@ return [
                                 'id' => '[^\/]+',
                             ],
                             'defaults' => [
+                                'version' => $version,
                                 'action' => 'info',
                             ],
                         ],
@@ -124,6 +138,7 @@ return [
                                 'format' => '.+',
                             ],
                             'defaults' => [
+                                'version' => $version,
                                 'action' => 'bad',
                             ],
                         ],
@@ -155,6 +170,7 @@ return [
                                 'format' => 'jpg|png|gif|webp|tif|jp2|pdf',
                             ],
                             'defaults' => [
+                                'version' => $version,
                                 'action' => 'fetch',
                             ],
                         ],
@@ -186,6 +202,7 @@ return [
                             ],
                             'defaults' => [
                                 '__API__' => true,
+                                'version' => $version,
                             ],
                         ],
                     ],
@@ -199,6 +216,7 @@ return [
                             ],
                             'defaults' => [
                                 '__API__' => true,
+                                'version' => $version,
                                 'action' => 'info',
                             ],
                         ],
@@ -217,6 +235,7 @@ return [
                                 'format' => '.+',
                             ],
                             'defaults' => [
+                                'version' => $version,
                                 'action' => 'bad',
                             ],
                         ],
@@ -233,6 +252,7 @@ return [
                                 'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
                             ],
                             'defaults' => [
+                                'version' => $version,
                                 'action' => 'fetch',
                             ],
                         ],
@@ -280,6 +300,7 @@ return [
     'imageserver' => [
         'config' => [
             'imageserver_info_version' => '2',
+            'imageserver_info_version_append' => false,
             'imageserver_info_rights' => 'property_or_url',
             'imageserver_info_rights_property' => 'dcterms:license',
             'imageserver_info_rights_url' => '',
