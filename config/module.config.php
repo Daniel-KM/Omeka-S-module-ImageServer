@@ -163,7 +163,7 @@ return [
                                 // Old version 2.1.
                                 // 'size' => 'full|\d+,\d*|\d*,\d+|pct:\d+\.?\d*|!\d+,\d+',
                                 // New multi-version.
-                                'size' => 'full|\^?max|\^?\d+,|\^?,\d+|\^?pct:\d+\.?\d*|\^?!?\d+,\d+',
+                                'size' => 'full|(?:%5E|%5e|\^)?(?:max|\d+,|,\d+|pct:\d+\.?\d*|!?\d+,\d+)',
                                 'rotation' => '\!?(?:(?:[0-2]?[0-9]?[0-9]|3[0-5][0-9])(?:\.\d*)?|360)',
                                 'quality' => 'default|color|gray|bitonal',
                                 // May requires additional packages. Checked in controller.

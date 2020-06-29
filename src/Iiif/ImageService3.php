@@ -270,6 +270,10 @@ class ImageService3 extends AbstractResourceType
         return null;
     }
 
+    /**
+     * @link https://iiif.io/api/image/2.1/#profile-description
+     * @link https://iiif.io/api/image/3.0/#6-compliance-level-and-profile-document
+     */
     public function getExtraFeatures()
     {
         // See https://iiif.io/api/image/3/context.json.

@@ -370,6 +370,7 @@ class ImageController extends AbstractActionController
      * Check, clean and optimize the request for quicker transformation.
      *
      * @todo Move the maximum of checks in the Image Server.
+     * @todo Use the result to build the canonical link for the header.
      *
      * @param MediaRepresentation $media
      * @return array|null Array of cleaned requested image, else null.
@@ -489,8 +490,15 @@ class ImageController extends AbstractActionController
 
         // Determine the size.
 
+        // Manage the main difference between version 2 and 3.
+        $upscale = substr($size, 0, 1) === '^';
+        if ($upscale && version_compare($this->version, '3', '<')) {
+            $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for API version %s.'), $size, $this->version));
+            return null;
+        }
+
         // Full image.
-        if ($size === 'full') {
+        elseif ($size === 'full') {
             // This value is not allowed in version 3.
             if (version_compare($this->version, '3', '>=')) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
@@ -501,23 +509,25 @@ class ImageController extends AbstractActionController
 
         // Max image (but below the max of the server).
         // Note: Currently, the module doesn't set any max size, so max is full.
-        elseif ($size === 'max') {
-            $transform['size']['feature'] = 'max';
-        }
-        elseif ($size === '^max') {
+        elseif ($size === 'max' || $size === '^max') {
             $transform['size']['feature'] = 'max';
         }
 
         // "pct:x": sizeByPct
-        elseif (strpos($size, 'pct:') === 0) {
-            $sizePercentage = floatval(substr($size, 4));
-            if (empty($sizePercentage) || $sizePercentage > 100) {
+        elseif (strpos($size, 'pct:') === 0 || strpos($size, '^pct:') === 0) {
+            $sizePercentage = floatval(substr($size, $upscale ? 5 : 4));
+            if (empty($sizePercentage)) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
                 return null;
             }
             // A quick check to avoid a possible transformation.
             if ($sizePercentage == 100) {
                 $transform['size']['feature'] = 'max';
+            }
+            // Check strict upscale for version 3.
+            elseif (!$upscale && $sizePercentage > 100 && version_compare($this->version, '3', '>=')) {
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
+                return null;
             }
             // Normal size.
             else {
@@ -526,20 +536,28 @@ class ImageController extends AbstractActionController
             }
         }
 
-        // "!w,h": sizeByWh
-        elseif (strpos($size, '!') === 0) {
+        // "!w,h": sizeByWh (keep ratio).
+        elseif (strpos($size, '!') === 0 || strpos($size, '^!') === 0) {
             $pos = strpos($size, ',');
-            $destinationWidth = (int) substr($size, 1, $pos);
+            $destinationWidth = (int) substr($size, $upscale ? 2 : 1, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) || empty($destinationHeight)) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
                 return null;
             }
+
             // A quick check to avoid a possible transformation.
             if ($destinationWidth == $transform['region']['width']
-                    && $destinationHeight == $transform['region']['width']
+                    && $destinationHeight == $transform['region']['height']
                 ) {
                 $transform['size']['feature'] = 'max';
+            }
+            // Check strict upscale for version 3.
+            elseif (!$upscale && version_compare($this->version, '3', '>=')
+                && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
+            ) {
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
+                return null;
             }
             // Normal size.
             else {
@@ -552,10 +570,17 @@ class ImageController extends AbstractActionController
         // "w,h", "w," or ",h".
         else {
             $pos = strpos($size, ',');
-            $destinationWidth = (int) substr($size, 0, $pos);
+            $destinationWidth = (int) substr($size, $upscale ? 1 : 0, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) && empty($destinationHeight)) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                return null;
+            }
+
+            if (!$upscale && version_compare($this->version, '3', '>=')
+                && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
+            ) {
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
                 return null;
             }
 
