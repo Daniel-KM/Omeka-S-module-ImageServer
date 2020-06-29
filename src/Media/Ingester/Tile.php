@@ -178,57 +178,57 @@ class Tile implements IngesterInterface
      * @param ErrorStore $errorStore
      * @see \FileSideload\Media\Ingester\Sideload::ingest()
      */
-     protected function ingestFromLocalFile(Media $media, Request $request, ErrorStore $errorStore)
-     {
-         if (strlen($this->directory) < 2) {
-             $errorStore->addError('ingest_url', 'The local file should be in a configured directory'); // @translate
-             return;
-         }
+    protected function ingestFromLocalFile(Media $media, Request $request, ErrorStore $errorStore)
+    {
+        if (strlen($this->directory) < 2) {
+            $errorStore->addError('ingest_url', 'The local file should be in a configured directory'); // @translate
+            return;
+        }
 
-         $data = $request->getContent();
+        $data = $request->getContent();
 
-         // This check allows to use the same form for local and distant url.
-         if (strpos($data['ingest_url'], 'file://') === 0) {
-             $data['ingest_url'] = substr($data['ingest_url'], 7);
-         }
+        // This check allows to use the same form for local and distant url.
+        if (strpos($data['ingest_url'], 'file://') === 0) {
+            $data['ingest_url'] = substr($data['ingest_url'], 7);
+        }
 
-         $isAbsolutePathInsideDir = $this->directory && strpos($data['ingest_url'], $this->directory) === 0;
-         $filepath = $isAbsolutePathInsideDir
+        $isAbsolutePathInsideDir = $this->directory && strpos($data['ingest_url'], $this->directory) === 0;
+        $filepath = $isAbsolutePathInsideDir
              ? $data['ingest_url']
              : $this->directory . DIRECTORY_SEPARATOR . $data['ingest_url'];
-         $fileinfo = new \SplFileInfo($filepath);
-         $realPath = $this->verifyFile($fileinfo);
-         if (false === $realPath) {
-             $errorStore->addError('ingest_url', sprintf(
+        $fileinfo = new \SplFileInfo($filepath);
+        $realPath = $this->verifyFile($fileinfo);
+        if (false === $realPath) {
+            $errorStore->addError('ingest_url', sprintf(
                  'Cannot sideload file "%s". File does not exist or does not have sufficient permissions', // @translate
                  $filepath
              ));
-             return;
-         }
+            return;
+        }
 
-         $tempFile = $this->tempFileFactory->build();
-         $tempFile->setSourceName($data['ingest_url']);
-         if (!array_key_exists('o:source', $data)) {
-             $media->setSource($data['ingest_url']);
-         }
+        $tempFile = $this->tempFileFactory->build();
+        $tempFile->setSourceName($data['ingest_url']);
+        if (!array_key_exists('o:source', $data)) {
+            $media->setSource($data['ingest_url']);
+        }
 
-         // Copy the file to a temp path, so it is managed as a real temp file (#14).
-         copy($realPath, $tempFile->getTempPath());
+        // Copy the file to a temp path, so it is managed as a real temp file (#14).
+        copy($realPath, $tempFile->getTempPath());
 
-         if (!$this->validator->validate($tempFile, $errorStore)) {
-             return;
-         }
+        if (!$this->validator->validate($tempFile, $errorStore)) {
+            return;
+        }
 
-         if (!$this->validatorFileIsImage($tempFile, $errorStore)) {
-             return;
-         }
+        if (!$this->validatorFileIsImage($tempFile, $errorStore)) {
+            return;
+        }
 
-         $this->mediaIngestFinalize($media, $request, $errorStore, $tempFile, 'local');
+        $this->mediaIngestFinalize($media, $request, $errorStore, $tempFile, 'local');
 
-         if ($this->deleteFile) {
-             unlink($realPath);
-         }
-     }
+        if ($this->deleteFile) {
+            unlink($realPath);
+        }
+    }
 
     /**
      * @param Media $media

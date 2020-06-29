@@ -194,12 +194,12 @@ class ImageController extends AbstractActionController
 
         // A quick check when there is no transformation.
         if ($transform['region']['feature'] == 'full'
-                && $transform['size']['feature'] == 'max'
-                && $transform['mirror']['feature'] == 'default'
-                && $transform['rotation']['feature'] == 'noRotation'
-                && $transform['quality']['feature'] == 'default'
-                && $transform['format']['feature'] == $media->mediaType()
-            ) {
+            && $transform['size']['feature'] == 'max'
+            && $transform['mirror']['feature'] == 'default'
+            && $transform['rotation']['feature'] == 'noRotation'
+            && $transform['quality']['feature'] == 'default'
+            && $transform['format']['feature'] == $media->mediaType()
+        ) {
             $imageUrl = $media->originalUrl();
         }
 
@@ -210,11 +210,11 @@ class ImageController extends AbstractActionController
             if ($pretiled) {
                 // Check if a light transformation is needed.
                 if ($transform['size']['feature'] != 'max'
-                        || $transform['mirror']['feature'] != 'default'
-                        || $transform['rotation']['feature'] != 'noRotation'
-                        || $transform['quality']['feature'] != 'default'
-                        || $transform['format']['feature'] != $pretiled['media_type']
-                    ) {
+                    || $transform['mirror']['feature'] != 'default'
+                    || $transform['rotation']['feature'] != 'noRotation'
+                    || $transform['quality']['feature'] != 'default'
+                    || $transform['format']['feature'] != $pretiled['media_type']
+                ) {
                     $args = $transform;
                     $args['source']['filepath'] = $pretiled['filepath'];
                     $args['source']['media_type'] = $pretiled['media_type'];
@@ -245,11 +245,11 @@ class ImageController extends AbstractActionController
                     // Check if a light transformation is needed (all except
                     // extraction of the region).
                     if (($pretiled['overlap'] && !$pretiled['isSingleCell'])
-                            || $transform['mirror']['feature'] != 'default'
-                            || $transform['rotation']['feature'] != 'noRotation'
-                            || $transform['quality']['feature'] != 'default'
-                            || $transform['format']['feature'] != $pretiled['media_type']
-                        ) {
+                        || $transform['mirror']['feature'] != 'default'
+                        || $transform['rotation']['feature'] != 'noRotation'
+                        || $transform['quality']['feature'] != 'default'
+                        || $transform['format']['feature'] != $pretiled['media_type']
+                    ) {
                         $args = $transform;
                         $args['source']['filepath'] = $pretiled['filepath'];
                         $args['source']['media_type'] = $pretiled['media_type'];
@@ -438,10 +438,10 @@ class ImageController extends AbstractActionController
             $regionValues = array_map('floatval', $regionValues);
             // A quick check to avoid a possible transformation.
             if ($regionValues[0] == 0
-                    && $regionValues[1] == 0
-                    && $regionValues[2] == 100
-                    && $regionValues[3] == 100
-                ) {
+                && $regionValues[1] == 0
+                && $regionValues[2] == 100
+                && $regionValues[3] == 100
+            ) {
                 $transform['region']['feature'] = 'full';
                 // Next values may be needed for next parameters.
                 $transform['region']['x'] = 0;
@@ -469,10 +469,10 @@ class ImageController extends AbstractActionController
             $regionValues = array_map('intval', $regionValues);
             // A quick check to avoid a possible transformation.
             if ($regionValues[0] == 0
-                    && $regionValues[1] == 0
-                    && $regionValues[2] == $sourceWidth
-                    && $regionValues[3] == $sourceHeight
-                ) {
+                && $regionValues[1] == 0
+                && $regionValues[2] == $sourceWidth
+                && $regionValues[3] == $sourceHeight
+            ) {
                 $transform['region']['feature'] = 'full';
                 // Next values may be needed for next parameters.
                 $transform['region']['x'] = 0;
@@ -651,8 +651,8 @@ class ImageController extends AbstractActionController
 
             // A quick check to avoid a possible transformation.
             if (isset($transform['size']['width']) && empty($transform['size']['width'])
-                    || isset($transform['size']['height']) && empty($transform['size']['height'])
-                ) {
+                || isset($transform['size']['height']) && empty($transform['size']['height'])
+            ) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), $size));
                 return null;
             }
