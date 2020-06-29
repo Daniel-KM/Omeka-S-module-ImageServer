@@ -694,8 +694,9 @@ class ImageController extends AbstractActionController
                 break;
 
             case 'sizeByPct':
+                // TODO Check the height too? Anyway, it requires to update the percent in $transform (percent x source width / derivative width).
                 if ($transform['size']['percentage'] <= ($derivativeWidth * 100 / $transform['source']['width'])) {
-                    $useDerivativePath = true;
+                    // $useDerivativePath = true;
                 }
                 break;
 
