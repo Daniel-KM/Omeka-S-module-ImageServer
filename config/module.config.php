@@ -56,6 +56,10 @@ return [
         'routes' => [
             // @todo It is recommended to use a true identifier (ark, urn…], not an internal id.
 
+            // The Api version 2 and 3 are supported via the optional "/version".
+            // When version is not indicated in url, the default version is the one set in headers, else
+            // via the setting "imageserver_manifest_version".
+
             // @link http://iiif.io/api/image/2.0
             // @link http://iiif.io/api/image/3.0
             // Image          {scheme}://{server}{/prefix}/{identifier}
@@ -78,8 +82,9 @@ return [
                     'id' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id',
+                            'route' => '[/v:version]/:id',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                             ],
                         ],
@@ -87,8 +92,9 @@ return [
                     'info' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id/info.json',
+                            'route' => '[/v:version]/:id/info.json',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                             ],
                             'defaults' => [
@@ -104,8 +110,9 @@ return [
                     'media-bad' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id/:region/:size/:rotation/:quality:.:format',
+                            'route' => '[/v:version]/:id/:region/:size/:rotation/:quality:.:format',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                                 'region' => '.+',
                                 'size' => '.+',
@@ -128,8 +135,9 @@ return [
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id/:region/:size/:rotation/:quality:.:format',
+                            'route' => '[/v:version]/:id/:region/:size/:rotation/:quality:.:format',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                                 'region' => 'full|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
                                 // Version 2.0 allows "max", but version 3.0 rejects "full".
@@ -171,8 +179,9 @@ return [
                     'id' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id',
+                            'route' => '[/v:version]/:id',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                             ],
                             'defaults' => [
@@ -183,8 +192,9 @@ return [
                     'info' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id/info.json',
+                            'route' => '[/v:version]/:id/info.json',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                             ],
                             'defaults' => [
@@ -200,8 +210,9 @@ return [
                     'media-bad' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id:.:format',
+                            'route' => '[/v:version]/:id:.:format',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                                 'format' => '.+',
                             ],
@@ -215,8 +226,9 @@ return [
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '/:id:.:format',
+                            'route' => '[/v:version]/:id:.:format',
                             'constraints' => [
+                                'version' => '2|3',
                                 'id' => '\d+',
                                 'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
                             ],
