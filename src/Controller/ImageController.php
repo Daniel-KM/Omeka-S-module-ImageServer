@@ -859,6 +859,6 @@ class ImageController extends AbstractActionController
         $view = new ViewModel;
         return $view
             ->setTemplate('image-server/image/error')
-            ->setVariable($exception->getMessage());
+            ->setVariable('message', $exception->getMessage());
     }
 }

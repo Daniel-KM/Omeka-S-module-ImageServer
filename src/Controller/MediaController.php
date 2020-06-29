@@ -248,6 +248,6 @@ class MediaController extends AbstractActionController
         $view = new ViewModel;
         return $view
             ->setTemplate('image-server/media/error')
-            ->setVariable($exception->getMessage());
+            ->setVariable('message', $exception->getMessage());
     }
 }
