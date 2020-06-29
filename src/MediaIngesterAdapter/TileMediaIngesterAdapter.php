@@ -9,9 +9,6 @@ class TileMediaIngesterAdapter implements MediaIngesterAdapterInterface
     {
         $mediaJson = [];
         $mediaJson['ingest_url'] = $mediaDatum;
-        // TODO Support local files (sideload).
-        // $mediaJson['tile'] = $mediaDatum;
-        // $mediaJson['tile_index'] = $mediaDatum;
         return $mediaJson;
     }
 }

@@ -5,6 +5,7 @@ use Omeka\Api\Request;
 use Omeka\Entity\Media;
 use Omeka\File\Downloader;
 use Omeka\File\TempFile;
+use Omeka\File\TempFileFactory;
 use Omeka\File\Uploader;
 use Omeka\File\Validator;
 use Omeka\Job\Dispatcher;
@@ -24,14 +25,29 @@ class Tile implements IngesterInterface
     protected $downloader;
 
     /**
-     * @var Validator
-     */
-    protected $validator;
-
-    /**
      * @var Uploader
      */
     protected $uploader;
+
+    /**
+     * @var string
+     */
+    protected $directory;
+
+    /**
+     * @var bool
+     */
+    protected $deleteFile;
+
+    /**
+     * @var TempFileFactory
+     */
+    protected $tempFileFactory;
+
+    /**
+     * @var Validator
+     */
+    protected $validator;
 
     /**
      * @var Dispatcher
@@ -40,19 +56,33 @@ class Tile implements IngesterInterface
 
     /**
      * @param Downloader $downloader
-     * @param Validator $validator
      * @param Uploader $uploader
+     * @param string $directory
+     * @param bool $deleteFile
+     * @param TempFileFactory $tempFileFactory
+     * @param Validator $validator
      * @param Dispatcher $dispatcher
      */
     public function __construct(
         Downloader $downloader,
-        Validator $validator,
         Uploader $uploader,
+        $directory,
+        $deleteFile,
+        TempFileFactory $tempFileFactory,
+        Validator $validator,
         Dispatcher $dispatcher
     ) {
+        // For url.
         $this->downloader = $downloader;
-        $this->validator = $validator;
+        // For file via form.
         $this->uploader = $uploader;
+        // From module FileSideload.
+        // Only work on the resolved real directory path.
+        $this->directory = realpath($directory);
+        $this->deleteFile = $deleteFile;
+        $this->tempFileFactory = $tempFileFactory;
+        // Process.
+        $this->validator = $validator;
         $this->dispatcher = $dispatcher;
     }
 
@@ -74,8 +104,14 @@ class Tile implements IngesterInterface
      */
     public function ingest(Media $media, Request $request, ErrorStore $errorStore)
     {
-        if ($request->getValue('ingest_url')) {
-            $this->ingestFromUrl($media, $request, $errorStore);
+        // Check if the url is a local path.
+        $ingestUrl = $request->getValue('ingest_url');
+        if ($ingestUrl) {
+            if (strpos($ingestUrl, 'https://') === 0 || strpos($ingestUrl, 'http://') === 0) {
+                $this->ingestFromUrl($media, $request, $errorStore);
+                return;
+            }
+            $this->ingestFromLocalFile($media, $request, $errorStore);
             return;
         }
 
@@ -129,6 +165,70 @@ class Tile implements IngesterInterface
 
         $this->mediaIngestFinalize($media, $request, $errorStore, $tempFile, 'url');
     }
+
+    /**
+     * Accepts the following non-prefixed keys (mostly like module Sideload,
+     * except the name of the key):
+     *
+     * + ingest_url: (required) The filename to ingest.
+     * + store_original: (optional, default true) Store the original file?
+     *
+     * @param Media $media
+     * @param Request $request
+     * @param ErrorStore $errorStore
+     * @see \FileSideload\Media\Ingester\Sideload::ingest()
+     */
+     protected function ingestFromLocalFile(Media $media, Request $request, ErrorStore $errorStore)
+     {
+         if (strlen($this->directory) < 2) {
+             $errorStore->addError('ingest_url', 'The local file should be in a configured directory'); // @translate
+             return;
+         }
+
+         $data = $request->getContent();
+
+         // This check allows to use the same form for local and distant url.
+         if (strpos($data['ingest_url'], 'file://') === 0) {
+             $data['ingest_url'] = substr($data['ingest_url'], 7);
+         }
+
+         $isAbsolutePathInsideDir = $this->directory && strpos($data['ingest_url'], $this->directory) === 0;
+         $filepath = $isAbsolutePathInsideDir
+             ? $data['ingest_url']
+             : $this->directory . DIRECTORY_SEPARATOR . $data['ingest_url'];
+         $fileinfo = new \SplFileInfo($filepath);
+         $realPath = $this->verifyFile($fileinfo);
+         if (false === $realPath) {
+             $errorStore->addError('ingest_url', sprintf(
+                 'Cannot sideload file "%s". File does not exist or does not have sufficient permissions', // @translate
+                 $filepath
+             ));
+             return;
+         }
+
+         $tempFile = $this->tempFileFactory->build();
+         $tempFile->setSourceName($data['ingest_url']);
+         if (!array_key_exists('o:source', $data)) {
+             $media->setSource($data['ingest_url']);
+         }
+
+         // Copy the file to a temp path, so it is managed as a real temp file (#14).
+         copy($realPath, $tempFile->getTempPath());
+
+         if (!$this->validator->validate($tempFile, $errorStore)) {
+             return;
+         }
+
+         if (!$this->validatorFileIsImage($tempFile, $errorStore)) {
+             return;
+         }
+
+         $this->mediaIngestFinalize($media, $request, $errorStore, $tempFile, 'local');
+
+         if ($this->deleteFile) {
+             unlink($realPath);
+         }
+     }
 
     /**
      * @param Media $media
@@ -241,7 +341,7 @@ class Tile implements IngesterInterface
         $urlInput
             ->setOptions([
                 'label' => 'Either a URL', // @translate
-                'info' => 'A URL to the image.', // @translate
+                'info' => 'A URL to the image. Prefix it with "file://" for a local file managed via module Sideload', // @translate
             ])
             ->setAttributes([
                 'id' => 'media-tile-ingest-url-__index__',
@@ -312,5 +412,39 @@ class Tile implements IngesterInterface
             }
         }
         return $result;
+    }
+
+    /**
+     * Verify the passed file.
+     *
+     * Working off the "real" base directory and "real" filepath: both must
+     * exist and have sufficient permissions; the filepath must begin with the
+     * base directory path to avoid problems with symlinks; the base directory
+     * must be server-writable to delete the file; and the file must be a
+     * readable regular file.
+     *
+     * @param \SplFileInfo $fileinfo
+     * @return string|false The real file path or false if the file is invalid
+     * @see \FileSideload\Media\Ingester\Sideload::verifyFile()
+     */
+    public function verifyFile(\SplFileInfo $fileinfo)
+    {
+        if (false === $this->directory) {
+            return false;
+        }
+        $realPath = $fileinfo->getRealPath();
+        if (false === $realPath) {
+            return false;
+        }
+        if (0 !== strpos($realPath, $this->directory)) {
+            return false;
+        }
+        if ($this->deleteFile && !$fileinfo->getPathInfo()->isWritable()) {
+            return false;
+        }
+        if (!$fileinfo->isFile() || !$fileinfo->isReadable()) {
+            return false;
+        }
+        return $realPath;
     }
 }
