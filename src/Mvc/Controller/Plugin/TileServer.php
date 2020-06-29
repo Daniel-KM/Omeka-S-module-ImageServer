@@ -276,6 +276,10 @@ class TileServer extends AbstractPlugin
                     }
                     break;
 
+                case 'sizeByConfinedWh':
+                    // TODO Manage sizeByConfinedWh by tile server.
+                    break;
+
                 case 'sizeByWh':
                 case 'sizeByWhListed':
                     // TODO To improve.

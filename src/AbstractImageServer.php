@@ -168,6 +168,8 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
                 if ($args['size']['height'] > $sourceHeight) {
                     $args['size']['height'] = $sourceHeight;
                 }
+                // no break.
+            case 'sizeByConfinedWh':
                 // Check ratio to find best fit.
                 $destinationHeight = $args['size']['width'] * $sourceHeight / $sourceWidth;
                 if ($destinationHeight > $args['size']['height']) {
@@ -185,7 +187,12 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
         }
 
         // Final generic checks for size.
-        if (empty($destinationWidth) || empty($destinationHeight)) {
+        // In version 2, size 0 is not allowed, but in version 3, minimum size is 1.
+        if (version_compare($args['version'], '3', '<')) {
+            if (empty($destinationWidth) || empty($destinationHeight)) {
+                return;
+            }
+        } elseif ($destinationWidth < 1 || $destinationHeight < 1) {
             return;
         }
 

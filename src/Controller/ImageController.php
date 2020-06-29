@@ -379,6 +379,8 @@ class ImageController extends AbstractActionController
     {
         $transform = [];
 
+        $transform['version'] = $this->version;
+
         $transform['source']['filepath'] = $this->_getImagePath($media, 'original');
         $transform['source']['media_type'] = $media->mediaType();
 
@@ -491,8 +493,9 @@ class ImageController extends AbstractActionController
         // Determine the size.
 
         // Manage the main difference between version 2 and 3.
-        $upscale = substr($size, 0, 1) === '^';
-        if ($upscale && version_compare($this->version, '3', '<')) {
+        $upscale = mb_substr($size, 0, 1) === '^';
+        $versionIsGreaterOrEqual3 = version_compare($this->version, '3', '>=');
+        if ($upscale && !$versionIsGreaterOrEqual3) {
             $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for API version %s.'), $size, $this->version));
             return null;
         }
@@ -500,7 +503,7 @@ class ImageController extends AbstractActionController
         // Full image.
         elseif ($size === 'full') {
             // This value is not allowed in version 3.
-            if (version_compare($this->version, '3', '>=')) {
+            if ($versionIsGreaterOrEqual3) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
                 return null;
             }
@@ -525,7 +528,7 @@ class ImageController extends AbstractActionController
                 $transform['size']['feature'] = 'max';
             }
             // Check strict upscale for version 3.
-            elseif (!$upscale && $sizePercentage > 100 && version_compare($this->version, '3', '>=')) {
+            elseif (!$upscale && $sizePercentage > 100 && $versionIsGreaterOrEqual3) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
                 return null;
             }
@@ -536,7 +539,13 @@ class ImageController extends AbstractActionController
             }
         }
 
-        // "!w,h": sizeByWh (keep ratio).
+        // Warning: "sizeByWh" has not the same meaning in api 2 and api 3.
+        // In api 2, it preserves aspect ratio, but not in api 3 (use
+        // "sizeByConfinedWh" instead).
+        // Anyway, it's just used as an internal convention here, only to have
+        // the same meaning in image server.
+
+        // "!w,h": sizeByWh / sizeByConfinedWh (keep ratio).
         elseif (strpos($size, '!') === 0 || strpos($size, '^!') === 0) {
             $pos = strpos($size, ',');
             $destinationWidth = (int) substr($size, $upscale ? 2 : 1, $pos);
@@ -547,17 +556,23 @@ class ImageController extends AbstractActionController
             }
 
             // A quick check to avoid a possible transformation.
-            if ($destinationWidth == $transform['region']['width']
-                    && $destinationHeight == $transform['region']['height']
-                ) {
+            if (($destinationWidth >= $transform['region']['width'] && $destinationHeight == $transform['region']['height'])
+                || ($destinationWidth == $transform['region']['width'] && $destinationHeight >= $transform['region']['height'])
+            ) {
                 $transform['size']['feature'] = 'max';
             }
             // Check strict upscale for version 3.
-            elseif (!$upscale && version_compare($this->version, '3', '>=')
+            elseif (!$upscale && $versionIsGreaterOrEqual3
                 && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
             ) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
                 return null;
+            }
+            // Upscaled size.
+            elseif ($destinationWidth > $transform['region']['width'] && $destinationHeight > $transform['region']['height']) {
+                $transform['size']['feature'] = 'sizeByConfinedWh';
+                $transform['size']['width'] = $destinationWidth;
+                $transform['size']['height'] = $destinationHeight;
             }
             // Normal size.
             else {
@@ -577,7 +592,7 @@ class ImageController extends AbstractActionController
                 return null;
             }
 
-            if (!$upscale && version_compare($this->version, '3', '>=')
+            if (!$upscale && $versionIsGreaterOrEqual3
                 && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
             ) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
@@ -752,6 +767,7 @@ class ImageController extends AbstractActionController
                 break;
 
             case 'sizeByWh':
+            case 'sizeByConfinedWh':
             case 'sizeByWhListed':
             case 'sizeByForcedWh':
                 $constraintW = $transform['size']['width'];
@@ -802,6 +818,8 @@ class ImageController extends AbstractActionController
      */
     protected function _usePreTiled(MediaRepresentation $media, $transform)
     {
+        // TODO Fix the use of pre-tiled images with an arbitrary size.
+        return null;
         $tileInfo = $this->tileInfo($media);
         if ($tileInfo) {
             return $this->tileServer($tileInfo, $transform);
