@@ -398,13 +398,31 @@ class ImageController extends AbstractActionController
         // Determine the region.
 
         // Full image.
-        if ($region == 'full') {
+        // Manage the case where the source and requested images are square too.
+        // TODO Square is not supported by 2.0, only by 2.1, but the iiif validator bypasses it.
+        if ($region == 'full' || ($region === 'square' && $sourceWidth === $sourceHeight)) {
             $transform['region']['feature'] = 'full';
             // Next values may be needed for next parameters.
             $transform['region']['x'] = 0;
             $transform['region']['y'] = 0;
             $transform['region']['width'] = $sourceWidth;
             $transform['region']['height'] = $sourceHeight;
+        }
+
+        // Square image.
+        elseif ($region == 'square') {
+            $transform['region']['feature'] = 'regionByPx';
+            if ($sourceWidth > $sourceHeight) {
+                $transform['region']['x'] = (int) (($sourceWidth - $sourceHeight) / 2);
+                $transform['region']['y'] = 0;
+                $transform['region']['width'] = $sourceHeight;
+                $transform['region']['height'] = $sourceHeight;
+            } else {
+                $transform['region']['x'] = 0;
+                $transform['region']['y'] = (int) (($sourceHeight - $sourceWidth) / 2);
+                $transform['region']['width'] = $sourceWidth;
+                $transform['region']['height'] = $sourceWidth;
+            }
         }
 
         // "pct:x,y,w,h": regionByPct

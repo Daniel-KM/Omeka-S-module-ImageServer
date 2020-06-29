@@ -157,7 +157,7 @@ return [
                             'constraints' => [
                                 'version' => '2|3',
                                 'id' => '[^\/]+',
-                                'region' => 'full|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
+                                'region' => 'full|square|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
                                 // Version 2.0 allows "max", but version 3.0 rejects "full".
                                 // Version 3.0 adds upscalling: "^max", "^w,", "^,h", "^pct:n"; "^w,h", and "^!w,h".
                                 // Old version 2.1.
