@@ -57,6 +57,7 @@ return [
         'factories' => [
             'iiifInfo2' => Service\ViewHelper\IiifInfo2Factory::class,
             'iiifInfo3' => Service\ViewHelper\IiifInfo3Factory::class,
+            'tileInfo' => Service\ViewHelper\TileInfoFactory::class,
         ],
     ],
     'form_elements' => [
