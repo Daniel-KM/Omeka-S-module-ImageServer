@@ -16,7 +16,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
     {
         $this
             ->add([
-                'name' => 'imageserver_info_version',
+                'name' => 'imageserver_info_default_version',
                 'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Default IIIF api version (info)', // @translate
@@ -27,7 +27,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_info_version',
+                    'id' => 'imageserver_info_default_version',
                 ],
             ])
 

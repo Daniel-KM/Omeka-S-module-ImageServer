@@ -66,11 +66,9 @@ return [
         // In order to use clean urls, the identifier "id" can be any string without "/", not only Omeka id.
         // A specific config file is used is used to manage identifiers with "/", like arks.
         'routes' => [
-            // @todo It is recommended to use a true identifier (ark, urn…], not an internal id.
-
             // The Api version 2 and 3 are supported via the optional "/version".
             // When version is not indicated in url, the default version is the one set in headers, else
-            // via the setting "imageserver_manifest_version".
+            // via the setting "imageserver_manifest_version_default".
 
             // @link http://iiif.io/api/image/2.0
             // @link http://iiif.io/api/image/3.0
@@ -299,7 +297,7 @@ return [
     ],
     'imageserver' => [
         'config' => [
-            'imageserver_info_version' => '2',
+            'imageserver_info_default_version' => '2',
             'imageserver_info_version_append' => false,
             'imageserver_info_rights' => 'property_or_url',
             'imageserver_info_rights_property' => 'dcterms:license',

@@ -56,7 +56,7 @@ Object|null
         $view = $this->getView();
 
         if (is_null($version)) {
-            $version = $view->setting('imageserver_info_version', '2');
+            $version = $view->setting('imageserver_info_default_version', '2');
         } else {
             $version = $version === '2' ? '2' : '3';
         }

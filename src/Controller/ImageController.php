@@ -930,7 +930,7 @@ class ImageController extends AbstractActionController
         } elseif (strpos($accept, 'iiif.io/api/image/2/context.json')) {
             $this->version = '2';
         } else {
-            $this->version = $this->settings()->get('imageserver_info_version', '2') ?: '2';
+            $this->version = $this->settings()->get('imageserver_info_default_version', '2') ?: '2';
         }
         return $this->version;
     }
