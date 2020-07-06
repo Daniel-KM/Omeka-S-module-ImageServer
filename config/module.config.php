@@ -134,21 +134,6 @@ return [
                             ],
                         ],
                     ],
-                    'info' => [
-                        'type' => \Zend\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => "[/v:version]/$prefix:id/info.json",
-                            'constraints' => [
-                                'version' => '2|3',
-                                'prefix' => $constraintPrefix,
-                                'id' => '[^\/]+',
-                            ],
-                            'defaults' => [
-                                'version' => $version,
-                                'action' => 'info',
-                            ],
-                        ],
-                    ],
                     // This route is a garbage collector that allows to return an error 400 or 501 to
                     // invalid or not implemented requests, as required by specification.
                     // This route should be set before the imageserver/media in order to be
@@ -171,6 +156,21 @@ return [
                             'defaults' => [
                                 'version' => $version,
                                 'action' => 'bad',
+                            ],
+                        ],
+                    ],
+                    'info' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => "[/v:version]/$prefix:id/info.json",
+                            'constraints' => [
+                                'version' => '2|3',
+                                'prefix' => $constraintPrefix,
+                                'id' => '[^\/]+',
+                            ],
+                            'defaults' => [
+                                'version' => $version,
+                                'action' => 'info',
                             ],
                         ],
                     ],
@@ -239,22 +239,6 @@ return [
                             ],
                         ],
                     ],
-                    'info' => [
-                        'type' => \Zend\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => "[/v:version]/$prefix:id/info.json",
-                            'constraints' => [
-                                'version' => '2|3',
-                                'prefix' => $constraintPrefix,
-                                'id' => '[^\/]+',
-                            ],
-                            'defaults' => [
-                                '__API__' => true,
-                                'version' => $version,
-                                'action' => 'info',
-                            ],
-                        ],
-                    ],
                     // This route is a garbage collector that allows to return an error 400 or 501 to
                     // invalid or not implemented requests, as required by specification.
                     // This route should be set before the mediaserver/media in order to be
@@ -272,6 +256,22 @@ return [
                             'defaults' => [
                                 'version' => $version,
                                 'action' => 'bad',
+                            ],
+                        ],
+                    ],
+                    'info' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => "[/v:version]/$prefix:id/info.json",
+                            'constraints' => [
+                                'version' => '2|3',
+                                'prefix' => $constraintPrefix,
+                                'id' => '[^\/]+',
+                            ],
+                            'defaults' => [
+                                '__API__' => true,
+                                'version' => $version,
+                                'action' => 'info',
                             ],
                         ],
                     ],
