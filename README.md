@@ -1,7 +1,6 @@
 Image Server (module for Omeka S)
 =================================
 
-[![Build Status](https://travis-ci.org/Daniel-KM/Omeka-S-module-ImageServer.svg?branch=master)](https://travis-ci.org/Daniel-KM/Omeka-S-module-ImageServer)
 
 [Image Server] is a module for [Omeka S] that integrates the [IIIF specifications]
 and a simple image server (similar to a basic [IIP Image]) to allow to process
@@ -25,15 +24,16 @@ specific viewer or the [Universal Viewer], a widget that can display books,
 images, maps, audio, movies, pdf, 3D, and anything else as long as the
 appropriate extension is installed.
 
-This [Omeka S] module is a rewrite of the [Universal Viewer plugin for Omeka] by
-[BibLibre] with the same features as the original plugin, but separated into two
-modules (the Image server and the widget Universal Viewer). It integrates the
-tiler [Zoomify] that was used the plugin [OpenLayers Zoom] for [Omeka Classic]
-and another tiler to support the [Deep Zoom Image] tile format.
-
 The IIIF manifests can be displayed with many viewers, the integrated [OpenSeadragon],
 the [Universal Viewer], the advanced [Mirador], or the ligher and themable [Diva],
 or any other IIIF compatible viewer.
+
+This [Omeka S] module is a rewrite of the [Universal Viewer plugin for Omeka]
+initially done by [BibLibre]. It has the same features as the original plugin,
+but separated into three modules (the IIIF server, the image server and the
+widget Universal Viewer). It integrates the tiler [Zoomify] that was used the
+plugin [OpenLayers Zoom] for [Omeka Classic] and another tiler to support the
+[Deep Zoom Image] tile format.
 
 
 Installation
@@ -172,6 +172,11 @@ The image server has two roles.
   The tiles are created via a background job from the media "Tile" (in item edit
   view).
 
+  The tiles are created when the media "Tile" is used. The source can be an
+  uploaded file, a url or a local file (prepended with "file://" in the form,
+  and requires the module [File Sideload] to be installed). They can be created via
+  the modules [CSV Import] and [Bulk Import] too.
+
   The tiles can be created in bulk via a job, that can be run via a button in
   the config form of the module.
 
@@ -201,8 +206,10 @@ TODO / Bugs
 - Support curl when allow_url_fopen and allow_url_include are forbidden.
 - Automatically manage pdf as a list of canvas and images (extract size and
   page number, then manage it by the image server)
-- Support a different route for iiif version 2 and iiif version 3, plus the
-  default one.
+- Remove the specific choice of the processor and use the Omeka one (gd/imagemagick/imagick)
+- Adapt the info.json to the image processor.
+- Add the canonical link header.
+- Use the tiled images when available for arbitrary size request.
 
 See module [Iiif Server].
 
@@ -288,6 +295,9 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [OpenLayers]: https://openlayers.org/
 [threejs]: https://threejs.org
 [Archive Repertory]: https://github.com/Daniel-KM/Omeka-S-module-ArchiveRepertory
+[CSV Import]: https://github.com/omeka-s-modules/CSVImport
+[File Sideload]: https://github.com/omeka-s-modules/FileSideload
+[Bulk Import]: https://github.com/Daniel-KM/Omeka-S-module-BulkImport
 [Deepzoom library]: https://github.com/Daniel-KM/LibraryDeepzoom
 [Zoomify library]: https://github.com/Daniel-KM/LibraryZoomify
 [Deepzoom]: https://github.com/jeremytubbs/deepzoom
