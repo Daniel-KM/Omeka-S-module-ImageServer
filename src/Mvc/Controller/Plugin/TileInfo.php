@@ -73,7 +73,7 @@ class TileInfo extends AbstractPlugin
     {
         // Quick check for possible issue when used outside of the Image Server.
         if (strpos($media->mediaType(), 'image/') !== 0) {
-            return;
+            return null;
         }
 
         $services = $media->getServiceLocator();
@@ -142,6 +142,8 @@ class TileInfo extends AbstractPlugin
                 . DIRECTORY_SEPARATOR . 'ImageProperties.xml';
             return $tilingData;
         }
+
+        return null;
     }
 
     /**
@@ -154,7 +156,7 @@ class TileInfo extends AbstractPlugin
     {
         $xml = simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
         if ($xml === false) {
-            return;
+            return null;
         }
         $data = json_encode($xml);
         $data = json_decode($data, true);
@@ -213,7 +215,7 @@ class TileInfo extends AbstractPlugin
     {
         $xml = simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
         if ($xml === false) {
-            return;
+            return null;
         }
         $properties = $xml->attributes();
         $properties = reset($properties);

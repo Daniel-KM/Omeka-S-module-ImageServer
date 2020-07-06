@@ -32,7 +32,6 @@ namespace ImageServer\Iiif;
 use IiifServer\Iiif\AbstractResourceType;
 use IiifServer\Iiif\TraitRights;
 use Omeka\Api\Representation\MediaRepresentation;
-use ImageServer\Mvc\Controller\Plugin\TileInfo;
 
 /**
  *@link https://iiif.io/api/image/3.0/
@@ -84,6 +83,11 @@ class ImageService3 extends AbstractResourceType
     ];
 
     /**
+     * @var \ImageServer\Mvc\Controller\Plugin\TileInfo
+     */
+    protected $tileInfo;
+
+    /**
      * @var \Omeka\Api\Representation\MediaRepresentation
      */
     protected $resource;
@@ -91,6 +95,10 @@ class ImageService3 extends AbstractResourceType
     public function __construct(MediaRepresentation $resource, array $options = null)
     {
         parent::__construct($resource, $options);
+
+        $plugins = $this->resource->getServiceLocator()->get('ControllerPluginManager');
+        $this->tileInfo = $plugins->get('tileInfo');
+
         // TODO Use subclass to manage image or media. Currently, only image.
         $this->initImage();
     }
@@ -180,8 +188,8 @@ class ImageService3 extends AbstractResourceType
         $tiles = [];
 
         // TODO Use a standard json-serializable TileInfo.
-        $tileInfo = new TileInfo();
-        $tilingData = $tileInfo($this->resource);
+        $helper = $this->tileInfo;
+        $tilingData = $helper($this->resource);
         if ($tilingData) {
             $iiifTileInfo = new Tile($this->resource, ['tilingData' => $tilingData]);
             if ($iiifTileInfo->hasTilingInfo()) {

@@ -30,7 +30,6 @@
 
 namespace ImageServer\View\Helper;
 
-use ImageServer\Mvc\Controller\Plugin\TileInfo;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\TempFileFactory;
 use Zend\View\Helper\AbstractHelper;
@@ -89,8 +88,7 @@ class IiifInfo2 extends AbstractHelper
             $imageUrl = $this->view->iiifImageUrl($media, 'imageserver/id', '2');
 
             $tiles = [];
-            $tileInfo = new TileInfo();
-            $tilingData = $tileInfo($media);
+            $tilingData = $view->tileInfo($media);
             if ($tilingData) {
                 $iiifTileInfo = $this->iiifTileInfo($tilingData);
                 if ($iiifTileInfo) {

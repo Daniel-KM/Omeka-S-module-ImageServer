@@ -1,21 +1,31 @@
 <?php
 namespace ImageServer\Media\Renderer;
 
+use ImageServer\Mvc\Controller\Plugin\TileInfo;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Media\Renderer\RendererInterface;
 use Omeka\Stdlib\Message;
 use Zend\View\Renderer\PhpRenderer;
-use ImageServer\Mvc\Controller\Plugin\TileInfo;
 
 class Tile implements RendererInterface
 {
+    /**
+     * @var \ImageServer\Mvc\Controller\Plugin\TileInfo
+     */
+    protected $tileInfo;
+
     /**
      * @var string
      */
     protected $tileDir;
 
-    public function __construct($tileDir)
+    /**
+     * @param TileInfo $tileInfo
+     * @param string $tileDir
+     */
+    public function __construct(TileInfo $tileInfo, $tileDir)
     {
+        $this->tileInfo = $tileInfo;
         $this->tileDir = $tileDir;
     }
 
@@ -37,8 +47,8 @@ class Tile implements RendererInterface
     {
         static $firstTile = true;
 
-        $tileInfo = new TileInfo();
-        $tileInfo = $tileInfo($media);
+        $helper = $this->tileInfo;
+        $tileInfo = $helper($media);
         if (empty($tileInfo)) {
             return new Message('No tile or no properties for media #%d.', // @translate
                 $media->id());

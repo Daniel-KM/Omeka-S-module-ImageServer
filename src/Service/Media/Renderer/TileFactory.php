@@ -18,8 +18,11 @@ class TileFactory implements FactoryInterface
         $settings = $services->get('Omeka\Settings');
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
-            throw new ConfigException('The tile dir is not defined.');
+            throw new ConfigException('The tile dir is not defined.'); // @translate
         }
-        return new Tile($tileDir);
+        return new Tile(
+            $services->get('ControllerPluginManager')->get('tileInfo'),
+            $tileDir
+        );
     }
 }
