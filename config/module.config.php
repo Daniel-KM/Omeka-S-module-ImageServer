@@ -1,7 +1,18 @@
 <?php
+/**
+ * @var string $defaultVersion
+ * @var bool $versionAppend
+ * @var string $prefix
+ *
+ * Unlike presentation api, the identifier must be url encoded in image api.
+ * Nevertheless, when a prefix is set in the config, it can be bypassed to allow
+ * the raw or the url-encoded identifier.
+ * @link https://iiif.io/api/image/3.0/#9-uri-encoding-and-decoding
+ */
+
 namespace ImageServer;
 
-// Write the default verseion ("2" or "3") here (and in iiif server if needed).
+// Write the default version ("2" or "3") here (and in iiif server if needed).
 if (!isset($defaultVersion)) {
     $defaultVersion = '';
 }
@@ -10,6 +21,25 @@ if (!isset($versionAppend)) {
 }
 // If the version is set here, the route will skip it.
 $version = $versionAppend ? '' : $defaultVersion;
+
+// Write the prefix between the top of the iiif server and the identifier.
+// This option allows to manage arks identifiers not url-encoded.
+// Unlike presentation api, It is forbidden for image api, but some institutions
+// need to bypass specifications.
+// So prefix can be "ark:/12345/". Note that identifier part of the media is
+// always encoded: "ark:/12345/b45r9z%2Ff15"
+// So it runs like the base of the server is "iiif/v3/ark:/12345/".
+if (!isset($prefix)) {
+    $prefix = '';
+}
+if ($prefix) {
+    $urlEncodedPrefix = rawurlencode($prefix);
+    $constraintPrefix = $prefix . '|' . $urlEncodedPrefix . '|' . str_replace('%3A', ':', $urlEncodedPrefix);
+    $prefix = '[:prefix]';
+} else {
+    $constraintPrefix = '';
+    $prefix = '';
+}
 
 return [
     'view_manager' => [
@@ -68,7 +98,7 @@ return [
         'routes' => [
             // The Api version 2 and 3 are supported via the optional "/version".
             // When version is not indicated in url, the default version is the one set in headers, else
-            // via the setting "imageserver_manifest_version_default".
+            // via the setting "imageserver_info_default_version".
 
             // @link http://iiif.io/api/image/2.0
             // @link http://iiif.io/api/image/3.0
@@ -92,9 +122,10 @@ return [
                     'id' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id',
+                            'route' => "[/v:version]/$prefix:id",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 // 'id' => '\d+',
                                 'id' => '[^\/]+',
                             ],
@@ -106,9 +137,10 @@ return [
                     'info' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id/info.json',
+                            'route' => "[/v:version]/$prefix:id/info.json",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 'id' => '[^\/]+',
                             ],
                             'defaults' => [
@@ -125,9 +157,10 @@ return [
                     'media-bad' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id/:region/:size/:rotation/:quality:.:format',
+                            'route' => "[/v:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 'id' => '[^\/]+',
                                 'region' => '[^\/]+',
                                 'size' => '[^\/]+',
@@ -151,9 +184,10 @@ return [
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id/:region/:size/:rotation/:quality:.:format',
+                            'route' => "[/v:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 'id' => '[^\/]+',
                                 'region' => 'full|square|\d+,\d+,\d+,\d+|pct:\d+\.?\d*,\d+\.?\d*,\d+\.?\d*,\d+\.?\d*',
                                 // Version 2.0 allows "max", but version 3.0 rejects "full".
@@ -193,9 +227,10 @@ return [
                     'id' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id',
+                            'route' => "[/v:version]/$prefix:id",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 'id' => '[^\/]+',
                             ],
                             'defaults' => [
@@ -207,9 +242,10 @@ return [
                     'info' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id/info.json',
+                            'route' => "[/v:version]/$prefix:id/info.json",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 'id' => '[^\/]+',
                             ],
                             'defaults' => [
@@ -226,9 +262,10 @@ return [
                     'media-bad' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id:.:format',
+                            'route' => "[/v:version]/$prefix:id:.:format",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 'id' => '[^\/]+',
                                 'format' => '.+',
                             ],
@@ -243,9 +280,10 @@ return [
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => '[/v:version]/:id:.:format',
+                            'route' => "[/v:version]/$prefix:id:.:format",
                             'constraints' => [
                                 'version' => '2|3',
+                                'prefix' => $constraintPrefix,
                                 'id' => '[^\/]+',
                                 'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
                             ],
