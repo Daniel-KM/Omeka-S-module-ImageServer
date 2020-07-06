@@ -119,15 +119,8 @@ class ImageService3 extends AbstractResourceType
 
     public function getId()
     {
-        $cleanIdentifiers = $this->iiifCleanIdentifiers;
-        $helper = $this->urlHelper;
-        $url = $helper(
-            'imageserver/id',
-            ['version' => '3', 'id' => $cleanIdentifiers($this->resource->id())],
-            ['force_canonical' => true]
-        );
-        $helper = $this->iiifForceBaseUrlIfRequired;
-        return $helper($url);
+        $helper = $this->iiifImageUrl;
+        return $helper($this->resource, 'imageserver/id', '3');
     }
 
     public function getProtocol()

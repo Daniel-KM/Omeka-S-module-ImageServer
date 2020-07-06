@@ -112,8 +112,13 @@ class ImageController extends AbstractActionController
      */
     public function indexAction()
     {
+        $settings = $this->settings();
         $id = $this->params('id');
-        $url = $this->url()->fromRoute('imageserver/info', ['id' => $id], ['force_canonical' => true]);
+        $url = $this->url()->fromRoute('imageserver/info', [
+            'id' => $id,
+            'version' => $this->params('version') ?: $settings->get('imageserver_info_default_version', '2'),
+            'prefix' => $this->params('prefix') ?: $settings->get('cleanurl_identifier_prefix'),
+        ], ['force_canonical' => true]);
         return $this->getResponse()
             // TODO The iiif image api specification recommands 303, not 302.
             ->setStatusCode(\Zend\Http\Response::STATUS_CODE_303)
@@ -906,7 +911,7 @@ class ImageController extends AbstractActionController
     protected function useCleanIdentifier()
     {
         return $this->viewHelpers()->has('getResourcesFromIdentifiers')
-            && $this->settings()->get('iiifserver_manifest_clean_identifier');
+            && $this->settings()->get('iiifserver_identifier_clean');
     }
 
     /**
