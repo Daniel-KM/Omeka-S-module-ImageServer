@@ -150,6 +150,13 @@ class IiifInfo2 extends AbstractHelper
             $info['protocol'] = 'http://wellcomelibrary.org/ld/ixif';
         }
 
+        // The trait TraitRights may be not available. Currently require module Iiif Server.
+        // It uses different settings anyway.
+        $license = $this->rightsResource($media);
+        if ($license) {
+            $info['license'] = $license;
+        }
+
         // Give possibility to customize the info.json.
         // TODO Manifest (info) should be a true object, with many sub-objects.
         $manifest = &$info;
@@ -190,5 +197,73 @@ class IiifInfo2 extends AbstractHelper
         $tile['width'] = $tileSize;
         $tile['scaleFactors'] = $squaleFactors;
         return $tile;
+    }
+
+    /**
+     * @see \IiifServer\Iiif\TraitRights
+     * @param MediaRepresentation $resource
+     * @return string|null
+     */
+    protected function rightsResource(MediaRepresentation $resource = null)
+    {
+        $helper = $this->getView()->getHelperPluginManager()->get('setting');
+        $url = null;
+        $orUrl = false;
+        $orText = false;
+
+        $param = $helper('imageserver_manifest_rights');
+        switch ($param) {
+            case 'text':
+                // if ($this->getContext() === 'http://iiif.io/api/presentation/3/context.json') {
+                //     return null;
+                // }
+                $url = $helper('imageserver_manifest_rights_text');
+                break;
+            case 'url':
+                $url = $helper('imageserver_manifest_rights_url');
+                break;
+            case 'property_or_text':
+                $orText = !empty($helper('imageserver_manifest_rights_text'));
+                // no break.
+            case 'property_or_url':
+                if ($param === 'property_or_url') {
+                    $orUrl = true;
+                }
+                // no break.
+            case 'property':
+                if ($resource) {
+                    $property = $helper('imageserver_manifest_rights_property');
+                    $url = (string) $resource->value($property);
+                }
+                break;
+            case 'none':
+            default:
+                return null;
+        }
+
+        // Text is not allowed for presentation 3.
+        // $isPresentation3 = $this->getContext() === 'http://iiif.io/api/presentation/3/context.json';
+        $isPresentation3 = false;
+        $orText = $orText && !$isPresentation3;
+
+        if (!$url) {
+            if ($orUrl) {
+                $url = $helper('imageserver_manifest_rights_url');
+            } elseif ($orText) {
+                $url = $helper('imageserver_manifest_rights_text');
+            } else {
+                return null;
+            }
+        }
+
+        if ($isPresentation3 && $url) {
+            foreach ($this->rightUrls as $rightUrl) {
+                if (strpos($url, $rightUrl) === 0) {
+                    return $url;
+                }
+            }
+        }
+
+        return null;
     }
 }

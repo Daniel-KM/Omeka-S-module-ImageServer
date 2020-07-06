@@ -47,11 +47,13 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'name' => 'imageserver_info_rights',
                 'type' => Element\Select::class,
                 'options' => [
-                    'label' => 'Rights', // @translate
+                    'label' => 'Rights (license)', // @translate
                     'value_options' => [
                         'none' => 'No mention', // @translate
+                        'text' => 'Specified text below (only for iiif 2.0)', // @translate
                         'url' => 'Specified license url below', // @translate
                         'property' => 'Specified property below', // @translate
+                        'property_or_text' => 'Property if any, else specified license text (only for iiif 2.0)', // @translate
                         'property_or_url' => 'Property if any, else specified license', // @translate
                         'item' => 'Url specified by the iiif server for the item', // @translate
                         'item_or_url' => 'Item rights url if any, else specified license', // @translate
@@ -85,6 +87,16 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
                 'attributes' => [
                     'id' => 'imageserver_info_rights_url',
+                ],
+            ])
+            ->add([
+                'name' => 'imageserver_info_rights_text',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Default license text (only for iiif 2.0)', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_info_rights_text',
                 ],
             ])
 

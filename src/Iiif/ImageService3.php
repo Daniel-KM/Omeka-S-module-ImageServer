@@ -241,6 +241,9 @@ class ImageService3 extends AbstractResourceType
                     return $url;
                 }
                 break;
+            // This method is only for Api 3.
+            case 'text':
+            case 'property_or_text':
             case 'none':
             default:
                 return null;
