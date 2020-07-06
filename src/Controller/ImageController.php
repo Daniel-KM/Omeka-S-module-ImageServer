@@ -893,7 +893,7 @@ class ImageController extends AbstractActionController
         $useCleanIdentifier = $this->useCleanIdentifier();
         if ($useCleanIdentifier) {
             $getResourceFromIdentifier = $this->viewHelpers()->get('getResourceFromIdentifier');
-            return $getResourceFromIdentifier($id, false, $resourceType);
+            return $getResourceFromIdentifier($id, $resourceType);
         }
 
         try {
