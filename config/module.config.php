@@ -28,7 +28,7 @@ $version = $versionAppend ? '' : $defaultVersion;
 // need to bypass specifications.
 // So prefix can be "ark:/12345/". Note that identifier part of the media is
 // always encoded: "ark:/12345/b45r9z%2Ff15"
-// So it runs like the base of the server is "iiif/v3/ark:/12345/".
+// So it runs like the base of the server is "iiif/3/ark:/12345/".
 if (!isset($prefix)) {
     $prefix = '';
 }
@@ -123,7 +123,7 @@ return [
                     'id' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id",
+                            'route' => "[/:version]/$prefix:id",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
@@ -143,7 +143,7 @@ return [
                     'media-bad' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
+                            'route' => "[/:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
@@ -163,7 +163,7 @@ return [
                     'info' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id/info.json",
+                            'route' => "[/:version]/$prefix:id/info.json",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
@@ -185,7 +185,7 @@ return [
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
+                            'route' => "[/:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
@@ -228,7 +228,7 @@ return [
                     'id' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id",
+                            'route' => "[/:version]/$prefix:id",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
@@ -247,7 +247,7 @@ return [
                     'media-bad' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id:.:format",
+                            'route' => "[/:version]/$prefix:id:.:format",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
@@ -263,7 +263,7 @@ return [
                     'info' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id/info.json",
+                            'route' => "[/:version]/$prefix:id/info.json",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
@@ -281,7 +281,7 @@ return [
                     'media' => [
                         'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
-                            'route' => "[/v:version]/$prefix:id:.:format",
+                            'route' => "[/:version]/$prefix:id:.:format",
                             'constraints' => [
                                 'version' => '2|3',
                                 'prefix' => $constraintPrefix,
