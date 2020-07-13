@@ -61,8 +61,8 @@ directory, and rename the module folder `ImageServer`.
 If the module was installed from the source, check if the name of the folder of
 the module is `ImageServer`, go to the root of the module, and run either:
 
-```
-    composer install
+```sh
+composer install --no-dev
 ```
 
 Then install it like any other Omeka module.
