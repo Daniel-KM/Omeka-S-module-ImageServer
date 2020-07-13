@@ -32,7 +32,7 @@ class Tile implements RendererInterface
     /**
      * Render a tiled image.
      *
-     * @param PhpRenderer $view,
+     * @param PhpRenderer $view
      * @param MediaRepresentation $media
      * @param array $options These options are managed:
      *   - mode: set the rendering mode: "native" to the tiles type (default),
