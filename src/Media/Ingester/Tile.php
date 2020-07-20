@@ -115,7 +115,7 @@ class Tile implements IngesterInterface
             return;
         }
 
-        $fileData = $request->getValue('fileData');
+        $fileData = $request->getFileData();
         if (isset($fileData['tile'])) {
             $this->ingestFromFile($media, $request, $errorStore);
             return;
