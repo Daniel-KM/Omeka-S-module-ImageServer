@@ -45,8 +45,31 @@ class Tiler extends AbstractPlugin
             return false;
         }
 
-        $sourcePath = $this->params['basePath'] . '/original/' . $media->filename();
-        if (!file_exists($sourcePath) || !filesize($sourcePath)) {
+        // Use a local sub-folder to create the tiles when Amazon s3 is used.
+        // TODO Update tilers in vendor/ to manage Amazon directly.
+        $subfolder = $this->params['hasAmazonS3'] ? '/tiletmp/' : '/original/';
+        $sourcePath = $this->params['basePath'] . $subfolder . $media->filename();
+        $storageId = $media->storageId();
+
+        $isMissingFile = !file_exists($sourcePath) || !filesize($sourcePath);
+        if ($isMissingFile && $this->params['hasAmazonS3'] && $this->params['hasArchiveRepertory']) {
+            $services = $media->getServiceLocator();
+            $fileManager = $services->get('ArchiveRepertory\FileManager');
+            /** @var \Omeka\Entity\Media $mediaRes */
+            $mediaRes = $services->get('Omeka\ApiManager')
+                ->read('media', $media->id(), [], ['responseContent' => 'resource'])->getContent();
+
+            $newStorageId = $fileManager->getStorageId($mediaRes);
+            if ($storageId !== $newStorageId) {
+                $storageId = $newStorageId;
+                $extension = $media->extension();
+                $fullExtension = strlen($extension) ? '.' . $extension : $extension;
+                $sourcePath = $this->params['basePath'] . $subfolder . $newStorageId . $fullExtension;
+                $isMissingFile = !file_exists($sourcePath) || !filesize($sourcePath);
+            }
+        }
+
+        if ($isMissingFile) {
             $message = new Message(
                 'The file "%s" of media #%d is missing', // @translate
                 $media->filename(),
@@ -61,8 +84,8 @@ class Tiler extends AbstractPlugin
         // When a specific store or Archive Repertory are used, the storage id
         // may contain a subdir, so it should be added. There is no change with
         // the default simple storage id.
-        $storageId = $media->storageId();
         $params['storageId'] = basename($storageId);
+
         $tileDir = $params['basePath'] . DIRECTORY_SEPARATOR . $params['tile_dir'];
         $tileDir = dirname($tileDir . DIRECTORY_SEPARATOR . $storageId);
 

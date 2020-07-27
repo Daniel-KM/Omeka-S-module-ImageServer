@@ -33,7 +33,18 @@ class TilerFactory implements FactoryInterface
 
         $params['basePath'] = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
 
-        return new Tiler($params, $services->get('Omeka\Logger'));
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $module = $moduleManager->getModule('AmazonS3');
+        $params['hasAmazonS3'] = $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+        $module = $moduleManager->getModule('ArchiveRepertory');
+        $params['hasArchiveRepertory'] = $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+
+        return new Tiler(
+            $params,
+            $services->get('Omeka\Logger')
+        );
     }
 
     /**

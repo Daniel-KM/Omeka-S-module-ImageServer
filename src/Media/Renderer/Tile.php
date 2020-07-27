@@ -55,6 +55,7 @@ class Tile implements RendererInterface
         }
 
         $mode = !empty($options['mode']) ? $options['mode'] : 'native';
+
         $prefixId = 'osd';
         switch ($mode) {
             case 'iiif':

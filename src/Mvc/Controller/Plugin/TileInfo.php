@@ -95,8 +95,7 @@ class TileInfo extends AbstractPlugin
         $basePath = $viewHelpers->get('BasePath');
         $this->tileBaseUrl = $serverUrl() . $basePath('files' . '/' . $tileDir);
 
-        $tilingData = $this->getTilingData($media->storageId());
-        return $tilingData;
+        return $this->getTilingData($media->storageId());
     }
 
     /**

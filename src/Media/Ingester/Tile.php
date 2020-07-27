@@ -1,4 +1,5 @@
 <?php
+
 namespace ImageServer\Media\Ingester;
 
 use Omeka\Api\Request;
@@ -55,6 +56,18 @@ class Tile implements IngesterInterface
     protected $dispatcher;
 
     /**
+     * @var string
+     */
+    protected $basePathFiles;
+
+    /**
+     * @var bool
+     */
+    protected $hasAmazonS3;
+
+    protected $dirMode = 0755;
+
+    /**
      * @param Downloader $downloader
      * @param Uploader $uploader
      * @param string $directory
@@ -62,6 +75,8 @@ class Tile implements IngesterInterface
      * @param TempFileFactory $tempFileFactory
      * @param Validator $validator
      * @param Dispatcher $dispatcher
+     * @param string $basePathFiles
+     * @param bool $hasAmazonS3
      */
     public function __construct(
         Downloader $downloader,
@@ -70,7 +85,9 @@ class Tile implements IngesterInterface
         $deleteFile,
         TempFileFactory $tempFileFactory,
         Validator $validator,
-        Dispatcher $dispatcher
+        Dispatcher $dispatcher,
+        $basePathFiles,
+        $hasAmazonS3
     ) {
         // For url.
         $this->downloader = $downloader;
@@ -84,6 +101,8 @@ class Tile implements IngesterInterface
         // Process.
         $this->validator = $validator;
         $this->dispatcher = $dispatcher;
+        $this->basePathFiles = $basePathFiles;
+        $this->hasAmazonS3 = $hasAmazonS3;
     }
 
     public function getLabel()
@@ -135,10 +154,11 @@ class Tile implements IngesterInterface
      *   file. This is helpful when you want the media to have thumbnails but do
      *   not need the original file.
      *
+     * @see \Omeka\Media\Ingester\Url::ingest()
+     *
      * @param Media $media
      * @param Request $request
      * @param ErrorStore $errorStore
-     * @see \Omeka\Media\Ingester\Url::ingest()
      */
     protected function ingestFromUrl(Media $media, Request $request, ErrorStore $errorStore)
     {
@@ -194,15 +214,15 @@ class Tile implements IngesterInterface
 
         $isAbsolutePathInsideDir = $this->directory && strpos($data['ingest_url'], $this->directory) === 0;
         $filepath = $isAbsolutePathInsideDir
-             ? $data['ingest_url']
-             : $this->directory . DIRECTORY_SEPARATOR . $data['ingest_url'];
+            ? $data['ingest_url']
+            : $this->directory . DIRECTORY_SEPARATOR . $data['ingest_url'];
         $fileinfo = new \SplFileInfo($filepath);
         $realPath = $this->verifyFile($fileinfo);
         if (false === $realPath) {
             $errorStore->addError('ingest_url', sprintf(
-                 'Cannot sideload file "%s". File does not exist or does not have sufficient permissions', // @translate
-                 $filepath
-             ));
+                'Cannot sideload file "%s". File does not exist or does not have sufficient permissions', // @translate
+                $filepath
+            ));
             return;
         }
 
@@ -259,7 +279,7 @@ class Tile implements IngesterInterface
 
         $tempFile->setSourceName($fileData['tile'][$index]['name']);
         if (!array_key_exists('o:source', $data)) {
-            $media->setSource($fileData['file'][$index]['name']);
+            $media->setSource($fileData['tile'][$index]['name']);
         }
 
         if (!$this->validator->validate($tempFile, $errorStore)) {
@@ -303,6 +323,27 @@ class Tile implements IngesterInterface
             $media->setSize($tempFile->getSize());
         }
 
+        if ($this->hasAmazonS3) {
+            // With Amazon, save the original file in a temp directory in order
+            // to create tiles.
+            $tiletmpContainerPath = $this->basePathFiles . '/tiletmp';
+            if (!is_dir($tiletmpContainerPath)) {
+                $result = mkdir($tiletmpContainerPath, $this->dirMode);
+                if (!$result) {
+                    $errorStore->addError('error', 'Unable to create the temp dir "tiletmp", required to create tiles on Amazon S3. Check rights in the local directory files/.'); // @translate
+                    return;
+                }
+            }
+
+            $mainPath = $tiletmpContainerPath . '/' . $tempFile->getStorageId() . '.' . $tempFile->getExtension();
+            $result = copy($tempFile->getTempPath(), $mainPath);
+            if (!$result) {
+                $errorStore->addError('error', 'Unable to copy the file in the temp dir "tiletmp", required to create tiles on Amazon S3. Check rights in the local directory files/.'); // @translate
+                return;
+            }
+        }
+
+        // TODO Create thumbnails from the tiled image via the image server.
         if ($storeThumbnails) {
             $hasThumbnails = $tempFile->storeThumbnails();
             $media->setHasThumbnails($hasThumbnails);
@@ -311,6 +352,7 @@ class Tile implements IngesterInterface
         // The original is temporary saved, and may be removed if the original
         // is not wanted.
         $media->setHasOriginal(true);
+
         $tempFile->storeOriginal();
 
         if (file_exists($tempFile->getTempPath()) && $deleteTempFile) {
@@ -326,10 +368,16 @@ class Tile implements IngesterInterface
 
         $args = [];
         $args['storageId'] = $media->getStorageId();
-        $args['storagePath'] = $this->getStoragePath('original', $media->getFilename());
+        if ($this->hasAmazonS3) {
+            $args['storagePath'] = $mainPath;
+        } else {
+            $args['storagePath'] = $this->getStoragePath('original', $media->getFilename());
+        }
+
         $args['storeOriginal'] = $storeOriginal;
         $args['type'] = $type;
 
+        // TODO Move this job to create tiles inside an event api.create.post to avoid an issue with renaming?
         $job = $this->dispatcher->dispatch(\ImageServer\Job\Tiler::class, $args);
 
         $media->setData(['job' => $job->getId()]);
@@ -384,11 +432,10 @@ class Tile implements IngesterInterface
      * Pass the $errorStore object if an error should raise an API validation
      * error.
      *
-     * @see \Omeka\File\Validator
-     *
      * @param TempFile $tempFile
      * @param ErrorStore|null $errorStore
      * @return bool
+     * @see \Omeka\File\Validator
      */
     protected function validatorFileIsImage(TempFile $tempFile, ErrorStore $errorStore = null)
     {

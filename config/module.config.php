@@ -9,7 +9,6 @@
  * the raw or the url-encoded identifier.
  * @link https://iiif.io/api/image/3.0/#9-uri-encoding-and-decoding
  */
-
 namespace ImageServer;
 
 // Write the default version ("2" or "3") here (and in iiif server if needed).
@@ -316,6 +315,7 @@ return [
     'archiverepertory' => [
         'ingesters' => [
             'tile' => [
+                // This is the param "imageserver_image_tile_dir".
                 'path' => 'tile',
                 'extension' => [
                     '.dzi',
@@ -344,8 +344,10 @@ return [
             'imageserver_info_rights_text' => '',
             'imageserver_image_creator' => 'Auto',
             'imageserver_image_max_size' => 10000000,
-            'imageserver_image_tile_dir' => 'tile',
             'imageserver_image_tile_type' => 'deepzoom',
+            // This param may be change locally.
+            // If updated, the path for the ArchiveRepertory ingester should be changed.
+            'imageserver_image_tile_dir' => 'tile',
         ],
     ],
 ];
