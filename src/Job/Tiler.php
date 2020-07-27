@@ -300,7 +300,7 @@ SQL;
             $this->rrmdir($dir);
         }
         foreach ($rmfile as $file) {
-            @unlink($tileDirMedia);
+            @unlink($file);
         }
     }
 

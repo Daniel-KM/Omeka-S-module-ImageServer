@@ -163,10 +163,10 @@ class Module extends AbstractModule
             return;
         }
 
-        $serviceLocator = $this->getServiceLocator();
-        $settings = $serviceLocator->get('Omeka\Settings');
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
 
-        $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             $message = new Message('The tile dir is not defined and won’t be removed.'); // @translate
@@ -277,12 +277,12 @@ class Module extends AbstractModule
         return $processors;
     }
 
-    protected function createTilesMainDir(ServiceLocatorInterface $serviceLocator)
+    protected function createTilesMainDir(ServiceLocatorInterface $services)
     {
         // The local store "files" may be hard-coded.
         $config = include __DIR__ . '/config/module.config.php';
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
-        $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $defaultSettings['imageserver_image_tile_dir'];
         if (empty($tileDir)) {
             throw new ModuleCannotInstallException(new Message(
@@ -336,21 +336,39 @@ class Module extends AbstractModule
      */
     public function deleteMediaTiles(Event $event)
     {
-        $serviceLocator = $this->getServiceLocator();
-        $settings = $serviceLocator->get('Omeka\Settings');
-        $basePath = $serviceLocator->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
-            $logger = $serviceLocator->get('Omeka\logger');
+            $logger = $services->get('Omeka\logger');
             $logger->err(new Message('Tile dir is not defined, so media tiles cannot be removed.')); // @translate
+            return;
+        }
+
+        // Remove all files and folders, whatever the format or the source.
+        // The default storage interface doesn't manage directories directly.
+        $media = $event->getTarget();
+        $storageId = $media->getStorageId();
+
+        $module = $services->get('Omeka\ModuleManager')->getModule('AmazonS3');
+        $hasAmazonS3 = $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+        if ($hasAmazonS3) {
+            $store = $services->get(\AmazonS3\File\Store\AwsS3::class);
+            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '.dzi';
+            $store->delete($filepath);
+            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '.js';
+            $store->delete($filepath);
+            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '_files';
+            $store->deleteDir($filepath);
+            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '_zdata';
+            $store->deleteDir($filepath);
             return;
         }
 
         $tileDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
 
-        // Remove all files and folders, whatever the format or the source.
-        $media = $event->getTarget();
-        $storageId = $media->getStorageId();
         $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '.dzi';
         if (file_exists($filepath)) {
             unlink($filepath);
