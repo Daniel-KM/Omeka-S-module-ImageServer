@@ -35,6 +35,8 @@ widget Universal Viewer). It integrates the tiler [Zoomify] that was used the
 plugin [OpenLayers Zoom] for [Omeka Classic] and another tiler to support the
 [Deep Zoom Image] tile format.
 
+It supports Amazon S3 backend throught the module [Amazon S3].
+
 
 Installation
 ------------
@@ -198,6 +200,12 @@ To display an image with the IIIF protocol, set its url (https://example.org/iii
 in an attached media of type "IIIF" or use it directly in your viewer. The id is
 the one of the media, not the item.
 
+### Amazon S3
+
+Currently, only the public files are available: let the option "expiration" to "0".
+You should add CORS header `Access-Control-Allow-Origin` to make OpenSeadragon
+and other viewer working.
+
 
 TODO / Bugs
 -----------
@@ -210,6 +218,7 @@ TODO / Bugs
 - Adapt the info.json to the image processor.
 - Add the canonical link header.
 - Use the tiled images when available for arbitrary size request.
+- Update vendor tilers to manage Amazon directly.
 
 See module [Iiif Server].
 
@@ -280,6 +289,7 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [Universal Viewer]: https://github.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Mirador]: https://github.com/Daniel-KM/Omeka-S-module-Mirador
 [Diva]: https://github.com/Daniel-KM/Omeka-S-module-Diva
+[Amazon S3]: https://github.com/Daniel-KM/Omeka-S-module-AmazonS3
 [Omeka Classic]: https://omeka.org
 [`GD`]: https://secure.php.net/manual/en/book.image.php
 [`Imagick`]: https://php.net/manual/en/book.imagick.php
