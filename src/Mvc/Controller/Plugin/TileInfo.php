@@ -64,6 +64,23 @@ class TileInfo extends AbstractPlugin
     protected $tileBaseUrl;
 
     /**
+     * Query appended to the url of tiles (credentials).
+     *
+     * @var string
+     */
+    protected $tileBaseQuery;
+
+    /**
+     * @var bool
+     */
+    protected $hasAmazonS3;
+
+    /**
+     * @var \AmazonS3\File\Store\AwsS3
+     */
+    protected $store;
+
+    /**
      * Retrieve info about the tiling of an image.
      *
      * @param MediaRepresentation $media
@@ -80,20 +97,36 @@ class TileInfo extends AbstractPlugin
         $settings = $services->get('Omeka\Settings');
         $viewHelpers = $services->get('ViewHelperManager');
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $module = $services->get('Omeka\ModuleManager')->getModule('AmazonS3');
+        $this->hasAmazonS3 = $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
 
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             throw new ConfigException('The tile dir is not defined.');
         }
 
-        $this->tileBaseDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
-
-        // A full url avoids some complexity when Omeka is not the root of the
-        // server.
-        $serverUrl = $viewHelpers->get('ServerUrl');
-        // The local store base path is totally different from url base path.
-        $basePath = $viewHelpers->get('BasePath');
-        $this->tileBaseUrl = $serverUrl() . $basePath('files' . '/' . $tileDir);
+        if ($this->hasAmazonS3) {
+            // TODO Use config key [file_store][awss3][base_uri].
+            $this->store = $services->get(\AmazonS3\File\Store\AwsS3::class);
+            $this->tileBaseDir = $tileDir;
+            $baseUrl  = $this->store->getUri($tileDir);
+            if (strpos($baseUrl, '?') === false) {
+                $this->tileBaseUrl = $baseUrl;
+                $this->tileBaseQuery = '';
+            } else {
+                list($this->tileBaseUrl, $this->tileBaseQuery) = explode('?', $baseUrl, 2);
+            }
+        } else {
+            $this->tileBaseDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
+            // A full url avoids some complexity when Omeka is not the root of the
+            // server.
+            $serverUrl = $viewHelpers->get('ServerUrl');
+            // The local store base path is totally different from url base path.
+            $basePath = $viewHelpers->get('BasePath');
+            $this->tileBaseUrl = $serverUrl() . $basePath('files' . '/' . $tileDir);
+            $this->tileBaseQuery = '';
+        }
 
         return $this->getTilingData($media->storageId());
     }
@@ -116,7 +149,7 @@ class TileInfo extends AbstractPlugin
     protected function getTilingData($basename)
     {
         $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.dzi';
-        if (file_exists($basepath)) {
+        if ($this->fileExists($basepath)) {
             $tilingData = $this->getTilingDataDeepzoomDzi($basepath);
             $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_DEEPZOOM;
             $tilingData['metadata_path'] = $basename . '.dzi';
@@ -124,7 +157,7 @@ class TileInfo extends AbstractPlugin
         }
 
         $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.js';
-        if (file_exists($basepath)) {
+        if ($this->fileExists($basepath)) {
             $tilingData = $this->getTilingDataDeepzoomJsonp($basepath);
             $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_DEEPZOOM;
             $tilingData['metadata_path'] = $basename . '.js';
@@ -134,7 +167,7 @@ class TileInfo extends AbstractPlugin
         $basepath = $this->tileBaseDir
             . DIRECTORY_SEPARATOR . $basename . self::FOLDER_EXTENSION_ZOOMIFY
             . DIRECTORY_SEPARATOR . 'ImageProperties.xml';
-        if (file_exists($basepath)) {
+        if ($this->fileExists($basepath)) {
             $tilingData = $this->getTilingDataZoomify($basepath);
             $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_ZOOMIFY;
             $tilingData['metadata_path'] = $basename . self::FOLDER_EXTENSION_ZOOMIFY
@@ -145,6 +178,13 @@ class TileInfo extends AbstractPlugin
         return null;
     }
 
+    protected function fileExists($path)
+    {
+        return $this->hasAmazonS3
+            ? $this->store->hasFile($path)
+            : file_exists($path);
+    }
+
     /**
      * Get rendering data from a dzi format.
      *
@@ -153,8 +193,11 @@ class TileInfo extends AbstractPlugin
      */
     protected function getTilingDataDeepzoomDzi($path)
     {
-        $xml = simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
-        if ($xml === false) {
+        if ($this->hasAmazonS3) {
+            $path = $this->store->getUri($path);
+        }
+        $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
+        if (!$xml) {
             return null;
         }
         $data = json_encode($xml);
@@ -166,6 +209,7 @@ class TileInfo extends AbstractPlugin
         $tilingData['media_path'] = '';
         $tilingData['url_base'] = $this->tileBaseUrl;
         $tilingData['path_base'] = $this->tileBaseDir;
+        $tilingData['url_query'] = $this->tileBaseQuery;
         $tilingData['size'] = (int) $data['@attributes']['TileSize'];
         $tilingData['overlap'] = (int) $data['@attributes']['Overlap'];
         $tilingData['total'] = null;
@@ -183,7 +227,13 @@ class TileInfo extends AbstractPlugin
      */
     protected function getTilingDataDeepzoomJsonp($path)
     {
-        $data = file_get_contents($path);
+        if ($this->hasAmazonS3) {
+            $path = $this->store->getUri($path);
+        }
+        $data = @file_get_contents($path);
+        if (!$data) {
+            return null;
+        }
         // Keep only the json object.
         $data = substr($data, strpos($data, '{'), strrpos($data, '}') - strpos($data, '{') + 1);
         $data = json_decode($data, true);
@@ -195,6 +245,7 @@ class TileInfo extends AbstractPlugin
         $tilingData['media_path'] = '';
         $tilingData['url_base'] = $this->tileBaseUrl;
         $tilingData['path_base'] = $this->tileBaseDir;
+        $tilingData['url_query'] = $this->tileBaseQuery;
         $tilingData['size'] = (int) $data['TileSize'];
         $tilingData['overlap'] = (int) $data['Overlap'];
         $tilingData['total'] = null;
@@ -212,8 +263,11 @@ class TileInfo extends AbstractPlugin
      */
     protected function getTilingDataZoomify($path)
     {
-        $xml = simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
-        if ($xml === false) {
+        if ($this->hasAmazonS3) {
+            $path = $this->store->getUri($path);
+        }
+        $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
+        if (!$xml) {
             return null;
         }
         $properties = $xml->attributes();
@@ -225,6 +279,7 @@ class TileInfo extends AbstractPlugin
         $tilingData['media_path'] = '';
         $tilingData['url_base'] = $this->tileBaseUrl;
         $tilingData['path_base'] = $this->tileBaseDir;
+        $tilingData['url_query'] = $this->tileBaseQuery;
         $tilingData['size'] = (int) $properties['TILESIZE'];
         $tilingData['overlap'] = 0;
         $tilingData['total'] = (int) $properties['NUMTILES'];

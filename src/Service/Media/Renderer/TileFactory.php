@@ -20,9 +20,15 @@ class TileFactory implements FactoryInterface
         if (empty($tileDir)) {
             throw new ConfigException('The tile dir is not defined.'); // @translate
         }
+
+        $module = $services->get('Omeka\ModuleManager')->getModule('AmazonS3');
+        $hasAmazonS3 = $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+
         return new Tile(
             $services->get('ControllerPluginManager')->get('tileInfo'),
-            $tileDir
+            $tileDir,
+            $hasAmazonS3
         );
     }
 }

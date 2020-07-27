@@ -20,13 +20,20 @@ class Tile implements RendererInterface
     protected $tileDir;
 
     /**
+     * @var bool
+     */
+    protected $hasAmazonS3;
+
+    /**
      * @param TileInfo $tileInfo
      * @param string $tileDir
+     * @param bool $hasAmazonS3
      */
-    public function __construct(TileInfo $tileInfo, $tileDir)
+    public function __construct(TileInfo $tileInfo, $tileDir, $hasAmazonS3)
     {
         $this->tileInfo = $tileInfo;
         $this->tileDir = $tileDir;
+        $this->hasAmazonS3 = $hasAmazonS3;
     }
 
     /**
@@ -49,7 +56,7 @@ class Tile implements RendererInterface
 
         $helper = $this->tileInfo;
         $tileInfo = $helper($media);
-        if (empty($tileInfo)) {
+        if (empty($tileInfo) || empty($tileInfo['tile_type'])) {
             return new Message('No tile or no properties for media #%d.', // @translate
                 $media->id());
         }
@@ -135,8 +142,13 @@ OUTPUT;
      */
     protected function getDataDeepzoom(MediaRepresentation $media, PhpRenderer $view, array $tileInfo)
     {
-        $url = $view->serverUrl()
-            . $view->basePath('files' . '/' . $this->tileDir . '/' . $tileInfo['metadata_path']);
+        if ($this->hasAmazonS3) {
+            // The url contains tile dir.
+            $url = $tileInfo['url_base'] . '/' . $tileInfo['metadata_path'];
+        } else {
+            $url = $view->serverUrl()
+                . $view->basePath('files' . '/' . $this->tileDir . '/' . $tileInfo['metadata_path']);
+        }
         $args = [];
         $args['id'] = 'osd-' . $media->id();
         $args['prefixUrl'] = '';
@@ -155,8 +167,13 @@ OUTPUT;
     protected function getDataZoomify(MediaRepresentation $media, PhpRenderer $view, array $tileInfo)
     {
         // NOTE OpenSeadragon doesn't support short syntax (url only) currently.
-        $url = $view->serverUrl()
-            . $view->basePath('files' . '/' . $this->tileDir . '/' . $tileInfo['media_path']) . '/';
+        if ($this->hasAmazonS3) {
+            // The url contains tile dir.
+            $url = $tileInfo['url_base'] . '/' . $tileInfo['media_path'] . '/';
+        } else {
+            $url = $view->serverUrl()
+                . $view->basePath('files' . '/' . $this->tileDir . '/' . $tileInfo['media_path']) . '/';
+        }
         $tileSource = [];
         $tileSource['type'] = 'zoomifytileservice';
         $tileSource['width'] = $tileInfo['source']['width'];
