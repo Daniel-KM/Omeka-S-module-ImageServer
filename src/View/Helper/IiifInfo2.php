@@ -74,17 +74,13 @@ class IiifInfo2 extends AbstractHelper
             $sizes = [];
             $availableTypes = ['medium', 'large', 'original'];
             foreach ($availableTypes as $imageType) {
-                $imageSize = $view->imageSize($media, $imageType) ?: ['width' => null, 'height' => null];
-                $size = [];
-                $size['width'] = $imageSize['width'];
-                $size['height'] = $imageSize['height'];
-                $size = (object) $size;
-                $sizes[] = $size;
+                $sizes[] = (object) $view->imageSize($media, $imageType);
             }
 
             $imageType = 'original';
             $imageSize = $view->imageSize($media, $imageType);
-            list($width, $height) = $imageSize ? array_values($imageSize) : [null, null];
+            $width = $imageSize['width'];
+            $height = $imageSize['height'];
             $imageUrl = $this->view->iiifImageUrl($media, 'imageserver/id', '2');
 
             $tiles = [];

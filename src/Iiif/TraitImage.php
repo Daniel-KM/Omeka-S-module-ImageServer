@@ -62,8 +62,7 @@ trait TraitImage
      */
     public function getHeight()
     {
-        $size = $this->imageSize();
-        return $size ? $size['height'] : null;
+        return $this->imageSize()['height'];
     }
 
     /**
@@ -71,8 +70,7 @@ trait TraitImage
      */
     public function getWidth()
     {
-        $size = $this->imageSize();
-        return $size ? $size['width'] : null;
+        return $this->imageSize()['width'];
     }
 
     protected function imageSize($type = 'original')
@@ -86,7 +84,7 @@ trait TraitImage
         }
 
         if (!array_key_exists($type, $this->_storage['image_sizes'])) {
-            $this->_storage['image_sizes'][$type] = $this->imageSize->__invoke($this->resource->primaryMedia(), $type) ?: null;
+            $this->_storage['image_sizes'][$type] = $this->imageSize->__invoke($this->resource->primaryMedia(), $type);
         }
 
         return $this->_storage['image_sizes'][$type];

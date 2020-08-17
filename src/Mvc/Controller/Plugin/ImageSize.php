@@ -4,8 +4,6 @@ namespace ImageServer\Mvc\Controller\Plugin;
 use Omeka\Api\Representation\AssetRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\TempFileFactory;
-use Omeka\Mvc\Exception\RuntimeException;
-use Omeka\Stdlib\Message;
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class ImageSize extends AbstractPlugin
@@ -33,14 +31,15 @@ class ImageSize extends AbstractPlugin
     /**
      * Get an array of the width and height of the image file from a media.
      *
+     * If media is not an image, width and height are null.
+     *
      * @todo Store size in the data of the media.
      *
-     * @param MediaRepresentation|AssetRepresentation|string $image Can be an
-     * object, an url or a filepath.
+     * @param MediaRepresentation|AssetRepresentation|string $image Can be a
+     * media, an asset, a url or a filepath.
      * @param string $imageType
-     * @throws RuntimeException
-     * @return array|null Associative array of width and height of the image
-     * file, else null.
+     * @return array Associative array of width and height of the image file.
+     * Values are empty when the size is undetermined.
      */
     public function __invoke($image, $imageType = 'original')
     {
@@ -58,15 +57,14 @@ class ImageSize extends AbstractPlugin
      *
      * @param MediaRepresentation $media
      * @param string $imageType
-     * @throws RuntimeException
-     * @return array|null Associative array of width and height of the image
-     * file, else null.
+     * @return array Associative array of width and height of the image file.
+     * Values are empty when the size is undetermined.
      */
     protected function sizeMedia(MediaRepresentation $media, $imageType = 'original')
     {
         // Check if this is an image.
         if (strtok($media->mediaType(), '/') !== 'image') {
-            return null;
+            return ['width' => null, 'height' => null];
         }
 
         // The storage adapter should be checked for external storage.
@@ -74,57 +72,34 @@ class ImageSize extends AbstractPlugin
             ? $this->getStoragePath($imageType, $media->filename())
             : $this->getStoragePath($imageType, $media->storageId(), 'jpg');
         $filepath = $this->basePath . DIRECTORY_SEPARATOR . $storagePath;
-        $result = $this->getWidthAndHeight($filepath);
-
-        // This is an image, but failed to get the resolution.
-        if (empty($result)) {
-            throw new RuntimeException(new Message('Failed to get image resolution: %s', // @translate
-                $storagePath));
-        }
-
-        return $result;
+        return $this->getWidthAndHeight($filepath);
     }
 
     /**
      * Get an array of the width and height of the image file from an asset.
      *
      * @param AssetRepresentation $asset
-     * @throws RuntimeException
-     * @return array|null Associative array of width and height of the image
-     * file, else null.
+     * @return array Associative array of width and height of the image file.
+     * Values are empty when the size is undetermined.
      */
     protected function sizeAsset(AssetRepresentation $asset)
     {
         // The storage adapter should be checked for external storage.
         $storagePath = $this->getStoragePath('asset', $asset->filename());
         $filepath = $this->basePath . DIRECTORY_SEPARATOR . $storagePath;
-        $result = $this->getWidthAndHeight($filepath);
-
-        // This is an image, but failed to get the resolution.
-        if (empty($result)) {
-            throw new RuntimeException(new Message('Failed to get image resolution: %s', // @translate
-                $storagePath));
-        }
-
-        return $result;
+        return $this->getWidthAndHeight($filepath);
     }
 
     /**
      * Get an array of the width and height of the image file from a file.
      *
      * @param string $file Filepath or url
-     * @throws RuntimeException
-     * @return array|null Associative array of width and height of the image
-     * file, else null.
+     * @return array Associative array of width and height of the image file.
+     * Values are empty when the size is undetermined.
      */
     protected function sizeFile($file)
     {
-        $result = $this->getWidthAndHeight($file);
-        if (empty($result)) {
-            throw new RuntimeException(new Message('Failed to get image resolution: %s', // @translate
-                $file));
-        }
-        return $result;
+        return $this->getWidthAndHeight($file);
     }
 
     /**
@@ -144,12 +119,14 @@ class ImageSize extends AbstractPlugin
      * Helper to get width and height of an image.
      *
      * @param string $filepath This should be an image (no check here).
-     * @return array|null Associative array of width and height of the image
-     * file, else null.
+     * @return array Associative array of width and height of the image file.
+     * Values are empty when the size is undetermined.
      */
     protected function getWidthAndHeight($filepath)
     {
         // An internet path.
+        $width = null;
+        $height = null;
         if (strpos($filepath, 'https://') === 0 || strpos($filepath, 'http://') === 0) {
             $tempFile = $this->tempFileFactory->build();
             $tempPath = $tempFile->getTempPath();
@@ -173,10 +150,6 @@ class ImageSize extends AbstractPlugin
             if ($result) {
                 list($width, $height) = $result;
             }
-        }
-
-        if (empty($width) || empty($height)) {
-            return null;
         }
 
         return [

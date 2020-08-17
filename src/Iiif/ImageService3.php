@@ -153,9 +153,7 @@ class ImageService3 extends AbstractResourceType
     public function getMaxArea()
     {
         $size = $this->imageSize();
-        return $size
-            ? $size['width'] * $size['height']
-            : null;
+        return $size['width'] * $size['height'] ?: null;
     }
 
     public function getSizes()

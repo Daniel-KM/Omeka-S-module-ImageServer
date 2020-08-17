@@ -75,7 +75,7 @@ class Size extends AbstractType
     public function hasSize()
     {
         $size = $this->imageSize($this->imageType());
-        return !empty($size);
+        return !empty(array_filter($size));
     }
 
     /**

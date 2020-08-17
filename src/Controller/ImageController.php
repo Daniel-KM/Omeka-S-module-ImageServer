@@ -390,7 +390,8 @@ class ImageController extends AbstractActionController
         $transform['source']['media_type'] = $media->mediaType();
 
         $imageSize = $this->imageSize($media, 'original');
-        list($sourceWidth, $sourceHeight) = $imageSize ? array_values($imageSize) : [null, null];
+        $sourceWidth = $imageSize['width'];
+        $sourceHeight = $imageSize['height'];
         $transform['source']['width'] = $sourceWidth;
         $transform['source']['height'] = $sourceHeight;
 
@@ -613,16 +614,15 @@ class ImageController extends AbstractActionController
                         $filepath = $this->_getImagePath($media, $imageType);
                         if ($filepath) {
                             $imageSize = $this->imageSize($media, $imageType);
-                            list($testWidth, $testHeight) = $imageSize ? array_values($imageSize) : [null, null];
-                            if ($destinationWidth == $testWidth && $destinationHeight == $testHeight) {
+                            if ($destinationWidth == $imageSize['width'] && $destinationHeight == $imageSize['height']) {
                                 $transform['size']['feature'] = 'max';
                                 // Change the source file to avoid a transformation.
                                 // TODO Check the format?
                                 if ($imageType != 'original') {
                                     $transform['source']['filepath'] = $filepath;
                                     $transform['source']['media_type'] = 'image/jpeg';
-                                    $transform['source']['width'] = $testWidth;
-                                    $transform['source']['height'] = $testHeight;
+                                    $transform['source']['width'] = $imageSize['width'];
+                                    $transform['source']['height'] = $imageSize['height'];
                                 }
                                 break;
                             }
@@ -754,7 +754,8 @@ class ImageController extends AbstractActionController
         // Currently, the check is done only on fullsize.
         $derivativeType = 'large';
         $imageSize = $this->imageSize($media, $derivativeType);
-        list($derivativeWidth, $derivativeHeight) = $imageSize ? array_values($imageSize) : [null, null];
+        $derivativeWidth = $imageSize['width'];
+        $derivativeHeight = $imageSize['height'];
         switch ($transform['size']['feature']) {
             case 'sizeByW':
             case 'sizeByH':
