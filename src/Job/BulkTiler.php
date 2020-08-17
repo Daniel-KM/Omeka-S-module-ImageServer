@@ -44,14 +44,6 @@ class BulkTiler extends AbstractJob
             return;
         }
 
-        $totalItems = $api->search('items', ['limit' => 0])->getTotalResults();
-        if ($totalToProcess >= $totalItems) {
-            $logger->warn(new Message(
-                'All items cannot be tiled all at once. You may check your query.' // @translate
-            ));
-            return;
-        }
-
         $logger->info(new Message(
             'Starting bulk tiling for %d items.', // @translate
             $totalToProcess
@@ -75,7 +67,7 @@ class BulkTiler extends AbstractJob
             foreach ($items as $key => $item) {
                 if ($this->shouldStop()) {
                     $logger->warn(new Message(
-                        'The job "Bulk Tiler" was stopped: %d/%d resources processed.', // @translate
+                        'The job "Bulk Tiler" was stopped: %1$d/%2$d resources processed.', // @translate
                         $offset + $key, $totalToProcess
                     ));
                     break 2;
@@ -91,7 +83,9 @@ class BulkTiler extends AbstractJob
                             'Starting tiling media #%d.', // @translate
                             $media->id()
                         ));
+
                         $result = $tiler($media, $removeDestination);
+
                         if ($result && !empty($result['result'])) {
                             if (!empty($result['skipped'])) {
                                 $logger->info(new Message(
@@ -109,7 +103,7 @@ class BulkTiler extends AbstractJob
                                     $entityManager->persist($mediaEntity);
                                     $entityManager->flush();
                                     $logger->info(new Message(
-                                        'Renderer "%s" of media #%d updated to "tile".', // @translate
+                                        'Renderer "%1$s" of media #%2$d updated to "tile".', // @translate
                                         $renderer,
                                         $media->id()
                                     ));
@@ -140,7 +134,7 @@ class BulkTiler extends AbstractJob
         }
 
         $logger->info(new Message(
-            'End of bulk tiling: %d/%d items processed, %d files tiled, %d errors, %d skipped on a total of %d images.', // @translate
+            'End of bulk tiling: %1$d/%2$d items processed, %3$d files tiled, %4$d errors, %5$d skipped on a total of %6$d images.', // @translate
             $totalProcessed,
             $totalToProcess,
             $totalSucceed,
