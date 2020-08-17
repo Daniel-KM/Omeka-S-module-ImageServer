@@ -46,7 +46,7 @@ class ImageSize extends AbstractPlugin
      *
      * If media is not an image, width and height are null.
      *
-     * @todo Store size in the data of the media.
+     * @see \IiifServer\Mvc\Controller\Plugin\ImageSize
      *
      * @param MediaRepresentation|AssetRepresentation|Media|Asset|string $image
      * Can be a media, an asset, a url or a filepath.
@@ -86,6 +86,14 @@ class ImageSize extends AbstractPlugin
         // Check if this is an image.
         if (strtok($media->mediaType(), '/') !== 'image') {
             return ['width' => null, 'height' => null];
+        }
+
+        // Check if size is already stored. The stored dimension may be null.
+        $mediaData = $media->mediaData();
+        if (is_array($mediaData)
+            && !empty($mediaData['dimensions'][$imageType])
+        ) {
+            return $mediaData['dimensions'][$imageType];
         }
 
         // The storage adapter should be checked for external storage.

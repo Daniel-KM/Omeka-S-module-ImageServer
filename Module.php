@@ -37,6 +37,7 @@ if (!class_exists(\Generic\AbstractModule::class)) {
 }
 
 use Generic\AbstractModule;
+use Omeka\Entity\Media;
 use Omeka\Module\Exception\ModuleCannotInstallException;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Stdlib\Message;
@@ -206,6 +207,23 @@ class Module extends AbstractModule
             [$this, 'warnUninstall']
         );
 
+        // There are no event "api.create.xxx" for media.
+        $sharedEventManager->attach(
+            \Omeka\Api\Adapter\ItemAdapter::class,
+            'api.create.post',
+            [$this, 'handleAfterSaveItem']
+        );
+        $sharedEventManager->attach(
+            \Omeka\Api\Adapter\ItemAdapter::class,
+            'api.update.post',
+            [$this, 'handleAfterSaveItem']
+        );
+        $sharedEventManager->attach(
+            \Omeka\Api\Adapter\MediaAdapter::class,
+            'api.update.post',
+            [$this, 'handleAfterSaveMedia']
+        );
+
         $sharedEventManager->attach(
             \Omeka\Entity\Media::class,
             'entity.remove.post',
@@ -344,6 +362,73 @@ class Module extends AbstractModule
             $basePath . DIRECTORY_SEPARATOR . 'index.html',
             $dir . DIRECTORY_SEPARATOR . 'index.html'
         );
+    }
+
+    public function handleAfterSaveItem(Event $event)
+    {
+        $item = $event->getParam('response')->getContent();
+        foreach ($item->getMedia() as $media) {
+            $this->afterSaveMedia($media);
+        }
+        $this->getServiceLocator()->get('Omeka\EntityManager')->flush();
+    }
+
+    public function handleAfterSaveMedia(Event $event)
+    {
+        $media = $event->getParam('response')->getContent();
+        $this->afterSaveMedia($media);
+        $this->getServiceLocator()->get('Omeka\EntityManager')->flush();
+    }
+
+    /**
+     * Save dimensions of a media.
+     *
+     * @param Media $media
+     */
+    protected function afterSaveMedia(Media $media)
+    {
+        if (strtok($media->getMediaType(), '/') !== 'image') {
+            return;
+        }
+
+        // Check is not done on original, because in some case, the original
+        // file is removed.
+        $mediaData = $media->getData() ?: [];
+        if (!empty($mediaData['dimensions']['large']['width'])) {
+            return;
+        }
+
+        // Reset dimensions to make the sizer working.
+        // TODO In some cases, the original file is removed once the thumbnails are built.
+        $mediaData['dimensions'] = [];
+        $media->setData($mediaData);
+
+        $services = $this->getServiceLocator();
+        $sizer = $services->get('ControllerPluginManager')->get('imageSize');
+        $imageTypes = array_keys($services->get('Config')['thumbnails']['types']);
+        array_unshift($imageTypes, 'original');
+
+        $failedTypes = [];
+        foreach ($imageTypes as $imageType) {
+            $result = $sizer($media, $imageType);
+            if (!array_filter($result)) {
+                $failedTypes[] = $imageType;
+            }
+            $mediaData['dimensions'][$imageType] = $result;
+        }
+        if (count($failedTypes)) {
+            $services->get('Omeka\Logger')->err(new Message(
+                'Error getting dimensions of media #%1$d for types "%2$s".', // @translate
+                $media->getId(),
+                implode('", "', $failedTypes)
+            ));
+        }
+
+        $media->setData($mediaData);
+
+        $entityManager = $services->get('Omeka\EntityManager');
+        $entityManager->persist($media);
+        // Flush one time only.
     }
 
     /**
