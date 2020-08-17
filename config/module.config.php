@@ -74,11 +74,11 @@ return [
         'invokables' => [
             'iiifImageJsonLd' => Mvc\Controller\Plugin\IiifImageJsonLd::class,
             'tileBuilder' => Mvc\Controller\Plugin\TileBuilder::class,
-            'tileInfo' => Mvc\Controller\Plugin\TileInfo::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
         ],
         'factories' => [
             'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,
+            'tileInfo' => Service\ControllerPlugin\TileInfoFactory::class,
             'tiler' => Service\ControllerPlugin\TilerFactory::class,
         ],
     ],

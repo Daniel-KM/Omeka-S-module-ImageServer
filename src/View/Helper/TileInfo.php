@@ -28,7 +28,6 @@ class TileInfo extends AbstractHelper
      */
     public function __invoke(MediaRepresentation $media)
     {
-        $tileInfo = $this->tileInfoPlugin;
-        return $tileInfo($media);
+        return $this->tileInfoPlugin->__invoke($media);
     }
 }

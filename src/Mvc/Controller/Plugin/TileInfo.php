@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright 2015-2017 Daniel Berthereau
+ * Copyright 2015-2020 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -30,7 +30,6 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\File\Exception\ConfigException;
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class TileInfo extends AbstractPlugin
@@ -76,9 +75,26 @@ class TileInfo extends AbstractPlugin
     protected $hasAmazonS3;
 
     /**
-     * @var \AmazonS3\File\Store\AwsS3
+     * @var \AmazonS3\File\Store\AwsS3|null
      */
     protected $store;
+
+    /**
+     * @param string $tileBaseDir Full path prepended to a storage id. Is equal
+     *   to tileBaseUrl for remote storage.
+     * @param string $tileBaseUrl
+     * @param string $tileBaseQuery
+     * @param bool $hasAmazonS3
+     * @param \AmazonS3\File\Store\AwsS3 $store
+     */
+    public function __construct($tileBaseDir, $tileBaseUrl, $tileBaseQuery, $hasAmazonS3, $store)
+    {
+        $this->tileBaseDir = $tileBaseDir;
+        $this->tileBaseUrl = $tileBaseUrl;
+        $this->tileBaseQuery = $tileBaseQuery;
+        $this->hasAmazonS3 = $hasAmazonS3;
+        $this->store = $store;
+    }
 
     /**
      * Retrieve info about the tiling of an image.
@@ -92,56 +108,20 @@ class TileInfo extends AbstractPlugin
         if (strpos($media->mediaType(), 'image/') !== 0) {
             return null;
         }
-
-        $services = $media->getServiceLocator();
-        $settings = $services->get('Omeka\Settings');
-        $viewHelpers = $services->get('ViewHelperManager');
-        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $module = $services->get('Omeka\ModuleManager')->getModule('AmazonS3');
-        $this->hasAmazonS3 = $module
-            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
-
-        $tileDir = $settings->get('imageserver_image_tile_dir');
-        if (empty($tileDir)) {
-            throw new ConfigException('The tile dir is not defined.');
-        }
-
-        if ($this->hasAmazonS3) {
-            // TODO Use config key [file_store][awss3][base_uri].
-            $this->store = $services->get(\AmazonS3\File\Store\AwsS3::class);
-            $this->tileBaseDir = $tileDir;
-            $baseUrl = $this->store->getUri($tileDir);
-            if (strpos($baseUrl, '?') === false) {
-                $this->tileBaseUrl = $baseUrl;
-                $this->tileBaseQuery = '';
-            } else {
-                list($this->tileBaseUrl, $this->tileBaseQuery) = explode('?', $baseUrl, 2);
-            }
-        } else {
-            $this->tileBaseDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
-            // A full url avoids some complexity when Omeka is not the root of the
-            // server.
-            $serverUrl = $viewHelpers->get('ServerUrl');
-            // The local store base path is totally different from url base path.
-            $basePath = $viewHelpers->get('BasePath');
-            $this->tileBaseUrl = $serverUrl() . $basePath('files' . '/' . $tileDir);
-            $this->tileBaseQuery = '';
-        }
-
         return $this->getTilingData($media->storageId());
     }
 
     /**
      * Check if an image is zoomed and return its main data.
      *
-     * @internal Path to the storage of tiles:
+     * Path to the storage of tiles:
      * - For Omeka Semantic (DeepZoom): files/tile/storagehash_files
      *   with metadata "storagehash.js" or "storagehash.dzi" and no subdir.
      * - For Omeka Classic (Zoomify): files/zoom_tiles/storagehash_zdata
      *   and, inside it, metadata "ImageProperties.xml" and subdirs "TileGroup{x}".
      *
-     * @internal This implementation is compatible with ArchiveRepertory (use of
-     * a basename that may be a partial path) and possible alternate adapters.
+     * This implementation is compatible with ArchiveRepertory (use of a
+     * basename that may be a partial path) and possible alternate adapters.
      *
      * @param string $basename Filename without the extension (storage id).
      * @return array|null

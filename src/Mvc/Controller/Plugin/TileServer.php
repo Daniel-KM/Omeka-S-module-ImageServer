@@ -56,25 +56,23 @@ class TileServer extends AbstractPlugin
     public function __invoke(array $tileInfo, array $transform)
     {
         if (empty($tileInfo)) {
-            return;
+            return null;
         }
 
         // Quick check of supported transformation of tiles.
         if (!in_array($transform['region']['feature'], ['regionByPx', 'full'])
             || !in_array($transform['size']['feature'], ['sizeByW', 'sizeByH', 'sizeByWh', 'sizeByWhListed', 'full', 'max'])
         ) {
-            return;
+            return null;
         }
 
         switch ($tileInfo['tile_type']) {
             case 'deepzoom':
-                $tile = $this->serveTilesDeepzoom($tileInfo, $transform);
-                return $tile;
-
+                return $this->serveTilesDeepzoom($tileInfo, $transform);
             case 'zoomify':
-                $tile = $this->serveTilesZoomify($tileInfo, $transform);
-                return $tile;
+                return $this->serveTilesZoomify($tileInfo, $transform);
         }
+        return null;
     }
 
     /**
