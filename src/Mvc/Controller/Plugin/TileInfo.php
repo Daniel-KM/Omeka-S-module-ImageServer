@@ -110,7 +110,7 @@ class TileInfo extends AbstractPlugin
             // TODO Use config key [file_store][awss3][base_uri].
             $this->store = $services->get(\AmazonS3\File\Store\AwsS3::class);
             $this->tileBaseDir = $tileDir;
-            $baseUrl  = $this->store->getUri($tileDir);
+            $baseUrl = $this->store->getUri($tileDir);
             if (strpos($baseUrl, '?') === false) {
                 $this->tileBaseUrl = $baseUrl;
                 $this->tileBaseQuery = '';
