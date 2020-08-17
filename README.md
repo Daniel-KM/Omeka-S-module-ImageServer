@@ -99,6 +99,8 @@ Then, you have to add the following rules, adapted to your needs, to the file
 It is recommended to use the main config of the server, for example  with the
 directive `<Directory>`.
 
+To fix Amazon cors issues, see the [aws documentation].
+
 
 Notes
 -----
@@ -204,7 +206,7 @@ the one of the media, not the item.
 
 Currently, only the public files are available: let the option "expiration" to "0".
 You should add CORS header `Access-Control-Allow-Origin` to make OpenSeadragon
-and other viewer working.
+and other viewers working. See [aws documentation].
 
 
 TODO / Bugs
@@ -312,6 +314,7 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [Zoomify library]: https://github.com/Daniel-KM/LibraryZoomify
 [Deepzoom]: https://github.com/jeremytubbs/deepzoom
 [#6]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues/6
+[aws documentation]: https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html
 [module issues]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
