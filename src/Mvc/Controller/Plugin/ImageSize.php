@@ -1,8 +1,11 @@
 <?php
 namespace ImageServer\Mvc\Controller\Plugin;
 
+use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Api\Representation\AssetRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
+use Omeka\Entity\Asset;
+use Omeka\Entity\Media;
 use Omeka\File\TempFileFactory;
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
@@ -19,13 +22,23 @@ class ImageSize extends AbstractPlugin
     protected $tempFileFactory;
 
     /**
+     * @var AdapterManager
+     */
+    protected $adapterManager;
+
+    /**
      * @param string $basePath
      * @param TempFileFactory $tempFileFactory
+     * @param AdapterManager $adapterManager
      */
-    public function __construct($basePath, TempFileFactory $tempFileFactory)
-    {
+    public function __construct(
+        $basePath,
+        TempFileFactory $tempFileFactory,
+        AdapterManager $adapterManager
+    ) {
         $this->basePath = $basePath;
         $this->tempFileFactory = $tempFileFactory;
+        $this->adapterManager = $adapterManager;
     }
 
     /**
@@ -35,8 +48,8 @@ class ImageSize extends AbstractPlugin
      *
      * @todo Store size in the data of the media.
      *
-     * @param MediaRepresentation|AssetRepresentation|string $image Can be a
-     * media, an asset, a url or a filepath.
+     * @param MediaRepresentation|AssetRepresentation|Media|Asset|string $image
+     * Can be a media, an asset, a url or a filepath.
      * @param string $imageType
      * @return array Associative array of width and height of the image file.
      * Values are empty when the size is undetermined.
@@ -49,7 +62,15 @@ class ImageSize extends AbstractPlugin
         if ($image instanceof AssetRepresentation) {
             return $this->sizeAsset($image);
         }
-        return $this->sizeFile($image);
+        if ($image instanceof Media) {
+            $image = $this->adapterManager->get('media')->getRepresentation($image);
+            return $this->sizeMedia($image, $imageType);
+        }
+        if ($image instanceof Asset) {
+            $image = $this->adapterManager->get('assets')->getRepresentation($image);
+            return $this->sizeAsset($image);
+        }
+        return $this->getWidthAndHeight($image);
     }
 
     /**
@@ -91,18 +112,6 @@ class ImageSize extends AbstractPlugin
     }
 
     /**
-     * Get an array of the width and height of the image file from a file.
-     *
-     * @param string $file Filepath or url
-     * @return array Associative array of width and height of the image file.
-     * Values are empty when the size is undetermined.
-     */
-    protected function sizeFile($file)
-    {
-        return $this->getWidthAndHeight($file);
-    }
-
-    /**
      * Get a storage path.
      *
      * @param string $prefix The storage prefix
@@ -116,7 +125,7 @@ class ImageSize extends AbstractPlugin
     }
 
     /**
-     * Helper to get width and height of an image.
+     * Helper to get width and height of an image, local or remote.
      *
      * @param string $filepath This should be an image (no check here).
      * @return array Associative array of width and height of the image file.
