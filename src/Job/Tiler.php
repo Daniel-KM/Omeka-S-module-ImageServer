@@ -153,7 +153,11 @@ class Tiler extends AbstractJob
         $jobId = (int) $this->job->getId();
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
         $sql = <<<SQL
-SELECT id FROM media WHERE data = '{"job":$jobId}' LIMIT 1;
+SELECT `id`
+FROM `media`
+WHERE `data` = '{"job":$jobId}'
+    OR `data` LIKE '%"job":$jobId,%'
+    OR `data` LIKE '%"job":$jobId}' LIMIT 1;
 SQL;
         return $connection->fetchColumn($sql);
     }
@@ -182,7 +186,7 @@ SQL;
         if ($this->getArg('storeOriginal', true) && $this->sourcePath) {
             $storeOriginal = '';
         } else {
-            $storeOriginal = ', has_original = 0';
+            $storeOriginal = ', `has_original` = 0';
             if (file_exists($this->sourcePath)) {
                 @unlink($this->sourcePath);
             }
@@ -190,14 +194,20 @@ SQL;
 
         // Clean media data. They cannot be updated via api, so use a query.
         // TODO Use doctrine repository.
+        $jobId = (int) $this->job->getId();
         $mediaId = (int) $mediaId;
         $sql = <<<SQL
-UPDATE media
-SET data = NULL
+UPDATE `media`
+SET
+`data` = CASE
+    WHEN `data` = '{"job":$jobId}' THEN NULL
+    WHEN `data` LIKE '%"job":$jobId,%' THEN REPLACE(`data`, '"job":$jobId,', '')
+    WHEN `data` LIKE '%"job":$jobId}%' THEN REPLACE(`data`, '"job":$jobId}', '')
+    ELSE `data`
+    END
 $storeOriginal
-WHERE id = $mediaId;
+WHERE `id` = $mediaId;
 SQL;
-
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
         $connection->exec($sql);
 
