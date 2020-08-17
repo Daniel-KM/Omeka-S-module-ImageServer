@@ -96,12 +96,19 @@ class ImageSize extends AbstractPlugin
             return $mediaData['dimensions'][$imageType];
         }
 
-        // The storage adapter should be checked for external storage.
+        // In order to manage external storage, check if the file is local.
         $storagePath = $imageType == 'original'
             ? $this->getStoragePath($imageType, $media->filename())
             : $this->getStoragePath($imageType, $media->storageId(), 'jpg');
         $filepath = $this->basePath . DIRECTORY_SEPARATOR . $storagePath;
-        return $this->getWidthAndHeight($filepath);
+        if (file_exists($filepath) && is_readable($filepath)) {
+            return $this->getWidthAndHeightLocal($filepath);
+        }
+
+        $filepath = $imageType == 'original'
+            ? $media->originalUrl()
+            : $media->thumbnailUrl($imageType);
+        return $this->getWidthAndHeightUrl($filepath);
     }
 
     /**
@@ -116,7 +123,9 @@ class ImageSize extends AbstractPlugin
         // The storage adapter should be checked for external storage.
         $storagePath = $this->getStoragePath('asset', $asset->filename());
         $filepath = $this->basePath . DIRECTORY_SEPARATOR . $storagePath;
-        return $this->getWidthAndHeight($filepath);
+        return file_exists($filepath) && is_readable($filepath)
+            ? $this->getWidthAndHeightLocal($filepath)
+            : $this->getWidthAndHeightUrl($asset->assetUrl());
     }
 
     /**
@@ -142,31 +151,67 @@ class ImageSize extends AbstractPlugin
     protected function getWidthAndHeight($filepath)
     {
         // An internet path.
-        $width = null;
-        $height = null;
         if (strpos($filepath, 'https://') === 0 || strpos($filepath, 'http://') === 0) {
-            $tempFile = $this->tempFileFactory->build();
-            $tempPath = $tempFile->getTempPath();
-            $tempFile->delete();
-            $handle = @fopen($filepath, 'rb');
-            if ($handle) {
-                $result = file_put_contents($tempPath, $handle);
-                @fclose($handle);
-                if ($result) {
-                    $result = getimagesize($tempPath);
-                    if ($result) {
-                        list($width, $height) = $result;
-                    }
-                }
-                unlink($tempPath);
-            }
+            return $this->getWidthAndHeightUrl($filepath);
         }
         // A normal path.
-        elseif (file_exists($filepath)) {
-            $result = getimagesize($filepath);
+        if (file_exists($filepath) && is_readable($filepath)) {
+            return $this->getWidthAndHeightLocal($filepath);
+        }
+        return [
+            'width' => null,
+            'height' => null,
+        ];
+    }
+
+    /**
+     * Helper to get width and height of an image (path is already checked).
+     *
+     * @param string $filepath This should be an image (no check here).
+     * @return array Associative array of width and height of the image file.
+     * Values are empty when the size is undetermined.
+     */
+    protected function getWidthAndHeightLocal($filepath)
+    {
+        $result = getimagesize($filepath);
+        if ($result) {
+            list($width, $height) = $result;
+        } else {
+            $width = null;
+            $height = null;
+        }
+        return [
+            'width' => $width,
+            'height' => $height,
+        ];
+    }
+
+    /**
+     * Helper to get width and height of an image url.
+     *
+     * @param string $url This should be an image (no check here).
+     * @return array Associative array of width and height of the image file.
+     * Values are empty when the size is undetermined.
+     */
+    protected function getWidthAndHeightUrl($url)
+    {
+        $width = null;
+        $height = null;
+
+        $tempFile = $this->tempFileFactory->build();
+        $tempPath = $tempFile->getTempPath();
+        $tempFile->delete();
+        $handle = @fopen($url, 'rb');
+        if ($handle) {
+            $result = file_put_contents($tempPath, $handle);
+            @fclose($handle);
             if ($result) {
-                list($width, $height) = $result;
+                $result = getimagesize($tempPath);
+                if ($result) {
+                    list($width, $height) = $result;
+                }
             }
+            unlink($tempPath);
         }
 
         return [
