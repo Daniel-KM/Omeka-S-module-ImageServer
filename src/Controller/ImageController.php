@@ -164,6 +164,7 @@ class ImageController extends AbstractActionController
      */
     public function fetchAction()
     {
+        /** @var \Omeka\Api\Representation\MediaRepresentation $media */
         $media = $this->fetchResource('media');
         if (!$media) {
             return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
@@ -289,7 +290,7 @@ class ImageController extends AbstractActionController
                 // The image needs to be transformed dynamically.
                 else {
                     $maxFileSize = $settings->get('imageserver_image_max_size');
-                    if (!empty($maxFileSize) && $this->_mediaFileSize($media) > $maxFileSize) {
+                    if (!empty($maxFileSize) && $media->size() > $maxFileSize) {
                         return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
                             'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.', // @translate
                             \Zend\Http\Response::STATUS_CODE_500
@@ -350,25 +351,6 @@ class ImageController extends AbstractActionController
                 \Zend\Http\Response::STATUS_CODE_500
             ));
         }
-    }
-
-    protected function _mediaFileSize(MediaRepresentation $media)
-    {
-        $filepath = $this->_mediaFilePath($media);
-        return filesize($filepath);
-    }
-
-    protected function _mediaFilePath(MediaRepresentation $media, $imageType = 'original')
-    {
-        if ($imageType == 'original') {
-            $storagePath = $this->getStoragePath($imageType, $media->filename());
-        } else {
-            $storagePath = $this->getStoragePath($imageType, $media->storageId(), 'jpg');
-        }
-        $filepath = $this->basePath
-            . DIRECTORY_SEPARATOR . $storagePath;
-
-        return $filepath;
     }
 
     /**
@@ -825,11 +807,10 @@ class ImageController extends AbstractActionController
     protected function _usePreTiled(MediaRepresentation $media, $transform)
     {
         // TODO Fix the use of pre-tiled images with an arbitrary size.
-        return null;
         $tileInfo = $this->tileInfo($media);
-        if ($tileInfo) {
-            return $this->tileServer($tileInfo, $transform);
-        }
+        return $tileInfo
+            ? $this->tileServer($tileInfo, $transform)
+            : null;
     }
 
     /**
@@ -847,29 +828,33 @@ class ImageController extends AbstractActionController
             ->transform($args);
     }
 
+    protected function _mediaPath(MediaRepresentation $media, $imageType = 'original')
+    {
+        $storagePath = $imageType == 'original'
+            ? $this->getStoragePath($imageType, $media->filename())
+            : $this->getStoragePath($imageType, $media->storageId(), 'jpg');
+        $filepath = $this->basePath . DIRECTORY_SEPARATOR . $storagePath;
+        if (file_exists($filepath) && is_readable($filepath)) {
+            return $filepath;
+        }
+        return $imageType == 'original'
+            ? $media->originalUrl()
+            : $media->thumbnailUrl($imageType);
+    }
+
     /**
-     * Get the path to an original or derivative file for an image.
+     * Get path to an original or derivative file for an image. May be a url.
      *
      * @param MediaRepresentation $media
-     * @param string $derivativeType
+     * @param string $imageType
      * @return string|null Null if not exists.
      * @see \ImageServer\View\Helper\IiifInfo::_getImagePath()
      */
-    protected function _getImagePath(MediaRepresentation $media, $derivativeType = 'original')
+    protected function _getImagePath(MediaRepresentation $media, $imageType = 'original')
     {
-        // Check if the file is an image.
-        if (strpos($media->mediaType(), 'image/') === 0) {
-            // Don't use the webpath to avoid the transfer through server.
-            $filepath = $this->_mediaFilePath($media, $derivativeType);
-            if (file_exists($filepath)) {
-                return $filepath;
-            }
-
-            // Use the web url when an external storage is used. No check can be
-            // done.
-            // TODO Load locally the external path? It will be done later.
-            return $media->thumbnailUrl($derivativeType);
-        }
+        return strpos($media->mediaType(), 'image/')=== 0
+            ? $this->_mediaPath($media, $imageType)
+            : null;
     }
 
     /**
@@ -883,7 +868,7 @@ class ImageController extends AbstractActionController
      */
     protected function getStoragePath($prefix, $name, $extension = null)
     {
-        return sprintf('%s/%s%s', $prefix, $name, $extension ? ".$extension" : null);
+        return sprintf('%s/%s%s', $prefix, $name, strlen($extension) ? '.' . $extension : '');
     }
 
     /**

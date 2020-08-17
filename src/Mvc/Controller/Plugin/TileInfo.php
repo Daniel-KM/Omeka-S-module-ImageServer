@@ -188,7 +188,7 @@ class TileInfo extends AbstractPlugin
         $tilingData['metadata_path'] = $path;
         $tilingData['media_path'] = '';
         $tilingData['url_base'] = $this->tileBaseUrl;
-        $tilingData['path_base'] = $this->tileBaseDir;
+        $tilingData['path_base'] = $this->hasAmazonS3 ? $this->tileBaseUrl : $this->tileBaseDir;
         $tilingData['url_query'] = $this->tileBaseQuery;
         $tilingData['size'] = (int) $data['@attributes']['TileSize'];
         $tilingData['overlap'] = (int) $data['@attributes']['Overlap'];
@@ -224,7 +224,7 @@ class TileInfo extends AbstractPlugin
         $tilingData['metadata_path'] = '';
         $tilingData['media_path'] = '';
         $tilingData['url_base'] = $this->tileBaseUrl;
-        $tilingData['path_base'] = $this->tileBaseDir;
+        $tilingData['path_base'] = $this->hasAmazonS3 ? $this->tileBaseUrl : $this->tileBaseDir;
         $tilingData['url_query'] = $this->tileBaseQuery;
         $tilingData['size'] = (int) $data['TileSize'];
         $tilingData['overlap'] = (int) $data['Overlap'];
