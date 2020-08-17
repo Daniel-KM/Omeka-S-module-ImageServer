@@ -93,7 +93,7 @@ class Imagick extends AbstractImageServer
     public function transform(array $args = [])
     {
         if (empty($args)) {
-            return;
+            return null;
         }
 
         $this->_args = $args;
@@ -102,12 +102,12 @@ class Imagick extends AbstractImageServer
         if (!$this->checkMediaType($args['source']['media_type'])
             || !$this->checkMediaType($args['format']['feature'])
         ) {
-            return;
+            return null;
         }
 
         $imagick = $this->_loadImageResource($args['source']['filepath']);
         if (empty($imagick)) {
-            return;
+            return null;
         }
 
         // Get width and height if missing.
@@ -120,7 +120,7 @@ class Imagick extends AbstractImageServer
         $extraction = $this->_prepareExtraction();
         if (!$extraction) {
             $imagick->clear();
-            return;
+            return null;
         }
 
         list(
@@ -161,7 +161,7 @@ class Imagick extends AbstractImageServer
 
             default:
                 $imagick->clear();
-                return;
+                return null;
         }
 
         // Rotation.
@@ -176,7 +176,7 @@ class Imagick extends AbstractImageServer
 
             default:
                 $imagick->clear();
-                return;
+                return null;
         }
 
         // Quality.
@@ -198,7 +198,7 @@ class Imagick extends AbstractImageServer
 
             default:
                 $imagick->clear();
-                return;
+                return null;
         }
 
         // Save resulted resource into the specified format.

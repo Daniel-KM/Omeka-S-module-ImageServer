@@ -100,7 +100,7 @@ class GD extends AbstractImageServer
     public function transform(array $args = [])
     {
         if (empty($args)) {
-            return;
+            return null;
         }
 
         $this->_args = $args;
@@ -109,12 +109,12 @@ class GD extends AbstractImageServer
         if (!$this->checkMediaType($args['source']['media_type'])
             || !$this->checkMediaType($args['format']['feature'])
         ) {
-            return;
+            return null;
         }
 
         $sourceGD = $this->_loadImageResource($args['source']['filepath']);
         if (empty($sourceGD)) {
-            return;
+            return null;
         }
 
         // Get width and height if missing.
@@ -127,7 +127,7 @@ class GD extends AbstractImageServer
         $extraction = $this->_prepareExtraction();
         if (!$extraction) {
             imagedestroy($sourceGD);
-            return;
+            return null;
         }
 
         list(
@@ -147,7 +147,7 @@ class GD extends AbstractImageServer
         if ($result === false) {
             imagedestroy($sourceGD);
             imagedestroy($destinationGD);
-            return;
+            return null;
         }
 
         // Mirror.
@@ -158,7 +158,7 @@ class GD extends AbstractImageServer
                 if ($result === false) {
                     imagedestroy($sourceGD);
                     imagedestroy($destinationGD);
-                    return;
+                    return null;
                 }
                 break;
 
@@ -167,7 +167,7 @@ class GD extends AbstractImageServer
                 if ($result === false) {
                     imagedestroy($sourceGD);
                     imagedestroy($destinationGD);
-                    return;
+                    return null;
                 }
                 break;
 
@@ -176,7 +176,7 @@ class GD extends AbstractImageServer
                 if ($result === false) {
                     imagedestroy($sourceGD);
                     imagedestroy($destinationGD);
-                    return;
+                    return null;
                 }
                 break;
 
@@ -187,7 +187,7 @@ class GD extends AbstractImageServer
             default:
                 imagedestroy($sourceGD);
                 imagedestroy($destinationGD);
-                return;
+                return null;
         }
 
         // Rotation.
@@ -211,7 +211,7 @@ class GD extends AbstractImageServer
                         imagedestroy($destinationGD);
                         if ($destinationGDrotated === false) {
                             imagedestroy($sourceGD);
-                            return;
+                            return null;
                         }
                         $destinationGD = &$destinationGDrotated;
                         break;
@@ -228,7 +228,7 @@ class GD extends AbstractImageServer
                 imagedestroy($destinationGD);
                 if ($destinationGDrotated === false) {
                     imagedestroy($sourceGD);
-                    return;
+                    return null;
                 }
                 imagealphablending($destinationGDrotated, true);
                 imagesavealpha($destinationGDrotated, true);
@@ -238,7 +238,7 @@ class GD extends AbstractImageServer
             default:
                 imagedestroy($sourceGD);
                 imagedestroy($destinationGD);
-                return;
+                return null;
         }
 
         // Quality.
@@ -255,7 +255,7 @@ class GD extends AbstractImageServer
                 if ($result === false) {
                     imagedestroy($sourceGD);
                     imagedestroy($destinationGD);
-                    return;
+                    return null;
                 }
                 break;
 
@@ -265,14 +265,14 @@ class GD extends AbstractImageServer
                 if ($result === false) {
                     imagedestroy($sourceGD);
                     imagedestroy($destinationGD);
-                    return;
+                    return null;
                 }
                 break;
 
             default:
                 imagedestroy($sourceGD);
                 imagedestroy($destinationGD);
-                return;
+                return null;
         }
 
         // Save resulted resource into the specified format.

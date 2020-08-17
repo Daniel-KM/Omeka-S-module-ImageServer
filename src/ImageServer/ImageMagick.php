@@ -113,21 +113,21 @@ class ImageMagick extends AbstractImageServer
     public function transform(array $args = [])
     {
         if (empty($args)) {
-            return;
+            return null;
         }
 
         $this->_args = $args;
         $args = &$this->_args;
 
         if (!$this->checkMediaType($args['source']['media_type'])
-                || !$this->checkMediaType($args['format']['feature'])
-            ) {
-            return;
+            || !$this->checkMediaType($args['format']['feature'])
+        ) {
+            return null;
         }
 
         $image = $this->_loadImageResource($args['source']['filepath']);
         if (empty($image)) {
-            return;
+            return null;
         }
 
         // Get width and height if missing.
@@ -139,7 +139,7 @@ class ImageMagick extends AbstractImageServer
         $extraction = $this->_prepareExtraction();
         if (!$extraction) {
             $this->_destroyIfFetched($image);
-            return;
+            return null;
         }
 
         list(
@@ -182,7 +182,7 @@ class ImageMagick extends AbstractImageServer
 
             default:
                 $this->_destroyIfFetched($image);
-                return;
+                return null;
         }
 
         // Rotation.
@@ -197,7 +197,7 @@ class ImageMagick extends AbstractImageServer
 
             default:
                 $this->_destroyIfFetched($image);
-                return;
+                return null;
         }
 
         // Quality.
@@ -219,7 +219,7 @@ class ImageMagick extends AbstractImageServer
 
             default:
                 $this->_destroyIfFetched($image);
-                return;
+                return null;
         }
 
         // Save resulted resource into the specified format.

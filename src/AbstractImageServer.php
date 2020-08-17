@@ -90,10 +90,10 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
 
             case 'regionByPx':
                 if ($args['region']['x'] >= $args['source']['width']) {
-                    return;
+                    return null;
                 }
                 if ($args['region']['y'] >= $args['source']['height']) {
-                    return;
+                    return null;
                 }
                 $sourceX = $args['region']['x'];
                 $sourceY = $args['region']['y'];
@@ -118,16 +118,16 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
                 break;
 
             default:
-                return;
-       }
+                return null;
+        }
 
         // Final generic check for region of the source.
         if ($sourceX < 0 || $sourceX >= $args['source']['width']
-                || $sourceY < 0 || $sourceY >= $args['source']['height']
-                || $sourceWidth <= 0 || $sourceWidth > $args['source']['width']
-                || $sourceHeight <= 0 || $sourceHeight > $args['source']['height']
-            ) {
-            return;
+            || $sourceY < 0 || $sourceY >= $args['source']['height']
+            || $sourceWidth <= 0 || $sourceWidth > $args['source']['width']
+            || $sourceHeight <= 0 || $sourceHeight > $args['source']['height']
+        ) {
+            return null;
         }
 
         // Size.
@@ -183,17 +183,17 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
                 break;
 
             default:
-                return;
+                return null;
         }
 
         // Final generic checks for size.
         // In version 2, size 0 is not allowed, but in version 3, minimum size is 1.
         if (version_compare($args['version'], '3', '<')) {
             if (empty($destinationWidth) || empty($destinationHeight)) {
-                return;
+                return null;
             }
         } elseif ($destinationWidth < 1 || $destinationHeight < 1) {
-            return;
+            return null;
         }
 
         return [
