@@ -221,16 +221,27 @@ class Module extends AbstractModule
 
         // Form is already validated in parent.
         $params = (array) $controller->getRequest()->getPost();
-        $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'process' => null]);
-        if (empty($params['process']) || $params['process'] !== $controller->translate('Process')) {
-            return;
+        $tilerParams = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'process' => null]);
+        if (empty($tilerParams['process']) || $tilerParams['process'] !== $controller->translate('Process')) {
+            return true;
         }
+
+        return $this->processTiler($tilerParams);
+    }
+
+    protected function processTiler(array $params)
+    {
+        $services = $this->getServiceLocator();
+        $plugins = $services->get('ControllerPluginManager');
+        $messenger = $plugins->get('messenger');
 
         if (empty($params['query'])) {
             $message = 'A query is needed to run the bulk tiler.'; // @translate
-            $controller->messenger()->addWarning($message);
-            return;
+            $messenger->addWarning($message);
+            return true;
         }
+
+        $urlHelper = $plugins->get('url');
 
         $query = [];
         parse_str($params['query'], $query);
@@ -239,19 +250,25 @@ class Module extends AbstractModule
 
         unset($params['process']);
 
-        $services = $this->getServiceLocator();
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
         $message = new Message(
-            'Creating tiles for images attached to specified items, in background (%sjob #%d%s)', // @translate
+            'Creating tiles for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
             sprintf('<a href="%s">',
-                htmlspecialchars($controller->url()->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
             ),
             $job->getId(),
-            '</a>'
+            '</a>',
+            sprintf('<a href="%s">',
+                htmlspecialchars($this->isModuleActive('Log')
+                    ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                    : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
+                )
+            )
         );
         $message->setEscapeHtml(false);
-        $controller->messenger()->addSuccess($message);
+        $messenger->addSuccess($message);
+        return true;
     }
 
     /**

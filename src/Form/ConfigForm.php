@@ -110,6 +110,9 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                         . ' ' . $this->translate('Nevertheless, the performance depends on your installation and your server.'), // @translate
                     'value_options' => $this->listImageProcessors(),
                 ],
+                'attributes' => [
+                    'id' => 'imageserver_image_creator',
+                ],
             ])
             ->add([
                 'name' => 'imageserver_image_max_size',
@@ -148,6 +151,9 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'options' => [
                     'label' => 'Bulk tiler', // @translate
                     'info' => 'Imported files can be tiled via a background job.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_bulk_tiler',
                 ],
             ])
         ;
