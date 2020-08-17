@@ -38,7 +38,7 @@ trait TraitImage
     /**
      * @var \IiifServer\View\Helper\ImageSize
      */
-    protected $imageSizeHelper;
+    protected $imageSize;
 
     /**
      * @var \IiifServer\View\Helper\IiifImageUrl
@@ -48,7 +48,7 @@ trait TraitImage
     protected function initImage()
     {
         $viewHelpers = $this->resource->getServiceLocator()->get('ViewHelperManager');
-        $this->imageSizeHelper = $viewHelpers->get('imageSize');
+        $this->imageSize = $viewHelpers->get('imageSize');
         $this->iiifImageUrl = $viewHelpers->get('iiifImageUrl');
     }
 
@@ -86,8 +86,7 @@ trait TraitImage
         }
 
         if (!array_key_exists($type, $this->_storage['image_sizes'])) {
-            $helper = $this->imageSizeHelper;
-            $this->_storage['image_sizes'][$type] = $helper($this->resource->primaryMedia(), $type) ?: null;
+            $this->_storage['image_sizes'][$type] = $this->imageSize->__invoke($this->resource->primaryMedia(), $type) ?: null;
         }
 
         return $this->_storage['image_sizes'][$type];

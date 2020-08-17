@@ -127,8 +127,7 @@ class ImageService3 extends AbstractResourceType
 
     public function getId()
     {
-        $helper = $this->iiifImageUrl;
-        return $helper($this->resource, 'imageserver/id', '3');
+        return $this->iiifImageUrl->__invoke($this->resource, 'imageserver/id', '3');
     }
 
     public function getProtocol()
@@ -188,8 +187,7 @@ class ImageService3 extends AbstractResourceType
         $tiles = [];
 
         // TODO Use a standard json-serializable TileInfo.
-        $helper = $this->tileInfo;
-        $tilingData = $helper($this->resource);
+        $tilingData = $this->tileInfo->__invoke($this->resource);
         if ($tilingData) {
             $iiifTileInfo = new Tile($this->resource, ['tilingData' => $tilingData]);
             if ($iiifTileInfo->hasTilingInfo()) {
@@ -216,20 +214,19 @@ class ImageService3 extends AbstractResourceType
 
     public function getRights()
     {
-        $helper = $this->setting;
         $url = null;
         $orUrl = false;
 
-        $param = $helper('imageserver_info_rights');
+        $param = $this->setting->__invoke('imageserver_info_rights');
         switch ($param) {
             case 'url':
-                $url = $helper('imageserver_info_rights_url');
+                $url = $this->setting->__invoke('imageserver_info_rights_url');
                 break;
             case 'property_or_url':
                 $orUrl = true;
                 // no break.
             case 'property':
-                $property = $helper('imageserver_info_rights_property');
+                $property = $this->setting->__invoke('imageserver_info_rights_property');
                 $url = (string) $this->resource->value($property);
                 break;
             case 'item_or_url':
@@ -250,7 +247,7 @@ class ImageService3 extends AbstractResourceType
         }
 
         if (!$url && $orUrl) {
-            $url = $helper('imageserver_info_rights_url');
+            $url = $this->setting->__invoke('imageserver_info_rights_url');
         }
 
         if ($url) {

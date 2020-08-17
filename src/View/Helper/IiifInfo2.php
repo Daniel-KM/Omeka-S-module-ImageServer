@@ -162,13 +162,10 @@ class IiifInfo2 extends AbstractHelper
         $manifest = &$info;
         $resource = $media;
         $type = 'file';
-        $triggerHelper = $this->view->plugin('trigger');
         $params = compact('manifest', 'resource', 'type');
-        $params = $triggerHelper('imageserver.manifest', $params, true);
+        $params = $this->view->plugin('trigger')->__invoke('imageserver.manifest', $params, true);
         $info = $params['manifest'];
-
-        $info = (object) $info;
-        return $info;
+        return (object) $info;
     }
 
     /**

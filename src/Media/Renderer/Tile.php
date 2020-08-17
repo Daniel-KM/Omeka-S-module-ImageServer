@@ -54,8 +54,7 @@ class Tile implements RendererInterface
     {
         static $firstTile = true;
 
-        $helper = $this->tileInfo;
-        $tileInfo = $helper($media);
+        $tileInfo = $this->tileInfo->__invoke($media);
         if (empty($tileInfo) || empty($tileInfo['tile_type'])) {
             return new Message('No tile or no properties for media #%d.', // @translate
                 $media->id());
