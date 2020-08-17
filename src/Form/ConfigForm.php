@@ -156,6 +156,17 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     'id' => 'imageserver_bulk_tiler',
                 ],
             ])
+            ->add([
+                'name' => 'imageserver_bulk_sizer',
+                'type' => Fieldset::class,
+                'options' => [
+                    'label' => 'Bulk sizer', // @translate
+                    'info' => 'This process saves height and width of all images and derivatives to speed up creation of iiif files.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_bulk_sizer',
+                ],
+            ])
         ;
         $bulkFieldset = $this->get('imageserver_bulk_tiler');
         $bulkFieldset
@@ -169,7 +180,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
                 ],
                 'attributes' => [
-                    'id' => 'query',
+                    'id' => 'tiler_query',
                 ],
             ])
             ->add([
@@ -191,6 +202,48 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
                 'attributes' => [
                     'id' => 'process',
+                    'value' => 'Process', // @translate
+                ],
+            ])
+        ;
+
+        $bulkFieldset = $this->get('imageserver_bulk_sizer');
+        $bulkFieldset
+            ->add([
+                'name' => 'query_sizer',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Query', // @translate
+                    'info' => $this->translate('This query will be used to select all items whose attached images will be processed in the background.'), // @translate
+                    'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
+                ],
+                'attributes' => [
+                    'id' => 'query_sizer',
+                ],
+            ])
+            ->add([
+                'name' => 'filter_sized',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Limit process', // @translate
+                    'value_options' => [
+                        'all' => 'All', // @translate
+                        'sized' => 'Only already sized', // @translate
+                        'unsized' => 'Only not yet sized', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'filter_sized',
+                ],
+            ])
+            ->add([
+                'name' => 'process_sizer',
+                'type' => Element\Submit::class,
+                'options' => [
+                    'label' => 'Run in background', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'process_sizer',
                     'value' => 'Process', // @translate
                 ],
             ])
@@ -219,6 +272,14 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ])
             ->add([
                 'name' => 'imageserver_bulk_tiler',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'imageserver_bulk_sizer',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'filter_sized',
                 'required' => false,
             ])
         ;

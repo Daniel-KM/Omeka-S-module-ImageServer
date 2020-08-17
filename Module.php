@@ -241,7 +241,14 @@ class Module extends AbstractModule
         $params = (array) $controller->getRequest()->getPost();
         $tilerParams = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'process' => null]);
         if (empty($tilerParams['process']) || $tilerParams['process'] !== $controller->translate('Process')) {
-            return true;
+            $sizerParams = array_intersect_key($params, ['query_sizer' => null, 'process_sizer' => null]);
+            if (empty($sizerParams['process_sizer']) || $sizerParams['process_sizer'] !== $controller->translate('Process')) {
+                return true;
+            }
+            return $this->processSizer([
+                'query' => $sizerParams['query_sizer'],
+                'filter' => empty($sizerParams['filter_sized']) ? 'all' : $sizerParams['filter_sized'],
+            ]);
         }
 
         return $this->processTiler($tilerParams);
@@ -284,6 +291,41 @@ class Module extends AbstractModule
                 )
             )
         );
+        $message->setEscapeHtml(false);
+        $messenger->addSuccess($message);
+        return true;
+    }
+
+    protected function processSizer(array $params)
+    {
+        $services = $this->getServiceLocator();
+        $plugins = $services->get('ControllerPluginManager');
+        $messenger = $plugins->get('messenger');
+        $urlHelper = $plugins->get('url');
+
+        $query = [];
+        parse_str($params['query'], $query);
+        unset($query['submit']);
+        $params['query'] = $query;
+
+        unset($params['process']);
+
+        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+        $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
+        $message = new Message(
+            'Saving sizes for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
+            sprintf('<a href="%s">',
+                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+            ),
+            $job->getId(),
+            '</a>',
+            sprintf('<a href="%s">',
+                htmlspecialchars($this->isModuleActive('Log')
+                        ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                        : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
+                    )
+                )
+            );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
         return true;
