@@ -5,7 +5,7 @@ use ImageServer\Mvc\Controller\Plugin\TileInfo;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Media\Renderer\RendererInterface;
 use Omeka\Stdlib\Message;
-use Zend\View\Renderer\PhpRenderer;
+use Laminas\View\Renderer\PhpRenderer;
 
 class Tile implements RendererInterface
 {

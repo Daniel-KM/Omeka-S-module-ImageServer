@@ -32,7 +32,7 @@ namespace ImageServer\ImageServer;
 
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
-use Zend\Log\Logger;
+use Laminas\Log\Logger;
 
 /**
  * Helper to create an image from another one with IIIF arguments.

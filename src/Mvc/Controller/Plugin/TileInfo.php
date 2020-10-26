@@ -30,7 +30,7 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use Omeka\Api\Representation\MediaRepresentation;
-use Zend\Mvc\Controller\Plugin\AbstractPlugin;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 class TileInfo extends AbstractPlugin
 {

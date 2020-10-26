@@ -30,10 +30,10 @@
 
 namespace ImageServer\ImageServer;
 
-use Zend\Log\LoggerAwareInterface;
-use Zend\Log\LoggerAwareTrait;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
+use Laminas\I18n\Translator\TranslatorAwareInterface;
+use Laminas\I18n\Translator\TranslatorAwareTrait;
 
 /**
  * Abstract  to manage strategies used to create an image.

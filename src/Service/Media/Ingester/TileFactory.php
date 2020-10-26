@@ -4,7 +4,7 @@ namespace ImageServer\Service\Media\Ingester;
 use ImageServer\Media\Ingester\Tile;
 use Interop\Container\ContainerInterface;
 use Omeka\Service\Exception\ConfigException;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class TileFactory implements FactoryInterface
 {

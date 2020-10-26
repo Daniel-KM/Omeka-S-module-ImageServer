@@ -3,7 +3,7 @@ namespace ImageServer\Service\Media\Renderer;
 
 use ImageServer\Media\Renderer\Tile;
 use Omeka\Service\Exception\ConfigException;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use Interop\Container\ContainerInterface;
 
 class TileFactory implements FactoryInterface

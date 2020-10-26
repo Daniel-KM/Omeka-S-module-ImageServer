@@ -29,7 +29,7 @@
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
-use Zend\Mvc\Controller\Plugin\AbstractPlugin;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 class TileServer extends AbstractPlugin
 {

@@ -5,7 +5,7 @@ use DanielKm\Deepzoom\DeepzoomFactory;
 use DanielKm\Zoomify\ZoomifyFactory;
 use Omeka\Service\Exception\InvalidArgumentException;
 use Omeka\Stdlib\Message;
-use Zend\Mvc\Controller\Plugin\AbstractPlugin;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 class TileBuilder extends AbstractPlugin
 {

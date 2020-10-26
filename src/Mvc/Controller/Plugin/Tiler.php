@@ -4,8 +4,8 @@ namespace ImageServer\Mvc\Controller\Plugin;
 
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Stdlib\Message;
-use Zend\Log\LoggerInterface;
-use Zend\Mvc\Controller\Plugin\AbstractPlugin;
+use Laminas\Log\LoggerInterface;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 class Tiler extends AbstractPlugin
 {

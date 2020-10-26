@@ -3,7 +3,7 @@ namespace ImageServer\Service\Controller;
 
 use ImageServer\Controller\MediaController;
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class MediaControllerFactory implements FactoryInterface
 {

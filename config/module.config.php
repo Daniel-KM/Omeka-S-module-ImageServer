@@ -105,7 +105,7 @@ return [
             // Image          {scheme}://{server}{/prefix}/{identifier}
 
             'imageserver' => [
-                'type' => \Zend\Router\Http\Literal::class,
+                'type' => \Laminas\Router\Http\Literal::class,
                 'options' => [
                     'route' => '/iiif-img',
                     'defaults' => [
@@ -120,7 +120,7 @@ return [
                 'child_routes' => [
                     // The specification requires a 303 redirect to the info.json.
                     'id' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id",
                             'constraints' => [
@@ -140,7 +140,7 @@ return [
                     // processed after it.
                     // TODO Simplify to any number of sub elements.
                     'media-bad' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
                             'constraints' => [
@@ -160,7 +160,7 @@ return [
                         ],
                     ],
                     'info' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id/info.json",
                             'constraints' => [
@@ -182,7 +182,7 @@ return [
                     // between version 2 and 3 and may return error, or return the image with
                     // the canonical url.
                     'media' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id/:region/:size/:rotation/:quality:.:format",
                             'constraints' => [
@@ -211,7 +211,7 @@ return [
             ],
 
             'mediaserver' => [
-                'type' => \Zend\Router\Http\Literal::class,
+                'type' => \Laminas\Router\Http\Literal::class,
                 'options' => [
                     'route' => '/ixif-media',
                     'defaults' => [
@@ -225,7 +225,7 @@ return [
                 'child_routes' => [
                     // A redirect to the info.json is required by the specification.
                     'id' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id",
                             'constraints' => [
@@ -244,7 +244,7 @@ return [
                     // This route should be set before the mediaserver/media in order to be
                     // processed after it.
                     'media-bad' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id:.:format",
                             'constraints' => [
@@ -260,7 +260,7 @@ return [
                         ],
                     ],
                     'info' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id/info.json",
                             'constraints' => [
@@ -278,7 +278,7 @@ return [
                     // Warning: the format is separated with a ".", not a "/".
                     // TODO pdf is not an audio video media.
                     'media' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                        'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
                             'route' => "[/:version]/$prefix:id:.:format",
                             'constraints' => [

@@ -33,10 +33,10 @@ namespace ImageServer\ImageServer;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 use Omeka\Settings\Settings;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
-use Zend\Log\LoggerAwareInterface;
-use Zend\Log\LoggerAwareTrait;
+use Laminas\I18n\Translator\TranslatorAwareInterface;
+use Laminas\I18n\Translator\TranslatorAwareTrait;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
 
 /**
  * Helper to create an image from another one with IIIF arguments.

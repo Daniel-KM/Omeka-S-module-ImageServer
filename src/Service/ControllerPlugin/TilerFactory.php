@@ -5,7 +5,7 @@ use ImageServer\Mvc\Controller\Plugin\Tiler;
 use Interop\Container\ContainerInterface;
 use Omeka\File\Thumbnailer\ImageMagick;
 use Omeka\Stdlib\Cli;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class TilerFactory implements FactoryInterface
 {

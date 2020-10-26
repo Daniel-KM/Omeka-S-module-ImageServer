@@ -34,9 +34,9 @@ use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
 use Omeka\File\Store\StoreInterface;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
-use Zend\View\Model\JsonModel;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
+use Laminas\View\Model\JsonModel;
 
 /**
  * The Media controller class.
@@ -79,7 +79,7 @@ class MediaController extends AbstractActionController
         ], ['force_canonical' => true]);
         return $this->getResponse()
             // TODO The iiif image api specification recommands 303, not 302.
-            ->setStatusCode(\Zend\Http\Response::STATUS_CODE_303)
+            ->setStatusCode(\Laminas\Http\Response::STATUS_CODE_303)
             ->getHeaders()->addHeaderLine('Location', $url);
     }
 
@@ -89,7 +89,7 @@ class MediaController extends AbstractActionController
     public function badAction()
     {
         $message = 'The Image server cannot fulfill the request: the arguments are incorrect.'; // @translate
-        return $this->viewError(new BadRequestException($message), \Zend\Http\Response::STATUS_CODE_400);
+        return $this->viewError(new BadRequestException($message), \Laminas\Http\Response::STATUS_CODE_400);
     }
 
     /**
@@ -102,7 +102,7 @@ class MediaController extends AbstractActionController
     {
         $resource = $this->fetchResource('media');
         if (!$resource) {
-            return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
+            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
         }
 
         $version = $this->requestedVersion();
@@ -112,7 +112,7 @@ class MediaController extends AbstractActionController
         try {
             $info = $iiifInfo($resource, $version);
         } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
-            return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_400);
+            return $this->jsonError($e, \Laminas\Http\Response::STATUS_CODE_400);
         }
 
         return $this->iiifImageJsonLd($info, $version);
@@ -125,7 +125,7 @@ class MediaController extends AbstractActionController
     {
         $media = $this->fetchResource('media');
         if (!$media) {
-            return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
+            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
         }
 
         $response = $this->getResponse();
@@ -136,7 +136,7 @@ class MediaController extends AbstractActionController
         if (pathinfo($media->filename(), PATHINFO_EXTENSION) != $format) {
             return $this->viewError(new UnsupportedMediaTypeException(
                 'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.', // @translate
-                \Zend\Http\Response::STATUS_CODE_500
+                \Laminas\Http\Response::STATUS_CODE_500
             ));
         }
 
@@ -149,7 +149,7 @@ class MediaController extends AbstractActionController
                 if (!file_exists($filepath) || filesize($filepath) == 0) {
                     return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
                         'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.', // @translate
-                        \Zend\Http\Response::STATUS_CODE_500
+                        \Laminas\Http\Response::STATUS_CODE_500
                     ));
                 }
                 break;
@@ -238,7 +238,7 @@ class MediaController extends AbstractActionController
 
     protected function jsonError(\Exception $exception, $statusCode = 500)
     {
-        /* @var \Zend\Http\Response $response */
+        /* @var \Laminas\Http\Response $response */
         $this->getResponse()->setStatusCode($statusCode);
         return new JsonModel([
             'status' => 'error',
@@ -248,7 +248,7 @@ class MediaController extends AbstractActionController
 
     protected function viewError(\Exception $exception, $statusCode = 500)
     {
-        /* @var \Zend\Http\Response $response */
+        /* @var \Laminas\Http\Response $response */
         $this->getResponse()->setStatusCode($statusCode);
         $view = new ViewModel;
         return $view

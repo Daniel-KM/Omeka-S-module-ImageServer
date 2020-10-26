@@ -38,10 +38,10 @@ use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 use Omeka\Module\Manager as ModuleManager;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
-use Zend\I18n\Translator\TranslatorInterface;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\JsonModel;
-use Zend\View\Model\ViewModel;
+use Laminas\I18n\Translator\TranslatorInterface;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
+use Laminas\View\Model\ViewModel;
 
 /**
  * The Image controller class.
@@ -121,7 +121,7 @@ class ImageController extends AbstractActionController
         ], ['force_canonical' => true]);
         return $this->getResponse()
             // TODO The iiif image api specification recommands 303, not 302.
-            ->setStatusCode(\Zend\Http\Response::STATUS_CODE_303)
+            ->setStatusCode(\Laminas\Http\Response::STATUS_CODE_303)
             ->getHeaders()->addHeaderLine('Location', $url);
     }
 
@@ -131,7 +131,7 @@ class ImageController extends AbstractActionController
     public function badAction()
     {
         $message = 'The Image server cannot fulfill the request: the arguments are incorrect.'; // @translate
-        return $this->viewError(new BadRequestException($message), \Zend\Http\Response::STATUS_CODE_400);
+        return $this->viewError(new BadRequestException($message), \Laminas\Http\Response::STATUS_CODE_400);
     }
 
     /**
@@ -144,7 +144,7 @@ class ImageController extends AbstractActionController
     {
         $resource = $this->fetchResource('media');
         if (!$resource) {
-            return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
+            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
         }
 
         $this->requestedVersion();
@@ -153,7 +153,7 @@ class ImageController extends AbstractActionController
         try {
             $info = $iiifInfo($resource, $this->version);
         } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
-            return $this->jsonError($e, \Zend\Http\Response::STATUS_CODE_400);
+            return $this->jsonError($e, \Laminas\Http\Response::STATUS_CODE_400);
         }
 
         return $this->iiifImageJsonLd($info, $this->version);
@@ -167,7 +167,7 @@ class ImageController extends AbstractActionController
         /** @var \Omeka\Api\Representation\MediaRepresentation $media */
         $media = $this->fetchResource('media');
         if (!$media) {
-            return $this->jsonError(new NotFoundException, \Zend\Http\Response::STATUS_CODE_404);
+            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
         }
 
         $response = $this->getResponse();
@@ -176,7 +176,7 @@ class ImageController extends AbstractActionController
         if (strpos($media->mediaType(), 'image/') !== 0) {
             return $this->viewError(new UnsupportedMediaTypeException(
                 sprintf('The media "%d" is not an image', $media->id()), // @translate
-                \Zend\Http\Response::STATUS_CODE_501
+                \Laminas\Http\Response::STATUS_CODE_501
             ));
         }
 
@@ -293,7 +293,7 @@ class ImageController extends AbstractActionController
                     if (!empty($maxFileSize) && $media->size() > $maxFileSize) {
                         return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
                             'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.', // @translate
-                            \Zend\Http\Response::STATUS_CODE_500
+                            \Laminas\Http\Response::STATUS_CODE_500
                         ));
                     }
                     $imagePath = $this->_transformImage($transform);
@@ -326,7 +326,7 @@ class ImageController extends AbstractActionController
             if (empty($output)) {
                 return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
                     'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.', // @translate
-                    \Zend\Http\Response::STATUS_CODE_500
+                    \Laminas\Http\Response::STATUS_CODE_500
                 ));
             }
 
@@ -348,7 +348,7 @@ class ImageController extends AbstractActionController
         else {
             return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
                 'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.', // @translate
-                \Zend\Http\Response::STATUS_CODE_500
+                \Laminas\Http\Response::STATUS_CODE_500
             ));
         }
     }

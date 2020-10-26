@@ -32,7 +32,7 @@ namespace ImageServer\View\Helper;
 use ImageServer\Iiif\ImageService3;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\TempFileFactory;
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
 
 /**
  * Helper to get a IIIF info.json for a file.

@@ -12,11 +12,11 @@ use Omeka\File\Validator;
 use Omeka\Job\Dispatcher;
 use Omeka\Media\Ingester\IngesterInterface;
 use Omeka\Stdlib\ErrorStore;
-use Zend\Form\Element\File;
-use Zend\Form\Element\Url as UrlElement;
-use Zend\Uri\Http as HttpUri;
-use Zend\Validator\File\IsImage;
-use Zend\View\Renderer\PhpRenderer;
+use Laminas\Form\Element\File;
+use Laminas\Form\Element\Url as UrlElement;
+use Laminas\Uri\Http as HttpUri;
+use Laminas\Validator\File\IsImage;
+use Laminas\View\Renderer\PhpRenderer;
 
 class Tile implements IngesterInterface
 {

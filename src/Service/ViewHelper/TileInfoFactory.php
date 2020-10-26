@@ -3,7 +3,7 @@ namespace ImageServer\Service\ViewHelper;
 
 use ImageServer\View\Helper\TileInfo;
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 /**
  * Service factory for the TileInfo view helper.

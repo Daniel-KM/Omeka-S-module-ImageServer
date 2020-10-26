@@ -3,7 +3,7 @@ namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\Mvc\Controller\Plugin\ImageSize;
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ImageSizeFactory implements FactoryInterface
 {

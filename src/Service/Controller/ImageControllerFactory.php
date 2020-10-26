@@ -5,7 +5,7 @@ use ImageServer\Controller\ImageController;
 use Interop\Container\ContainerInterface;
 use Omeka\File\Thumbnailer\ImageMagick;
 use Omeka\Stdlib\Cli;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ImageControllerFactory implements FactoryInterface
 {
