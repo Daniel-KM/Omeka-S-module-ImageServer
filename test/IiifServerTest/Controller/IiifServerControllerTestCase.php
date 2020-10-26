@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace ImageServerTest\Controller;
 
@@ -9,7 +9,7 @@ abstract class ImageServerControllerTestCase extends OmekaControllerTestCase
     protected $item;
     protected $itemSet;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->loginAsAdmin();
 
@@ -20,7 +20,7 @@ abstract class ImageServerControllerTestCase extends OmekaControllerTestCase
         $this->itemSet = $response->getContent();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->api()->delete('items', $this->item->id());
         $this->api()->delete('item_sets', $this->itemSet->id());

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2020 Daniel Berthereau
@@ -29,9 +29,9 @@
 
 namespace ImageServer\ImageServer;
 
+use Laminas\Log\Logger;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
-use Laminas\Log\Logger;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
@@ -297,7 +297,7 @@ class ImageMagick extends AbstractImageServer
      *
      * @param string $image
      */
-    protected function _destroyIfFetched($image)
+    protected function _destroyIfFetched($image): void
     {
         if (isset($this->fetched[$image])) {
             unlink($image);

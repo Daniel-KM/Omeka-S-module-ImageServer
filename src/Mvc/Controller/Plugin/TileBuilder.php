@@ -1,11 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use DanielKm\Deepzoom\DeepzoomFactory;
 use DanielKm\Zoomify\ZoomifyFactory;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Service\Exception\InvalidArgumentException;
 use Omeka\Stdlib\Message;
-use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 class TileBuilder extends AbstractPlugin
 {

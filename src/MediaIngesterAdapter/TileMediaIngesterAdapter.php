@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\MediaIngesterAdapter;
 
 use CSVImport\MediaIngesterAdapter\MediaIngesterAdapterInterface;

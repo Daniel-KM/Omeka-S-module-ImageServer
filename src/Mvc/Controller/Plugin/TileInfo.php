@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2020 Daniel Berthereau
@@ -29,8 +29,8 @@
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
-use Omeka\Api\Representation\MediaRepresentation;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use Omeka\Api\Representation\MediaRepresentation;
 
 class TileInfo extends AbstractPlugin
 {

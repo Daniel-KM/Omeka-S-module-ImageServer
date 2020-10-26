@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2020 Daniel Berthereau
@@ -30,13 +30,13 @@
 
 namespace ImageServer\ImageServer;
 
-use Omeka\File\Store\StoreInterface;
-use Omeka\File\TempFileFactory;
-use Omeka\Settings\Settings;
 use Laminas\I18n\Translator\TranslatorAwareInterface;
 use Laminas\I18n\Translator\TranslatorAwareTrait;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
+use Omeka\File\Store\StoreInterface;
+use Omeka\File\TempFileFactory;
+use Omeka\Settings\Settings;
 
 /**
  * Helper to create an image from another one with IIIF arguments.

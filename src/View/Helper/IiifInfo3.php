@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2020 Daniel Berthereau
@@ -30,9 +30,9 @@
 namespace ImageServer\View\Helper;
 
 use ImageServer\Iiif\ImageService3;
+use Laminas\View\Helper\AbstractHelper;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\TempFileFactory;
-use Laminas\View\Helper\AbstractHelper;
 
 /**
  * Helper to get a IIIF info.json for a file.

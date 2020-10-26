@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2020 Daniel Berthereau
@@ -45,7 +45,7 @@ trait TraitImage
      */
     protected $iiifImageUrl;
 
-    protected function initImage()
+    protected function initImage(): void
     {
         $viewHelpers = $this->resource->getServiceLocator()->get('ViewHelperManager');
         $this->imageSize = $viewHelpers->get('imageSize');

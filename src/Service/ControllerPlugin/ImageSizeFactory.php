@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\Mvc\Controller\Plugin\ImageSize;

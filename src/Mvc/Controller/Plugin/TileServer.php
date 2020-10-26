@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2018 Daniel Berthereau
@@ -412,7 +412,7 @@ class TileServer extends AbstractPlugin
     {
         $result = [];
         foreach (range(0, $numLevels - 1) as $level) {
-            $result[] = pow(2, $level);
+            $result[] = 2 ** $level;
         }
         return $result;
     }

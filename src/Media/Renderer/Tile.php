@@ -1,11 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Media\Renderer;
 
 use ImageServer\Mvc\Controller\Plugin\TileInfo;
+use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Media\Renderer\RendererInterface;
 use Omeka\Stdlib\Message;
-use Laminas\View\Renderer\PhpRenderer;
 
 class Tile implements RendererInterface
 {

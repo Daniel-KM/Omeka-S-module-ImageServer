@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2020 Daniel Berthereau
@@ -37,16 +37,16 @@ if (!class_exists(\Generic\AbstractModule::class)) {
 }
 
 use Generic\AbstractModule;
-use Omeka\Entity\Media;
-use Omeka\Module\Exception\ModuleCannotInstallException;
-use Omeka\Mvc\Controller\Plugin\Messenger;
-use Omeka\Stdlib\Message;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\ModuleManager\ModuleManager;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use Omeka\Entity\Media;
+use Omeka\Module\Exception\ModuleCannotInstallException;
+use Omeka\Mvc\Controller\Plugin\Messenger;
+use Omeka\Stdlib\Message;
 
 class Module extends AbstractModule
 {
@@ -55,12 +55,12 @@ class Module extends AbstractModule
     // TODO Remove dependency to IIIF Server.
     protected $dependency = 'IiifServer';
 
-    public function init(ModuleManager $moduleManager)
+    public function init(ModuleManager $moduleManager): void
     {
         require_once __DIR__ . '/vendor/autoload.php';
     }
 
-    public function onBootstrap(MvcEvent $event)
+    public function onBootstrap(MvcEvent $event): void
     {
         parent::onBootstrap($event);
 
@@ -75,7 +75,7 @@ class Module extends AbstractModule
             );
     }
 
-    protected function preInstall()
+    protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
         $moduleManager = $services->get('Omeka\ModuleManager');
@@ -122,13 +122,13 @@ class Module extends AbstractModule
         }
     }
 
-    protected function postInstall()
+    protected function postInstall(): void
     {
         $services = $this->getServiceLocator();
         $this->createTilesMainDir($services);
     }
 
-    protected function postUninstall()
+    protected function postUninstall(): void
     {
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
@@ -156,7 +156,7 @@ class Module extends AbstractModule
         }
     }
 
-    public function warnUninstall(Event $event)
+    public function warnUninstall(Event $event): void
     {
         $view = $event->getTarget();
         $module = $view->vars()->module;
@@ -199,7 +199,7 @@ class Module extends AbstractModule
         echo $html;
     }
 
-    public function attachListeners(SharedEventManagerInterface $sharedEventManager)
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Module',
@@ -354,7 +354,7 @@ class Module extends AbstractModule
         return $processors;
     }
 
-    protected function createTilesMainDir(ServiceLocatorInterface $services)
+    protected function createTilesMainDir(ServiceLocatorInterface $services): void
     {
         // The local store "files" may be hard-coded.
         $config = include __DIR__ . '/config/module.config.php';
@@ -406,7 +406,7 @@ class Module extends AbstractModule
         );
     }
 
-    public function handleAfterSaveItem(Event $event)
+    public function handleAfterSaveItem(Event $event): void
     {
         $item = $event->getParam('response')->getContent();
         foreach ($item->getMedia() as $media) {
@@ -415,7 +415,7 @@ class Module extends AbstractModule
         $this->getServiceLocator()->get('Omeka\EntityManager')->flush();
     }
 
-    public function handleAfterSaveMedia(Event $event)
+    public function handleAfterSaveMedia(Event $event): void
     {
         $media = $event->getParam('response')->getContent();
         $this->afterSaveMedia($media);
@@ -427,7 +427,7 @@ class Module extends AbstractModule
      *
      * @param Media $media
      */
-    protected function afterSaveMedia(Media $media)
+    protected function afterSaveMedia(Media $media): void
     {
         if (strtok($media->getMediaType(), '/') !== 'image') {
             return;
@@ -478,7 +478,7 @@ class Module extends AbstractModule
      *
      * @param Event $event
      */
-    public function deleteMediaTiles(Event $event)
+    public function deleteMediaTiles(Event $event): void
     {
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');

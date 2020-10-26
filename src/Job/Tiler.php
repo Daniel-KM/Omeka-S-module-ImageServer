@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace ImageServer\Job;
 
@@ -38,7 +38,7 @@ class Tiler extends AbstractJob
      */
     protected $mediaStorageId;
 
-    public function perform()
+    public function perform(): void
     {
         $this->fetchMedia();
         if (empty($this->media)) {
@@ -85,7 +85,7 @@ class Tiler extends AbstractJob
     /**
      * Get media via the job id.
      */
-    protected function fetchMedia()
+    protected function fetchMedia(): void
     {
         // If no media, the event "api.create.post" may be not finished, so wait
         // 300 sec.
@@ -167,7 +167,7 @@ SQL;
      *
      * @param array|null $result
      */
-    protected function endJob($result = null)
+    protected function endJob($result = null): void
     {
         $mediaId = $this->getMediaIdViaSql();
 
@@ -227,7 +227,7 @@ SQL;
         }
     }
 
-    protected function checkRenaming()
+    protected function checkRenaming(): void
     {
         $services = $this->getServiceLocator();
         $fileManager = $services->get('ArchiveRepertory\FileManager');
@@ -269,7 +269,7 @@ SQL;
         $this->mediaStorageId = $newStorageId;
     }
 
-    protected function moveToAmazonS3()
+    protected function moveToAmazonS3(): void
     {
         $services = $this->getServiceLocator();
         /** @var \AmazonS3\File\Store\AwsS3 $store */

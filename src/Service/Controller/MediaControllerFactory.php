@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Service\Controller;
 
 use ImageServer\Controller\MediaController;

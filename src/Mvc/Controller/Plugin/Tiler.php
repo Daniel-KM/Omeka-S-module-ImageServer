@@ -1,11 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
-use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\Stdlib\Message;
 use Laminas\Log\LoggerInterface;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use Omeka\Api\Representation\MediaRepresentation;
+use Omeka\Stdlib\Message;
 
 class Tiler extends AbstractPlugin
 {

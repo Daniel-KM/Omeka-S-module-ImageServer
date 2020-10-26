@@ -1,11 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Service\Controller;
 
 use ImageServer\Controller\ImageController;
 use Interop\Container\ContainerInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use Omeka\File\Thumbnailer\ImageMagick;
 use Omeka\Stdlib\Cli;
-use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ImageControllerFactory implements FactoryInterface
 {

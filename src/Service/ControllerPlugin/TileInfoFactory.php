@@ -1,10 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\Mvc\Controller\Plugin\TileInfo;
 use Interop\Container\ContainerInterface;
-use Omeka\File\Exception\ConfigException;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Omeka\File\Exception\ConfigException;
 
 class TileInfoFactory implements FactoryInterface
 {

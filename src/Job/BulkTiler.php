@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Job;
 
 use Omeka\Job\AbstractJob;
@@ -13,7 +13,7 @@ class BulkTiler extends AbstractJob
      */
     const SQL_LIMIT = 25;
 
-    public function perform()
+    public function perform(): void
     {
         /**
          * @var array $config

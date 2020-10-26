@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2017 Daniel Berthereau
@@ -30,10 +30,10 @@
 
 namespace ImageServer\ImageServer;
 
-use Laminas\Log\LoggerAwareInterface;
-use Laminas\Log\LoggerAwareTrait;
 use Laminas\I18n\Translator\TranslatorAwareInterface;
 use Laminas\I18n\Translator\TranslatorAwareTrait;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
 
 /**
  * Abstract  to manage strategies used to create an image.
@@ -82,7 +82,7 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
      *
      * @return array|null Arguments for the transformation, else null.
      */
-    protected function _prepareExtraction()
+    protected function _prepareExtraction(): ?array
     {
         $args = &$this->_args;
 

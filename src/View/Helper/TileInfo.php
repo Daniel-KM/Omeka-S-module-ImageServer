@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace ImageServer\View\Helper;
 
-use Omeka\Api\Representation\MediaRepresentation;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Representation\MediaRepresentation;
 
 class TileInfo extends AbstractHelper
 {

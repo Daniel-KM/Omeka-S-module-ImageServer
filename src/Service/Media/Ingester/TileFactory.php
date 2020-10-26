@@ -1,10 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Service\Media\Ingester;
 
 use ImageServer\Media\Ingester\Tile;
 use Interop\Container\ContainerInterface;
-use Omeka\Service\Exception\ConfigException;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Omeka\Service\Exception\ConfigException;
 
 class TileFactory implements FactoryInterface
 {

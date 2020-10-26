@@ -1,7 +1,12 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace ImageServer\Media\Ingester;
 
+use Laminas\Form\Element\File;
+use Laminas\Form\Element\Url as UrlElement;
+use Laminas\Uri\Http as HttpUri;
+use Laminas\Validator\File\IsImage;
+use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Request;
 use Omeka\Entity\Media;
 use Omeka\File\Downloader;
@@ -12,11 +17,6 @@ use Omeka\File\Validator;
 use Omeka\Job\Dispatcher;
 use Omeka\Media\Ingester\IngesterInterface;
 use Omeka\Stdlib\ErrorStore;
-use Laminas\Form\Element\File;
-use Laminas\Form\Element\Url as UrlElement;
-use Laminas\Uri\Http as HttpUri;
-use Laminas\Validator\File\IsImage;
-use Laminas\View\Renderer\PhpRenderer;
 
 class Tile implements IngesterInterface
 {
@@ -121,7 +121,7 @@ class Tile implements IngesterInterface
      *
      * {@inheritDoc}
      */
-    public function ingest(Media $media, Request $request, ErrorStore $errorStore)
+    public function ingest(Media $media, Request $request, ErrorStore $errorStore): void
     {
         // Check if the url is a local path.
         $ingestUrl = $request->getValue('ingest_url');
@@ -160,7 +160,7 @@ class Tile implements IngesterInterface
      * @param Request $request
      * @param ErrorStore $errorStore
      */
-    protected function ingestFromUrl(Media $media, Request $request, ErrorStore $errorStore)
+    protected function ingestFromUrl(Media $media, Request $request, ErrorStore $errorStore): void
     {
         $data = $request->getContent();
         $uri = new HttpUri($data['ingest_url']);
@@ -198,7 +198,7 @@ class Tile implements IngesterInterface
      * @param ErrorStore $errorStore
      * @see \FileSideload\Media\Ingester\Sideload::ingest()
      */
-    protected function ingestFromLocalFile(Media $media, Request $request, ErrorStore $errorStore)
+    protected function ingestFromLocalFile(Media $media, Request $request, ErrorStore $errorStore): void
     {
         if (strlen($this->directory) < 2) {
             $errorStore->addError('ingest_url', 'The local file should be in a configured directory'); // @translate
@@ -256,7 +256,7 @@ class Tile implements IngesterInterface
      * @param ErrorStore $errorStore
      * @see \Omeka\Media\Ingester\Upload::ingest()
      */
-    protected function ingestFromFile(Media $media, Request $request, ErrorStore $errorStore)
+    protected function ingestFromFile(Media $media, Request $request, ErrorStore $errorStore): void
     {
         $data = $request->getContent();
         $fileData = $request->getFileData();
@@ -307,7 +307,7 @@ class Tile implements IngesterInterface
         ErrorStore $errorStore,
         TempFile $tempFile,
         $type
-    ) {
+    ): void {
         $data = $request->getContent();
 
         $storeOriginal = (!isset($data['store_original']) || $data['store_original']);

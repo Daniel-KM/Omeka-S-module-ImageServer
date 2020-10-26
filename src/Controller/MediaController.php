@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2020 Daniel Berthereau
@@ -30,13 +30,13 @@
 
 namespace ImageServer\Controller;
 
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
+use Laminas\View\Model\ViewModel;
 use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
 use Omeka\File\Store\StoreInterface;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
-use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\View\Model\ViewModel;
-use Laminas\View\Model\JsonModel;
 
 /**
  * The Media controller class.

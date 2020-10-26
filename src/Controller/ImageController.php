@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2015-2020 Daniel Berthereau
@@ -31,6 +31,10 @@
 namespace ImageServer\Controller;
 
 use ImageServer\ImageServer\ImageServer;
+use Laminas\I18n\Translator\TranslatorInterface;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
+use Laminas\View\Model\ViewModel;
 use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
 use Omeka\Api\Representation\MediaRepresentation;
@@ -38,10 +42,6 @@ use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 use Omeka\Module\Manager as ModuleManager;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
-use Laminas\I18n\Translator\TranslatorInterface;
-use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\View\Model\JsonModel;
-use Laminas\View\Model\ViewModel;
 
 /**
  * The Image controller class.
@@ -852,7 +852,7 @@ class ImageController extends AbstractActionController
      */
     protected function _getImagePath(MediaRepresentation $media, $imageType = 'original')
     {
-        return strpos($media->mediaType(), 'image/')=== 0
+        return strpos($media->mediaType(), 'image/') === 0
             ? $this->_mediaPath($media, $imageType)
             : null;
     }

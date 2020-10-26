@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace ImageServer\Service\ViewHelper;
 
 use ImageServer\View\Helper\TileInfo;
