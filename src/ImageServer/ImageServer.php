@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace ImageServer;
+namespace ImageServer\ImageServer;
 
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
@@ -40,6 +40,8 @@ use Zend\Log\LoggerAwareTrait;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
+ *
+ * @todo Create a service for image server and use a manager.
  *
  * @package ImageServer
  */
@@ -75,15 +77,15 @@ class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
         $this->store = $store;
         $this->commandLineArgs = $commandLineArgs;
         $creatorClass = $settings->get('imageserver_image_creator', 'Auto');
-        $this->setCreator("\\ImageServer\\ImageServer\\" . $creatorClass);
+        $this->setCreator('\\ImageServer\\ImageServer\\' . $creatorClass);
     }
 
     public function setCreator($creatorClass)
     {
         try {
             $needCli = [
-                '\ImageServer\ImageServer\Auto',
-                '\ImageServer\ImageServer\ImageMagick',
+                '\\ImageServer\\ImageServer\\Auto',
+                '\\ImageServer\\ImageServer\\ImageMagick',
             ];
             $this->_creator = in_array($creatorClass, $needCli)
                 ? new $creatorClass($this->tempFileFactory, $this->store, $this->commandLineArgs)

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright 2015-2017 Daniel Berthereau
+ * Copyright 2015-2020 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -30,7 +30,6 @@
 
 namespace ImageServer\ImageServer;
 
-use ImageServer\AbstractImageServer;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 use Zend\Log\Logger;

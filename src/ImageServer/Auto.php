@@ -30,7 +30,6 @@
 
 namespace ImageServer\ImageServer;
 
-use ImageServer\AbstractImageServer;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 

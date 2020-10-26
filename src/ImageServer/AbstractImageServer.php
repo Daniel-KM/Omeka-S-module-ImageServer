@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace ImageServer;
+namespace ImageServer\ImageServer;
 
 use Zend\Log\LoggerAwareInterface;
 use Zend\Log\LoggerAwareTrait;

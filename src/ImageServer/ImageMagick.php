@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright 2015-2017 Daniel Berthereau
+ * Copyright 2015-2020 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -29,7 +29,6 @@
 
 namespace ImageServer\ImageServer;
 
-use ImageServer\AbstractImageServer;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 use Zend\Log\Logger;

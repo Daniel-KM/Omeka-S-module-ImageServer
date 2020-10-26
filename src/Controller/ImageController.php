@@ -30,7 +30,7 @@
 
 namespace ImageServer\Controller;
 
-use ImageServer\ImageServer;
+use ImageServer\ImageServer\ImageServer;
 use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
 use Omeka\Api\Representation\MediaRepresentation;
