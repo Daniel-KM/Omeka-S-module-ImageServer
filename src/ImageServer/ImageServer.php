@@ -82,21 +82,17 @@ class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
 
     public function setCreator($creatorClass)
     {
-        try {
-            $needCli = [
-                '\\ImageServer\\ImageServer\\Auto',
-                '\\ImageServer\\ImageServer\\ImageMagick',
-            ];
-            $this->_creator = in_array($creatorClass, $needCli)
-                ? new $creatorClass($this->tempFileFactory, $this->store, $this->commandLineArgs)
-                : new $creatorClass($this->tempFileFactory, $this->store);
-        } catch (\Exception $e) {
-            throw $e;
-        }
+        $needCli = [
+            '\\ImageServer\\ImageServer\\Auto',
+            '\\ImageServer\\ImageServer\\ImageMagick',
+        ];
+        $this->_creator = in_array($creatorClass, $needCli)
+            ? new $creatorClass($this->tempFileFactory, $this->store, $this->commandLineArgs)
+            : new $creatorClass($this->tempFileFactory, $this->store);
         return $this;
     }
 
-    public function setArgs($args)
+    public function setArgs(array $args)
     {
         $this->_args = $args;
         return $this;
@@ -105,14 +101,14 @@ class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
     /**
      * Transform an image into another image according to params.
      *
-     * @internal The args are currently already checked in the controller.
+     * Note: The args are currently already checked in the controller.
      *
      * @param array $args List of arguments for the transformation.
      * @return string|null The filepath to the temp image if success.
      */
-    public function transform(array $args = [])
+    public function transform(array $args = null): ?string
     {
-        if (!empty($args)) {
+        if (!is_null($args)) {
             $this->setArgs($args);
         }
 

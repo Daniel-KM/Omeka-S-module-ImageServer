@@ -868,7 +868,7 @@ class ImageController extends AbstractActionController
      */
     protected function getStoragePath($prefix, $name, $extension = null)
     {
-        return sprintf('%s/%s%s', $prefix, $name, strlen($extension) ? '.' . $extension : '');
+        return sprintf('%s/%s%s', $prefix, $name, strlen((string) $extension) ? '.' . $extension : '');
     }
 
     /**

@@ -41,7 +41,13 @@ use Zend\Log\Logger;
  */
 class Imagick extends AbstractImageServer
 {
-    // List of managed IIIF media types.
+    /**
+     * List of managed IIIF media types.
+     *
+     * Imagick requires uppercase for check. They are lowercased in construct.
+     *
+     * @var array
+     */
     protected $_supportedFormats = [
         'image/jpeg' => 'JPG',
         'image/png' => 'PNG',
@@ -78,7 +84,7 @@ class Imagick extends AbstractImageServer
 
         $this->tempFileFactory = $tempFileFactory;
         $this->store = $store;
-        $this->_supportedFormats = array_intersect($this->_supportedFormats, \Imagick::queryFormats());
+        $this->_supportedFormats = array_map('strtolower', array_intersect($this->_supportedFormats, \Imagick::queryFormats()));
     }
 
     /**
@@ -89,7 +95,7 @@ class Imagick extends AbstractImageServer
      * @param array $args List of arguments for the transformation.
      * @return string|null The filepath to the temp image if success.
      */
-    public function transform(array $args = [])
+    public function transform(array $args = null): ?string
     {
         if (empty($args)) {
             return null;
@@ -201,7 +207,7 @@ class Imagick extends AbstractImageServer
         }
 
         // Save resulted resource into the specified format.
-        $extension = strtolower($this->_supportedFormats[$args['format']['feature']]);
+        $extension = $this->_supportedFormats[$args['format']['feature']];
         $tempFile = $this->tempFileFactory->build();
         $destination = $tempFile->getTempPath() . '.' . $extension;
         $tempFile->delete();

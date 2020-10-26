@@ -41,15 +41,16 @@ use Zend\Log\Logger;
  */
 class GD extends AbstractImageServer
 {
-    // List of managed IIIF media types.
+    /**
+     * List of managed IIIF media types.
+     *
+     * @var array
+     */
     protected $_supportedFormats = [
-        'image/jpeg' => true,
-        'image/png' => true,
-        'image/tiff' => false,
-        'image/gif' => true,
-        'application/pdf' => false,
-        'image/jp2' => false,
-        'image/webp' => true,
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/gif' => 'gif',
+        'image/webp' => 'webp',
     ];
 
     /**
@@ -78,10 +79,10 @@ class GD extends AbstractImageServer
 
         $gdInfo = gd_info();
         if (empty($gdInfo['GIF Read Support']) || empty($gdInfo['GIF Create Support'])) {
-            $this->_supportedFormats['image/gif'] = false;
+            unset($this->_supportedFormats['image/gif']);
         }
         if (empty($gdInfo['WebP Support'])) {
-            $this->_supportedFormats['image/webp'] = false;
+            unset($this->_supportedFormats['image/webp']);
         }
 
         $this->tempFileFactory = $tempFileFactory;
@@ -96,7 +97,7 @@ class GD extends AbstractImageServer
      * @param array $args List of arguments for the transformation.
      * @return string|null The filepath to the temp image if success.
      */
-    public function transform(array $args = [])
+    public function transform(array $args = null): ?string
     {
         if (empty($args)) {
             return null;
@@ -276,7 +277,7 @@ class GD extends AbstractImageServer
 
         // Save resulted resource into the specified format.
         // TODO Use a true name to allow cache, or is it managed somewhere else?
-        $extension = strtolower($this->_supportedFormats[$args['format']['feature']]);
+        $extension = $this->_supportedFormats[$args['format']['feature']];
         $tempFile = $this->tempFileFactory->build();
         $destination = $tempFile->getTempPath() . '.' . $extension;
         $tempFile->delete();

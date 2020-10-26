@@ -75,13 +75,13 @@ class Auto extends AbstractImageServer
         // If available, use GD when source and destination formats are managed.
         if (extension_loaded('gd')) {
             $this->_gdMediaTypes = [
-                'image/jpeg' => true,
-                'image/png' => true,
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
                 'image/tiff' => false,
-                'image/gif' => true,
+                'image/gif' => 'gif',
                 'application/pdf' => false,
                 'image/jp2' => false,
-                'image/webp' => true,
+                'image/webp' => 'webp',
             ];
             $gdInfo = gd_info();
             if (empty($gdInfo['GIF Read Support']) || empty($gdInfo['GIF Create Support'])) {
@@ -113,12 +113,12 @@ class Auto extends AbstractImageServer
     /**
      * Transform an image into another image according to params.
      *
-     * @internal The args are currently already checked in the controller.
+     * Note: The args are currently already checked in the controller.
      *
      * @param array $args List of arguments for the transformation.
      * @return string|null The filepath to the temp image if success.
      */
-    public function transform(array $args = [])
+    public function transform(array $args = null): ?string
     {
         // GD seems to be 15% speeder, so it is used first if available.
         if (!empty($this->_gdMediaTypes[$args['source']['media_type']])
