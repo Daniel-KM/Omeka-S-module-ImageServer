@@ -240,13 +240,13 @@ your archives regularly so you can roll back if needed.
 Troubleshooting
 ---------------
 
-See online issues on the [module issues] page on GitHub.
+See online issues on the [module issues] page on GitLab.
 
 
 License
 -------
 
-This module is published under the [CeCILL v2.1] licence, compatible with
+This module is published under the [CeCILL v2.1] license, compatible with
 [GNU/GPL] and approved by [FSF] and [OSI].
 
 In consideration of access to the source code and the rights to copy, modify and
@@ -281,44 +281,44 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [Mines ParisTech].
 
 
-[Image Server]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer
+[Image Server]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer
 [Omeka S]: https://omeka.org/s
 [International Image Interoperability Framework]: http://iiif.io
 [IIIF specifications]: http://iiif.io/api/
 [IIP Image]: http://iipimage.sourceforge.net
-[Iiif Server]: https://github.com/Daniel-KM/Omeka-S-module-IiifServer
+[Iiif Server]: https://gitlab.com/Daniel-KM/Omeka-S-module-IiifServer
 [OpenSeadragon]: https://openseadragon.github.io
-[Universal Viewer plugin for Omeka]: https://github.com/Daniel-KM/Omeka-plugin-UniversalViewer
+[Universal Viewer plugin for Omeka]: https://gitlab.com/Daniel-KM/Omeka-plugin-UniversalViewer
 [BibLibre]: https://github.com/biblibre
-[OpenLayers Zoom]: https://github.com/Daniel-KM/Omeka-S-module-OpenLayersZoom
-[Universal Viewer]: https://github.com/Daniel-KM/Omeka-S-module-UniversalViewer
-[Mirador]: https://github.com/Daniel-KM/Omeka-S-module-Mirador
-[Diva]: https://github.com/Daniel-KM/Omeka-S-module-Diva
-[Amazon S3]: https://github.com/Daniel-KM/Omeka-S-module-AmazonS3
+[OpenLayers Zoom]: https://gitlab.com/Daniel-KM/Omeka-S-module-OpenLayersZoom
+[Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
+[Mirador]: https://gitlab.com/Daniel-KM/Omeka-S-module-Mirador
+[Diva]: https://gitlab.com/Daniel-KM/Omeka-S-module-Diva
+[Amazon S3]: https://gitlab.com/Daniel-KM/Omeka-S-module-AmazonS3
 [Omeka Classic]: https://omeka.org
 [`GD`]: https://secure.php.net/manual/en/book.image.php
 [`Imagick`]: https://php.net/manual/en/book.imagick.php
 [ImageMagick]: https://www.imagemagick.org/
-[`ImageServer.zip`]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/releases
-[Universal Viewer]: https://github.com/Daniel-KM/Omeka-S-module-UniversalViewer
+[`ImageServer.zip`]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/releases
+[Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Ark]: https://github.com/BibLibre/omeka-s-module-Ark
 [Clean Url]: https://github.com/BibLibre/omeka-s-module-CleanUrl
-[Collection Tree]: https://github.com/Daniel-KM/Omeka-S-module-CollectionTree
+[Collection Tree]: https://gitlab.com/Daniel-KM/Omeka-S-module-CollectionTree
 [Deep Zoom]: https://msdn.microsoft.com/en-us/library/cc645022(v=vs.95).aspx
 [Deep Zoom Image]: https://msdn.microsoft.com/en-us/library/cc645022(v=vs.95).aspx
 [Zoomify]: http://www.zoomify.com/
 [OpenLayers]: https://openlayers.org/
 [threejs]: https://threejs.org
-[Archive Repertory]: https://github.com/Daniel-KM/Omeka-S-module-ArchiveRepertory
+[Archive Repertory]: https://gitlab.com/Daniel-KM/Omeka-S-module-ArchiveRepertory
 [CSV Import]: https://github.com/omeka-s-modules/CSVImport
 [File Sideload]: https://github.com/omeka-s-modules/FileSideload
-[Bulk Import]: https://github.com/Daniel-KM/Omeka-S-module-BulkImport
-[Deepzoom library]: https://github.com/Daniel-KM/LibraryDeepzoom
-[Zoomify library]: https://github.com/Daniel-KM/LibraryZoomify
+[Bulk Import]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkImport
+[Deepzoom library]: https://gitlab.com/Daniel-KM/LibraryDeepzoom
+[Zoomify library]: https://gitlab.com/Daniel-KM/LibraryZoomify
 [Deepzoom]: https://github.com/jeremytubbs/deepzoom
-[#6]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues/6
+[#6]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues/6
 [aws documentation]: https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html
-[module issues]: https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues
+[module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org
@@ -326,4 +326,4 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [Bibliothèque patrimoniale]: https://patrimoine.mines-paristech.fr
 [Mines ParisTech]: http://mines-paristech.fr
 [GitLab]: https://gitlab.com/Daniel-KM
-[Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
+[Daniel-KM]: https://gitlab.com/Daniel-KM "Daniel Berthereau"

@@ -11,7 +11,7 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/Daniel-KM/LibraryDeepzoom.git",
+                "url": "https://gitlab.com/Daniel-KM/LibraryDeepzoom.git",
                 "reference": "0df9f8f72c5449f23ddd89275de3565a13b2ed1a"
             },
             "dist": {
@@ -71,7 +71,7 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/Daniel-KM/LibraryZoomify.git",
+                "url": "https://gitlab.com/Daniel-KM/LibraryZoomify.git",
                 "reference": "233c888b04fbb825d85bc927bb7586779aa6268b"
             },
             "dist": {
