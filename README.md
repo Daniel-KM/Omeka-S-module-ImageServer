@@ -1,6 +1,9 @@
 Image Server (module for Omeka S)
 =================================
 
+> __New versions of this module and support for Omeka S version 3.0 and above
+> are available on [GitLab], which seems to respect users and privacy better.__
+
 
 [Image Server] is a module for [Omeka S] that integrates the [IIIF specifications]
 and a simple image server (similar to a basic [IIP Image]) to allow to process
@@ -322,4 +325,5 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [OSI]: http://opensource.org
 [Bibliothèque patrimoniale]: https://patrimoine.mines-paristech.fr
 [Mines ParisTech]: http://mines-paristech.fr
+[GitLab]: https://gitlab.com/Daniel-KM
 [Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
