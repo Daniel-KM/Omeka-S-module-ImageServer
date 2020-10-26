@@ -197,12 +197,12 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
         }
 
         return [
-            $sourceX,
-            $sourceY,
-            $sourceWidth,
-            $sourceHeight,
-            $destinationWidth,
-            $destinationHeight,
+            (int) $sourceX,
+            (int) $sourceY,
+            (int) $sourceWidth,
+            (int) $sourceHeight,
+            (int) $destinationWidth,
+            (int) $destinationHeight,
         ];
     }
 }
