@@ -82,7 +82,7 @@ class BulkSizer extends AbstractJob
 
                 /** @var \Omeka\Api\Representation\MediaRepresentation $mediaRepr */
                 foreach ($item->media() as $mediaRepr) {
-                    if (strtok($mediaRepr->mediaType(), '/') === 'image') {
+                    if (strtok((string) $mediaRepr->mediaType(), '/') === 'image') {
                         ++$totalImages;
                         // Keep possible data added by another module.
                         $mediaData = $mediaRepr->mediaData() ?: [];

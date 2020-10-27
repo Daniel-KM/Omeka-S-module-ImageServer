@@ -40,7 +40,7 @@ class Tiler extends AbstractPlugin
     public function __invoke(MediaRepresentation $media, $removeDestination = false)
     {
         if (!$media->hasOriginal()
-            || strtok($media->mediaType(), '/') !== 'image'
+            || strtok((string) $media->mediaType(), '/') !== 'image'
         ) {
             return false;
         }

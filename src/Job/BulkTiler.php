@@ -76,7 +76,7 @@ class BulkTiler extends AbstractJob
                 /** @var \Omeka\Api\Representation\MediaRepresentation $media */
                 foreach ($item->media() as $media) {
                     if ($media->hasOriginal()
-                        && strtok($media->mediaType(), '/') === 'image'
+                        && strtok((string) $media->mediaType(), '/') === 'image'
                     ) {
                         ++$totalImages;
                         $logger->info(new Message(

@@ -429,7 +429,7 @@ class Module extends AbstractModule
      */
     protected function afterSaveMedia(Media $media): void
     {
-        if (strtok($media->getMediaType(), '/') !== 'image') {
+        if (strtok((string) $media->getMediaType(), '/') !== 'image') {
             return;
         }
 
