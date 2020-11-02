@@ -95,7 +95,7 @@ class Tile implements IngesterInterface
         $this->uploader = $uploader;
         // From module FileSideload.
         // Only work on the resolved real directory path.
-        $this->directory = realpath($directory);
+        $this->directory = $directory ? realpath($directory) : false;
         $this->deleteFile = $deleteFile;
         $this->tempFileFactory = $tempFileFactory;
         // Process.
