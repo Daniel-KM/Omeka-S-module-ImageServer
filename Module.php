@@ -304,7 +304,7 @@ class Module extends AbstractModule
         $urlHelper = $plugins->get('url');
 
         $query = [];
-        parse_str($params['query'], $query);
+        parse_str((string) $params['query'], $query);
         unset($query['submit']);
         $params['query'] = $query;
 
