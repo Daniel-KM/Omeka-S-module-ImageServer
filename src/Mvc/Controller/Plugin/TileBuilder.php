@@ -46,7 +46,7 @@ class TileBuilder extends AbstractPlugin
         }
 
         if (!is_file($source) || !is_readable($source)) {
-            throw new InvalidArgumentException(new Message(
+            throw new InvalidArgumentException((string) new Message(
                 'Source file "%s" is not readable.', // @translate
                 $source
             ));
@@ -77,7 +77,7 @@ class TileBuilder extends AbstractPlugin
                 $result['tile_dir'] = $destination;
                 break;
             default:
-                throw new InvalidArgumentException(new Message(
+                throw new InvalidArgumentException((string) new Message(
                     'The type of tiling "%s" is not supported by the tile builder.', // @translate
                     $tileType
                 ));

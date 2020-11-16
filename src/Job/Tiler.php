@@ -220,7 +220,7 @@ SQL;
 
         // If there is an issue in the tiling itself, the cleaning should be done.
         if ($result && empty($result['result'])) {
-            throw new RuntimeException(new Message(
+            throw new RuntimeException((string) new Message(
                 'An error occurred during the tiling of media #%d.', // @translate
                 $mediaId
             ));

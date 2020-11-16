@@ -373,13 +373,13 @@ class Module extends AbstractModule
         // Check if the directory exists in the archive.
         if (file_exists($dir)) {
             if (!is_dir($dir)) {
-                throw new ModuleCannotInstallException(new Message(
+                throw new ModuleCannotInstallException((string) new Message(
                     'The directory "%s" cannot be created: a file exists.', // @translate
                     $dir
                 ));
             }
             if (!is_writeable($dir)) {
-                throw new ModuleCannotInstallException(new Message(
+                throw new ModuleCannotInstallException((string) new Message(
                     'The directory "%s" is not writeable.', // @translate
                     $dir
                 ));
@@ -387,7 +387,7 @@ class Module extends AbstractModule
         } else {
             $result = mkdir($dir, 0755, true);
             if (!$result) {
-                throw new ModuleCannotInstallException(new Message(
+                throw new ModuleCannotInstallException((string) new Message(
                     'The directory "%s" cannot be created.', // @translate
                     $dir
                 ));
