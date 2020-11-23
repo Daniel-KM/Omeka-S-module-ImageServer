@@ -12,7 +12,9 @@ the desired formats. It works with the module [Iiif Server], that provides main
 manifests for items.
 
 The full specifications of the [International Image Interoperability Framework]
-standard are supported (level 2), so any widget that supports it can use it.
+standard are supported (versions 2 and 3), so any widget that supports it can
+use it.
+
 Rotation, zoom, inside search, etc. may be managed too. Dynamic lists of records
 may be created, for example for browse pages.
 
@@ -31,13 +33,6 @@ The IIIF manifests can be displayed with many viewers, the integrated [OpenSeadr
 the [Universal Viewer], the advanced [Mirador], or the ligher and themable [Diva],
 or any other IIIF compatible viewer.
 
-This [Omeka S] module is a rewrite of the [Universal Viewer plugin for Omeka]
-initially done by [BibLibre]. It has the same features as the original plugin,
-but separated into three modules (the IIIF server, the image server and the
-widget Universal Viewer). It integrates the tiler [Zoomify] that was used the
-plugin [OpenLayers Zoom] for [Omeka Classic] and another tiler to support the
-[Deep Zoom Image] tile format.
-
 It supports Amazon S3 backend throught the module [Amazon S3].
 
 
@@ -48,7 +43,8 @@ PHP should be installed with the extension `exif` in order to get the size of
 images. This is the case for all major distributions and providers. At least one
 of the php extensions [`GD`] or [`Imagick`] are recommended. They are installed
 by default in most servers. If not, the image server will use the command line
-[ImageMagick] tool `convert`.
+[ImageMagick] tool `convert`, that is used in the default config of Omeka
+anyway.
 
 The module [Iiif Server] is currently required and should be installed first.
 
@@ -57,7 +53,7 @@ before enabling of ImageServer. Else, simply set them in the config form.
 
 * From the zip
 
-Download the last release [`ImageServer.zip`] from the list of releases (the
+Download the last release [ImageServer.zip] from the list of releases (the
 master does not contain the dependencies), uncompress it in the `modules`
 directory, and rename the module folder `ImageServer`.
 
@@ -105,16 +101,86 @@ directive `<Directory>`.
 To fix Amazon cors issues, see the [aws documentation].
 
 
-Notes
------
-
-When you need to display big images (bigger than 10 to 50 MB according to your
-server), it is recommended to upload them as "Tile", so tiles will be
-automatically created (see below).
-
-
 Image Server
------------
+------------
+
+From version 3.6.3.1, tiles are created automatically for all new images. The
+conversion of the renderer from "tile" to the standard "file" can be done with
+the job in the config form.
+
+Furthermore, an option in settings and site settings allows to specify the
+default display: tile or large thumbnail. It can be selected directly in the
+theme too (thumbnail "tile").
+
+### Creation of static tiles
+
+For big images that are not stored in a versatile format and cannot be processed
+dynamically quickly, it is recommended to pre-tile them to load and zoom them
+instantly. It can be done for any size of images. It may be recommended to
+manage at least the big images (more than 10 to 50 MB, according to your server
+and your public.
+
+Tiles can be created in two formats: Deep Zoom and Zoomify. [Deep Zoom Image]
+is a free proprietary format from Microsoft largely supported, and [Zoomify] is
+an old format that was largely supported by proprietary image softwares and free
+viewers, like the [OpenLayers Zoom]. They are manageable by the module [Archive Repertory].
+
+The tiles are created via a background job for any image, uploaded from a file,
+an url. The media type "Tile", that was a specific type for that, is no more
+needed, except in some specific cases.
+
+The tiles are created when the media "Tile" is used. The source can be an
+uploaded file, a url or a local file (prepended with "file://" in the form, and
+requires the module [File Sideload] to be installed). They can be created via
+the modules [CSV Import] and [Bulk Import] too.
+
+The tiles can be created in bulk via a job, that can be run via a button in the
+config form of the module.
+
+### Dynamic creation of tiles and transformation
+
+The IIIF specifications allow to ask for any region of the original image, at
+any size, eventually with a rotation and a specified quality and format. The
+image server creates them dynamically from the original image, from the Omeka
+thumbnails or from the tiles if any.
+
+This dynamic creation is quick when the original is not too big or in the format
+jpeg 2000.
+
+The dynamic creation of tiles can be done with the php extensions GD or Imagick
+and with the command line tool ImageMagick, default in Omeka. GD is generally a
+little quicker, but ImageMagick manages many more formats. An option allows to
+select the library to use according to your server and your documents or to let
+the module chooses automagically.
+
+In case of big files, it is recommended to use the command line version of
+ImageMagick, that is not limited by the php memory.
+
+Furthermore, the limit of the size (10000000 bytes by default) can be increased
+if you have enough memory, so images won't appear blurry even if they are not tiled.
+
+### Display of standard and tiled images
+
+When created, the tiles are displayed automatically in admin and theme,
+according to the setting in the section Image Server.
+
+Any viewer that supports Deep Zoom or Zoomify can display them. [OpenSeadragon],
+the viewer integrated by default in Omeka S, can display them directly (from
+version 2.2.2), so it is quicker. This is the case for any derivated viewer too
+(Universal Viewer, Mirador, etc.). The [OpenLayers] viewer supports the two
+formats too.
+
+The options for the default viewer can be changed in the theme (in partial "common/renderer/tile.phtml",
+to copy in your theme, or by passing option `template` in the renderer).
+
+When the viewer doesn’t support a format, but the IIIF protocol, the image can
+be displayed through its IIIF url (https://example.org/iiif-img/{identifier}).
+It can be done for any image, even if it is not tiled, because of the dynamic
+transformation of images.
+
+To display an image with the IIIF protocol, set its url (https://example.org/iiif-img/{identifier}/info.json)
+in an attached media of type "IIIF" or use it directly in your viewer. The id is
+the one of the media, not the item.
 
 ### Routes
 
@@ -138,73 +204,6 @@ named number like in a library or a museum, isbn for books, or random id like
 with ark, noid, doi, etc. They can be displayed in the public url with the
 modules [Ark] and/or [Clean Url].
 
-### Features
-
-The image server has two roles.
-
-* Dynamic creation of tiles and transformation
-
-  The IIIF specifications allow to ask for any region of the original image, at
-  any size, eventually with a rotation and a specified quality and formats. The
-  image server creates them dynamically from the original image, from the Omeka
-  thumbnails or from the tiles if any.
-
-  It is recommended to use the php extensions GD or Imagick. The command line
-  tool ImageMagick, default in Omeka, is supported, but slower. GD is generally
-  a little quicker, but ImageMagick manages many more formats. An option allows
-  to select the library to use according to your server and your documents or to
-  let the module chooses automagically.
-
-  In case of big files, it is recommended to use the command line version of
-  ImageMagick, that is not limited by the php memory.
-
-  Furthermore, the limit of the size (10000000 bytes by default) can be
-  increased if you have enough memory, so images won't appear blurry even if
-  they are not tiled.
-
-* Creation of tiles
-
-  For big images that are not stored in a versatile format and cannot be
-  processed dynamically quickly, it is recommended to pre-tile them to load and
-  zoom them instantly. It can be done for any size of images. It may be
-  recommended to manage at least the big images (more than 10 to 50 MB,
-  according to your server and your public).
-
-  Tiles can be created in two formats: Deep Zoom and Zoomify. [Deep Zoom Image]
-  is a free proprietary format from Microsoft largely supported, and [Zoomify]
-  is an old format that was largely supported by proprietary image softwares and
-  free viewers, like the [OpenLayers Zoom]. They are manageable by the module
-  [Archive Repertory].
-
-  The tiles are created via a background job from the media "Tile" (in item edit
-  view).
-
-  The tiles are created when the media "Tile" is used. The source can be an
-  uploaded file, a url or a local file (prepended with "file://" in the form,
-  and requires the module [File Sideload] to be installed). They can be created via
-  the modules [CSV Import] and [Bulk Import] too.
-
-  The tiles can be created in bulk via a job, that can be run via a button in
-  the config form of the module.
-
-* Display of tiled and simple images
-
-When created, the tiles are displayed via their native format, so only viewers
-that support them can display them. [OpenSeadragon], the viewer integrated by
-default in Omeka S, can display the formats Deep Zoom and Zoomify directly (from
-version 2.2.2), so it is quicker. The [OpenLayers] viewer support the two
-formats too. The mode ("iiif" of "native") and other OpenSeadragon settings can
-be changed when the renderer is called.
-
-When the viewer doesn’t support a format, but the IIIF protocol, the image can
-be displayed through its IIIF url (https://example.org/iiif-img/:id). This can
-be done for any image, even if it is not tiled, because of the dynamic
-transformation of images.
-
-To display an image with the IIIF protocol, set its url (https://example.org/iiif-img/:id/info.json)
-in an attached media of type "IIIF" or use it directly in your viewer. The id is
-the one of the media, not the item.
-
 ### Amazon S3
 
 Currently, only the public files are available: let the option "expiration" to "0".
@@ -215,15 +214,16 @@ and other viewers working. See [aws documentation].
 TODO / Bugs
 -----------
 
-- Create thumbnails from the tiled image, not from the original.
-- Support curl when allow_url_fopen and allow_url_include are forbidden.
-- Automatically manage pdf as a list of canvas and images (extract size and
-  page number, then manage it by the image server)
-- Remove the specific choice of the processor and use the Omeka one (gd/imagemagick/imagick)
-- Adapt the info.json to the image processor.
-- Add the canonical link header.
-- Use the tiled images when available for arbitrary size request.
-- Update vendor tilers to manage Amazon directly.
+- [ ] Cache all original images as jpeg2000 to speed up dynamic requests or any region/size.
+- [ ] Create thumbnails from the tiled image, not from the original.
+- [ ] Support curl when allow_url_fopen and allow_url_include are forbidden.
+- [ ] Automatically manage pdf as a list of canvas and images (extract size and page number, then manage it by the image server)
+- [ ] Remove the specific choice of the processor and use the Omeka one (gd/imagemagick/imagick)
+- [ ] Adapt the info.json to the image processor.
+- [ ] Add the canonical link header.
+- [ ] Use the tiled images when available for arbitrary size request.
+- [ ] Update vendor tilers to manage Amazon directly.
+- [ ] Add a limit (width/height) for dynamic extraction (used with zoning and annotations).
 
 See module [Iiif Server].
 
@@ -277,8 +277,13 @@ Copyright
 * Copyright Daniel Berthereau, 2015-2020 (see [Daniel-KM])
 * Copyright BibLibre, 2016-2017
 
-First version of this plugin was built for the [Bibliothèque patrimoniale] of
-[Mines ParisTech].
+This module is a rewrite of the [Universal Viewer plugin for Omeka Classic],
+built for the [Bibliothèque patrimoniale] of [Mines ParisTech]. The upgrade to
+Omeka S was initially done by [BibLibre]. It has the same features as the
+original plugin, but separated into three modules (the IIIF server, the image
+server and the widget Universal Viewer). It integrates the tiler [Zoomify] that
+was used the plugin [OpenLayers Zoom] for [Omeka Classic] and another tiler to
+support the [Deep Zoom Image] tile format.
 
 
 [Image Server]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer
@@ -288,18 +293,14 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [IIP Image]: http://iipimage.sourceforge.net
 [Iiif Server]: https://gitlab.com/Daniel-KM/Omeka-S-module-IiifServer
 [OpenSeadragon]: https://openseadragon.github.io
-[Universal Viewer plugin for Omeka]: https://gitlab.com/Daniel-KM/Omeka-plugin-UniversalViewer
-[BibLibre]: https://github.com/biblibre
-[OpenLayers Zoom]: https://gitlab.com/Daniel-KM/Omeka-S-module-OpenLayersZoom
 [Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Mirador]: https://gitlab.com/Daniel-KM/Omeka-S-module-Mirador
 [Diva]: https://gitlab.com/Daniel-KM/Omeka-S-module-Diva
 [Amazon S3]: https://gitlab.com/Daniel-KM/Omeka-S-module-AmazonS3
-[Omeka Classic]: https://omeka.org
 [`GD`]: https://secure.php.net/manual/en/book.image.php
 [`Imagick`]: https://php.net/manual/en/book.imagick.php
 [ImageMagick]: https://www.imagemagick.org/
-[`ImageServer.zip`]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/releases
+[ImageServer.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/releases
 [Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Ark]: https://github.com/BibLibre/omeka-s-module-Ark
 [Clean Url]: https://github.com/BibLibre/omeka-s-module-CleanUrl
@@ -323,6 +324,10 @@ First version of this plugin was built for the [Bibliothèque patrimoniale] of
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org
 [OSI]: http://opensource.org
+[Universal Viewer plugin for Omeka Classic]: https://gitlab.com/Daniel-KM/Omeka-plugin-UniversalViewer
+[BibLibre]: https://github.com/biblibre
+[OpenLayers Zoom]: https://gitlab.com/Daniel-KM/Omeka-S-module-OpenLayersZoom
+[Omeka Classic]: https://omeka.org
 [Bibliothèque patrimoniale]: https://patrimoine.mines-paristech.fr
 [Mines ParisTech]: http://mines-paristech.fr
 [GitLab]: https://gitlab.com/Daniel-KM

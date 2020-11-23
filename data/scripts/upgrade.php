@@ -1,5 +1,9 @@
 <?php declare(strict_types=1);
+
 namespace ImageServer;
+
+use Omeka\Mvc\Controller\Plugin\Messenger;
+use Omeka\Stdlib\Message;
 
 /**
  * @var Module $this
@@ -19,7 +23,6 @@ $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
 $api = $services->get('Omeka\ApiManager');
 $config = require dirname(__DIR__, 2) . '/config/module.config.php';
-$defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
 $settings = $services->get('Omeka\Settings');
 
 if (version_compare($oldVersion, '3.6.2', '<')) {
@@ -38,4 +41,12 @@ if (version_compare($oldVersion, '3.6.3.3', '<')) {
         );
         throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
     }
+
+    $messenger = new Messenger();
+    $message = new Message(
+        'Now, all images are automatically converted into tiles and an option in settings and site settings allows to specify the default display.
+It can be selected directly in the theme too (thumbnail "tile").
+The conversion of the renderer from "tile" to the standard "file" can be done with the job in the config form.' // @translate
+    );
+    $messenger->addWarning($message);
 }
