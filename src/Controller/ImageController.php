@@ -31,7 +31,6 @@
 namespace ImageServer\Controller;
 
 use ImageServer\ImageServer\ImageServer;
-use Laminas\I18n\Translator\TranslatorInterface;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -39,9 +38,6 @@ use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\File\Store\StoreInterface;
-use Omeka\File\TempFileFactory;
-use Omeka\Module\Manager as ModuleManager;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
 
 /**
@@ -53,31 +49,6 @@ use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
  */
 class ImageController extends AbstractActionController
 {
-    /**
-     * @var TempFileFactory
-     */
-    protected $tempFileFactory;
-
-    /**
-     * @var StoreInterface
-     */
-    protected $store;
-
-    /**
-     * @var ModuleManager
-     */
-    protected $moduleManager;
-
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
-
-    /**
-     * @var array
-     */
-    protected $commandLineArgs;
-
     /**
      * Full path to the files.
      *
@@ -91,18 +62,8 @@ class ImageController extends AbstractActionController
     protected $version;
 
     public function __construct(
-        TempFileFactory $tempFileFactory,
-        $store,
-        ModuleManager $moduleManager,
-        TranslatorInterface $translator,
-        array $commandLineArgs,
         $basePath
     ) {
-        $this->tempFileFactory = $tempFileFactory;
-        $this->store = $store;
-        $this->moduleManager = $moduleManager;
-        $this->translator = $translator;
-        $this->commandLineArgs = $commandLineArgs;
         $this->basePath = $basePath;
     }
 
@@ -237,7 +198,7 @@ class ImageController extends AbstractActionController
                     $args['region']['y'] = 0;
                     $args['region']['width'] = $pretiled['width'];
                     $args['region']['height'] = $pretiled['height'];
-                    $imagePath = $this->_transformImage($args);
+                    $imagePath = $this->imageServer()->transform($args);
                 }
                 // No transformation.
                 else {
@@ -285,7 +246,7 @@ class ImageController extends AbstractActionController
                             $args['region']['height'] = $pretiled['height'];
                         }
                         $args['size']['feature'] = 'max';
-                        $imagePath = $this->_transformImage($args);
+                        $imagePath = $this->imageServer()->transform($args);
                     }
                     // No transformation.
                     else {
@@ -302,7 +263,7 @@ class ImageController extends AbstractActionController
                             \Laminas\Http\Response::STATUS_CODE_500
                         ));
                     }
-                    $imagePath = $this->_transformImage($transform);
+                    $imagePath = $this->imageServer()->transform($args);
                 }
             }
         }
@@ -837,21 +798,6 @@ class ImageController extends AbstractActionController
         return $tileInfo
             ? $this->tileServer($tileInfo, $transform)
             : null;
-    }
-
-    /**
-     * Transform a file according to parameters.
-     *
-     * @param array $args Contains the filepath and the parameters.
-     * @return string|null The filepath to the temp image if success.
-     */
-    protected function _transformImage(array $args): ?string
-    {
-        $imageServer = new ImageServer($this->tempFileFactory, $this->store, $this->commandLineArgs, $this->settings());
-        return $imageServer
-            ->setLogger($this->logger())
-            ->setTranslator($this->translator)
-            ->transform($args);
     }
 
     protected function _mediaPath(MediaRepresentation $media, string $imageType = 'original'): string

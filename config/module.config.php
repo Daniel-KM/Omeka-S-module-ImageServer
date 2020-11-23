@@ -97,6 +97,7 @@ return [
             'tileServerZoomify' => Mvc\Controller\Plugin\TileServerZoomify::class,
         ],
         'factories' => [
+            'imageServer' => Service\ControllerPlugin\ImageServerFactory::class,
             'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,
             'sizer' => Service\ControllerPlugin\SizerFactory::class,
             'tileInfo' => Service\ControllerPlugin\TileInfoFactory::class,
