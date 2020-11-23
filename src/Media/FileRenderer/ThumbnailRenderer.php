@@ -87,27 +87,12 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
             $headScript->appendFile($view->assetUrl('vendor/openseadragon/openseadragon.min.js', 'Omeka'));
         }
 
-        // @link https://openseadragon.github.io/docs/OpenSeadragon.html#.Options
-        $script = <<<JS
-var viewer = OpenSeadragon({
-    id: 'osd-{$media->id()}',
-    prefixUrl: '$prefixUrl',
-    tileSources: $tileSources,
-    minZoomImageRatio: 0.8,
-    maxZoomPixelRatio: 12,
-});
-JS;
-        // TODO Ideally, the script for OpenSeadragon should go inside header.
-        // $headScript->appendScript($script);
-
-        return <<<HTML
-<div class="openseadragon" id="osd-{$media->id()}" style="height: 600px;"></div>
-<script type="text/javascript">
-$script
-</script>
-<noscript>
-    <p>$noscript</p>
-</noscript>
-HTML;
+        return $view->partial($options['template'] ?? 'common/renderer/tile.phtml', [
+            'media' => $media,
+            'options' => $options,
+            'tileSources' => $tileSources,
+            'prefixUrl' => $prefixUrl,
+            'noScript' => $noscript,
+        ]);
     }
 }

@@ -1,0 +1,33 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \Omeka\Api\Representation\MediaRepresentation $media
+ * @var array $options
+ * @var array|string $tileSources
+ * @var string $prefixUrl
+ * @var string $noscript
+ *
+ * @link https://openseadragon.github.io/docs/OpenSeadragon.html#.Options
+ */
+
+$script = <<<JS
+var viewer = OpenSeadragon({
+    id: 'osd-{$media->id()}',
+    prefixUrl: '$prefixUrl',
+    tileSources: $tileSources,
+    minZoomImageRatio: 0.8,
+    maxZoomPixelRatio: 12,
+});
+JS;
+
+// TODO Ideally, the script for OpenSeadragon should go inside header.
+// $this->headScript()->appendScript($script);
+?>
+
+<div class="openseadragon" id="osd-<?= $media->id() ?>" style="height: 600px;"></div>
+<script type="text/javascript">
+<?= $script ?>
+</script>
+<noscript>
+    <p><?= $noscript ?></p>
+</noscript>
