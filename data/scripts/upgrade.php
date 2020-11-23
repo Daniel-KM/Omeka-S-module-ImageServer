@@ -27,3 +27,15 @@ if (version_compare($oldVersion, '3.6.2', '<')) {
     $settings->delete('imageserver_manifest_version');
     $settings->set('imageserver_info_version_append', false);
 }
+
+if (version_compare($oldVersion, '3.6.3.3', '<')) {
+    $module = $services->get('Omeka\ModuleManager')->getModule('Generic');
+    if ($module && version_compare($module->getIni('version'), '3.3.26', '<')) {
+        $translator = $services->get('MvcTranslator');
+        $message = new \Omeka\Stdlib\Message(
+            $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
+            'Generic', '3.3.26'
+        );
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+    }
+}

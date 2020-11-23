@@ -81,18 +81,18 @@ class Module extends AbstractModule
         $moduleManager = $services->get('Omeka\ModuleManager');
         $t = $services->get('MvcTranslator');
 
-        $checkDeepzoom = __DIR__
-            . DIRECTORY_SEPARATOR . 'vendor'
-            . DIRECTORY_SEPARATOR . 'daniel-km'
-            . DIRECTORY_SEPARATOR . 'deepzoom'
-            . DIRECTORY_SEPARATOR . 'src'
-            . DIRECTORY_SEPARATOR . 'DeepzoomFactory.php';
-        $checkZoomify = __DIR__
-            . DIRECTORY_SEPARATOR . 'vendor'
-            . DIRECTORY_SEPARATOR . 'daniel-km'
-            . DIRECTORY_SEPARATOR . 'zoomify'
-            . DIRECTORY_SEPARATOR . 'src'
-            . DIRECTORY_SEPARATOR . 'ZoomifyFactory.php';
+        $module = $moduleManager->getModule('Generic');
+        if ($module && version_compare($module->getIni('version'), '3.3.26', '<')) {
+            $translator = $services->get('MvcTranslator');
+            $message = new \Omeka\Stdlib\Message(
+                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
+                'Generic', '3.3.26'
+            );
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        }
+
+        $checkDeepzoom = __DIR__ . '/vendor/daniel-km/deepzoom/src/DeepzoomFactory.php';
+        $checkZoomify = __DIR__ . '/vendor/daniel-km/zoomify/src/ZoomifyFactory.php';
         if (!file_exists($checkDeepzoom) || !file_exists($checkZoomify)) {
             throw new ModuleCannotInstallException(
                 $t->translate('You should run "composer install" from the root of the module, or install a release with the dependencies.') // @translate
@@ -140,7 +140,7 @@ class Module extends AbstractModule
             $messenger = new Messenger();
             $messenger->addWarning('The tile dir is not defined and was not removed.'); // @translate
         } else {
-            $tileDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
+            $tileDir = $basePath . '/' . $tileDir;
 
             // A security check.
             $removable = $tileDir == realpath($tileDir);
@@ -172,7 +172,7 @@ class Module extends AbstractModule
         if (empty($tileDir)) {
             $message = new Message('The tile dir is not defined and won’t be removed.'); // @translate
         } else {
-            $tileDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
+            $tileDir = $basePath . '/' . $tileDir;
             $removable = $tileDir == realpath($tileDir);
             if ($removable) {
                 $message = 'All tiles will be removed!'; // @translate
@@ -239,19 +239,62 @@ class Module extends AbstractModule
 
         // Form is already validated in parent.
         $params = (array) $controller->getRequest()->getPost();
-        $tilerParams = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'process' => null]);
-        if (empty($tilerParams['process']) || $tilerParams['process'] !== $controller->translate('Process')) {
-            $sizerParams = array_intersect_key($params, ['query_sizer' => null, 'process_sizer' => null]);
-            if (empty($sizerParams['process_sizer']) || $sizerParams['process_sizer'] !== $controller->translate('Process')) {
-                return true;
-            }
-            return $this->processSizer([
-                'query' => $sizerParams['query_sizer'],
-                'filter' => empty($sizerParams['filter_sized']) ? 'all' : $sizerParams['filter_sized'],
-            ]);
+        if (empty($params['imageserver_bulk_prepare']['process'])
+            || empty($params['imageserver_bulk_prepare']['tasks'])
+        ) {
+            return true;
         }
 
-        return $this->processTiler($tilerParams);
+        $params = $params['imageserver_bulk_prepare'];
+
+        if (in_array('tile', $params['tasks']) && in_array('size', $params['tasks'])) {
+            $this->processTilerAndSizer($params);
+        } elseif (in_array('size', $params['tasks'])) {
+            $sizerParams = array_intersect_key($params, ['query' => null, 'filter' => null]);
+            $sizerParams['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
+            $this->processSizer($sizerParams);
+        } elseif (in_array('tile', $params['tasks'])) {
+            $tilerParams = array_intersect_key($params, ['query' => null, 'remove_destination' => null]);
+            $this->processTiler($tilerParams);
+        }
+
+        return true;
+    }
+
+    protected function processTilerAndSizer(array $params)
+    {
+        $services = $this->getServiceLocator();
+        $plugins = $services->get('ControllerPluginManager');
+        $messenger = $plugins->get('messenger');
+        $urlHelper = $plugins->get('url');
+
+        $query = [];
+        parse_str($params['query'], $query);
+        unset($query['submit']);
+        $params['query'] = $query;
+
+        $params['remove_destination'] = (bool) $params['remove_destination'];
+        $params['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
+        $params = array_intersect_key($params, ['query' => null, 'tasks' => null, 'remove_destination' => null, 'filter' => null]);
+
+        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+        $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
+        $message = new Message(
+            'Creating tiles and dimensions for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
+            sprintf('<a href="%s">',
+                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+            ),
+            $job->getId(),
+            '</a>',
+            sprintf('<a href="%s">',
+                htmlspecialchars($this->isModuleActive('Log')
+                    ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                    : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
+                )
+            )
+        );
+        $message->setEscapeHtml(false);
+        $messenger->addSuccess($message);
     }
 
     protected function processTiler(array $params)
@@ -259,13 +302,6 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
-
-        if (empty($params['query'])) {
-            $message = 'A query is needed to run the bulk tiler.'; // @translate
-            $messenger->addWarning($message);
-            return true;
-        }
-
         $urlHelper = $plugins->get('url');
 
         $query = [];
@@ -274,6 +310,8 @@ class Module extends AbstractModule
         $params['query'] = $query;
 
         unset($params['process']);
+
+        $params['remove_destination'] = (bool) $params['remove_destination'];
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
@@ -293,7 +331,6 @@ class Module extends AbstractModule
         );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
-        return true;
     }
 
     protected function processSizer(array $params)
@@ -321,14 +358,13 @@ class Module extends AbstractModule
             '</a>',
             sprintf('<a href="%s">',
                 htmlspecialchars($this->isModuleActive('Log')
-                        ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                        : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
-                    )
+                    ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                    : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
                 )
-            );
+            )
+        );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
-        return true;
     }
 
     /**
@@ -368,7 +404,7 @@ class Module extends AbstractModule
             ));
         }
 
-        $dir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
+        $dir = $basePath . '/' . $tileDir;
 
         // Check if the directory exists in the archive.
         if (file_exists($dir)) {
@@ -401,8 +437,8 @@ class Module extends AbstractModule
         ));
 
         @copy(
-            $basePath . DIRECTORY_SEPARATOR . 'index.html',
-            $dir . DIRECTORY_SEPARATOR . 'index.html'
+            $basePath . '/' . 'index.html',
+            $dir . '/' . 'index.html'
         );
     }
 
@@ -500,32 +536,32 @@ class Module extends AbstractModule
             && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
         if ($hasAmazonS3) {
             $store = $services->get(\AmazonS3\File\Store\AwsS3::class);
-            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '.dzi';
+            $filepath = $tileDir . '/' . $storageId . '.dzi';
             $store->delete($filepath);
-            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '.js';
+            $filepath = $tileDir . '/' . $storageId . '.js';
             $store->delete($filepath);
-            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '_files';
+            $filepath = $tileDir . '/' . $storageId . '_files';
             $store->deleteDir($filepath);
-            $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '_zdata';
+            $filepath = $tileDir . '/' . $storageId . '_zdata';
             $store->deleteDir($filepath);
             return;
         }
 
-        $tileDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
+        $tileDir = $basePath . '/' . $tileDir;
 
-        $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '.dzi';
+        $filepath = $tileDir . '/' . $storageId . '.dzi';
         if (file_exists($filepath)) {
             unlink($filepath);
         }
-        $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '.js';
+        $filepath = $tileDir . '/' . $storageId . '.js';
         if (file_exists($filepath)) {
             unlink($filepath);
         }
-        $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '_files';
+        $filepath = $tileDir . '/' . $storageId . '_files';
         if (file_exists($filepath) && is_dir($filepath)) {
             $this->rrmdir($filepath);
         }
-        $filepath = $tileDir . DIRECTORY_SEPARATOR . $storageId . '_zdata';
+        $filepath = $tileDir . '/' . $storageId . '_zdata';
         if (file_exists($filepath) && is_dir($filepath)) {
             $this->rrmdir($filepath);
         }
@@ -554,7 +590,7 @@ class Module extends AbstractModule
 
         $files = array_diff($scandir, ['.', '..']);
         foreach ($files as $file) {
-            $path = $dir . DIRECTORY_SEPARATOR . $file;
+            $path = $dir . '/' . $file;
             if (is_dir($path)) {
                 $this->rrmdir($path);
             } else {

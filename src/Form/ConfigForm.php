@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace ImageServer\Form;
 
+use ImageServer\Form\Element\Note;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
@@ -146,36 +147,33 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ])
 
             ->add([
-                'name' => 'imageserver_bulk_tiler',
+                'name' => 'imageserver_bulk_prepare',
                 'type' => Fieldset::class,
                 'options' => [
-                    'label' => 'Bulk tiler', // @translate
-                    'info' => 'Imported files can be tiled via a background job.', // @translate
+                    'label' => 'Bulk prepare tiles and sizes', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_bulk_tiler',
-                ],
-            ])
-            ->add([
-                'name' => 'imageserver_bulk_sizer',
-                'type' => Fieldset::class,
-                'options' => [
-                    'label' => 'Bulk sizer', // @translate
-                    'info' => 'This process saves height and width of all images and derivatives to speed up creation of iiif files.', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'imageserver_bulk_sizer',
+                    'id' => 'imageserver_bulk_prepare',
                 ],
             ])
         ;
-        $bulkFieldset = $this->get('imageserver_bulk_tiler');
+
+        $bulkFieldset = $this->get('imageserver_bulk_prepare');
         $bulkFieldset
+            ->add([
+                'name' => 'note',
+                'type' => Note::class,
+                'options' => [
+                    'text' => 'This process builds tiles and and saves dimensions of existing files via a background job.
+To save the height and the width of all images and derivatives allows to speed up creation of the iiif "info.json" of medias.', // @translate
+                ],
+            ])
             ->add([
                 'name' => 'query',
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Query', // @translate
-                    'info' => $this->translate('This query will be used to select all items whose attached images will be tiled in the background.') // @translate
+                    'info' => $this->translate('This query will be used to select all items whose attached images will be prepared in the background.') // @translate
                         . ' ' . $this->translate('Warning: The renderer of all tiled images will be set to "tile".'), // @translate
                     'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
                 ],
@@ -184,14 +182,49 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
             ->add([
-                'name' => 'remove_destination',
-                'type' => Element\Checkbox::class,
+                'name' => 'tasks',
+                'type' => Element\MultiCheckbox::class,
                 'options' => [
-                    'label' => 'Remove existing tiles', // @translate
-                    'info' => 'If checked, existing tiles will be removed, else they will be skipped.',  // @translate
+                    'label' => 'Tasks', // @translate
+                    'value_options' => [
+                        'tile' => 'Tiling', // @translate
+                        'size' => 'Sizing', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'tasks',
+                    'required' => false,
+                ],
+            ])
+            ->add([
+                'name' => 'remove_destination',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Limit process to prepare tiles', // @translate
+                    'value_options' => [
+                        '0' => 'Skip media with existing tiles', // @translate
+                        '1' => 'Remove existing tiles', // @translate
+                    ],
                 ],
                 'attributes' => [
                     'id' => 'remove-destination',
+                    'value' => '0',
+                ],
+            ])
+            ->add([
+                'name' => 'filter_sized',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Limit process to get sizes', // @translate
+                    'value_options' => [
+                        'all' => 'All', // @translate
+                        'sized' => 'Only already sized', // @translate
+                        'unsized' => 'Only not yet sized', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'filter_sized',
+                    'value' => 'all',
                 ],
             ])
             ->add([
@@ -202,48 +235,6 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
                 'attributes' => [
                     'id' => 'process',
-                    'value' => 'Process', // @translate
-                ],
-            ])
-        ;
-
-        $bulkFieldset = $this->get('imageserver_bulk_sizer');
-        $bulkFieldset
-            ->add([
-                'name' => 'query_sizer',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Query', // @translate
-                    'info' => $this->translate('This query will be used to select all items whose attached images will be processed in the background.'), // @translate
-                    'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
-                ],
-                'attributes' => [
-                    'id' => 'query_sizer',
-                ],
-            ])
-            ->add([
-                'name' => 'filter_sized',
-                'type' => Element\Radio::class,
-                'options' => [
-                    'label' => 'Limit process', // @translate
-                    'value_options' => [
-                        'all' => 'All', // @translate
-                        'sized' => 'Only already sized', // @translate
-                        'unsized' => 'Only not yet sized', // @translate
-                    ],
-                ],
-                'attributes' => [
-                    'id' => 'filter_sized',
-                ],
-            ])
-            ->add([
-                'name' => 'process_sizer',
-                'type' => Element\Submit::class,
-                'options' => [
-                    'label' => 'Run in background', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'process_sizer',
                     'value' => 'Process', // @translate
                 ],
             ])
@@ -271,11 +262,15 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'required' => false,
             ])
             ->add([
-                'name' => 'imageserver_bulk_tiler',
+                'name' => 'imageserver_bulk_prepare',
                 'required' => false,
             ])
             ->add([
-                'name' => 'imageserver_bulk_sizer',
+                'name' => 'tasks',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'remove_destination',
                 'required' => false,
             ])
             ->add([
