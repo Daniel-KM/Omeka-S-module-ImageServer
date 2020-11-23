@@ -46,7 +46,7 @@ class TileServerDeepZoom extends TileServer
         }
 
         // Quick check of supported transformation of tiles.
-        if (!in_array($transform['region']['feature'], ['regionByPx', 'full'])
+        if (!in_array($transform['region']['feature'], ['regionByPx', 'regionByPct', 'full'])
             || !in_array($transform['size']['feature'], ['sizeByW', 'sizeByH', 'sizeByWh', 'sizeByWhListed', 'full', 'max'])
         ) {
             return null;

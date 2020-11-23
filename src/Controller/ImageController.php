@@ -426,7 +426,7 @@ class ImageController extends AbstractActionController
         // "pct:x,y,w,h": regionByPct
         elseif (strpos($region, 'pct:') === 0) {
             $regionValues = explode(',', substr($region, 4));
-            if (count($regionValues) != 4) {
+            if (count($regionValues) !== 4) {
                 $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), $region));
                 return null;
             }

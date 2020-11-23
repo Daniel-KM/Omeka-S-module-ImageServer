@@ -113,7 +113,6 @@ abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAw
                 break;
 
             case 'regionByPct':
-                // Percent > 100 has already been checked.
                 $sourceX = $args['source']['width'] * $args['region']['x'] / 100;
                 $sourceY = $args['source']['height'] * $args['region']['y'] / 100;
                 $sourceWidth = ($args['region']['x'] + $args['region']['width']) <= 100

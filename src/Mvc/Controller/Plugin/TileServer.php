@@ -71,6 +71,25 @@ class TileServer extends AbstractPlugin
         }
     }
 
+    protected function convertRegionByPercent(array $source, array $region): array
+    {
+        $x = $source['width'] * $region['x'] / 100;
+        $y = $source['height'] * $region['y'] / 100;
+        $width = ($region['x'] + $region['width']) <= 100
+            ? $source['width'] * $region['width'] / 100
+            : $source['width'] - $x;
+        $height = ($region['y'] + $region['height']) <= 100
+            ? $source['height'] * $region['height'] / 100
+            : $source['height'] - $y;
+        return [
+            'feature' => 'regionByPx',
+            'x' => (int) $x,
+            'y' => (int) $y,
+            'width' => (int) $width,
+            'height' => (int) $height,
+        ];
+    }
+
     /**
      * Get the level and the position of the cell from the source and region.
      *
@@ -97,6 +116,10 @@ class TileServer extends AbstractPlugin
         // multiple tiles should be joined. Currently managed via the dynamic
         // processor.
         $cellSize = $tileInfo['size'];
+
+        if ($region['feature'] === 'regionByPct') {
+            $region = $this->convertRegionByPercent($source, $region);
+        }
 
         // Return only direct single tile, or smaller.
         $isNotTile = $region['x'] % $cellSize !== 0 || $region['y'] % $cellSize !== 0;
@@ -202,8 +225,16 @@ class TileServer extends AbstractPlugin
                     }
                     break;
 
+                case 'sizeByPct':
+                    // TODO Manage sizeByPct by tile server.
+                    break;
+
                 case 'sizeByConfinedWh':
                     // TODO Manage sizeByConfinedWh by tile server.
+                    break;
+
+                case 'sizeByForcedWh':
+                    // TODO Manage sizeByForcedWh by tile server.
                     break;
 
                 case 'sizeByWh':
