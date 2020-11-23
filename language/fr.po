@@ -3,24 +3,24 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-11-23 00:00+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2020-11-23 00:00+0000\n"
+"Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
+"Language-Team: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
 
 #: data/scripts/upgrade.php:39 Module.php:88
 #, php-format
 msgid "This module requires the module \"%s\", version %s or above."
-msgstr ""
+msgstr "Ce module requiert le module \"%s\", version \"%s\" ou supérieur."
 
 #: Module.php:98
 msgid ""
@@ -30,7 +30,7 @@ msgstr ""
 
 #: Module.php:99 Module.php:107
 msgid "See module’s installation documentation."
-msgstr ""
+msgstr "Consulter la documentation d’installation du module."
 
 #: Module.php:106
 msgid "The module requires an image processor (ImageMagick, Imagick or GD)."
@@ -147,16 +147,16 @@ msgstr ""
 #: src/Generic/AbstractModule.php:66
 #, php-format
 msgid "This module requires the module \"%s\"."
-msgstr ""
+msgstr "Ce module requiert le module \"%s\"."
 
 #: src/Generic/AbstractModule.php:73
 #, php-format
 msgid "This module requires modules \"%s\"."
-msgstr ""
+msgstr "Ce module requiert les modules \"%s\"."
 
 #: src/Generic/AbstractModule.php:80
 msgid "This module has resources that connot be installed."
-msgstr ""
+msgstr "Ce module a des ressources qui ne peuvent pas être installées."
 
 #: src/Generic/AbstractModule.php:710
 #, php-format
@@ -164,6 +164,8 @@ msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
 "unavailable."
 msgstr ""
+"Le module %s\" a été automatiquement désactivé car ses dépendances ne sont "
+"plus disponibles."
 
 #: src/ImageServer/GD.php:77
 msgid "The transformation of images via GD requires the PHP extension \"gd\"."
@@ -199,17 +201,18 @@ msgstr ""
 #: src/Job/Tiler.php:341
 #, php-format
 msgid "Error directory non writable: \"%s\"."
-msgstr ""
+msgstr "Erreur dossier fermé en écriture : \"%s\"."
 
 #: src/Job/Tiler.php:344
 #, php-format
 msgid "Failed to create folder \"%s\": a file with the same name exists…"
 msgstr ""
+"Impossible de créer le dossier \"%s\" : un fichier existe avec le même nom…"
 
 #: src/Job/Tiler.php:349
 #, php-format
 msgid "Error making directory: \"%s\"."
-msgstr ""
+msgstr "Erreur lors de la création du dossier : \"%s\"."
 
 #: data/scripts/upgrade.php:47
 msgid ""
@@ -244,7 +247,7 @@ msgstr ""
 
 #: Module.php:195
 msgid "WARNING"
-msgstr ""
+msgstr "ATTENTION"
 
 #: Module.php:202
 #, php-format
@@ -338,7 +341,7 @@ msgstr ""
 
 #: src/Form/SettingsFieldset.php:26
 msgid "Large"
-msgstr ""
+msgstr "Large"
 
 #: src/Form/SettingsFieldset.php:38
 msgid "Fallback when there is no tile"
@@ -366,11 +369,11 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:26
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: src/Form/ConfigForm.php:27
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: src/Form/ConfigForm.php:39
 msgid ""
@@ -499,7 +502,7 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:232
 msgid "Renderer"
-msgstr ""
+msgstr "Rendu"
 
 #: src/Form/ConfigForm.php:234
 msgid "Keep existing"
@@ -519,11 +522,11 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:264
 msgid "Run in background"
-msgstr ""
+msgstr "Lancer en arrière-plan"
 
 #: src/Form/ConfigForm.php:268
 msgid "Process"
-msgstr ""
+msgstr "Traitement"
 
 #: src/Form/ConfigForm.php:333
 msgid "Automatic (GD when possible, else Imagick, else command line)"
@@ -624,7 +627,7 @@ msgstr ""
 
 #: src/Media/Ingester/Tile.php:401
 msgid "Or a file"
-msgstr ""
+msgstr "Ou un fichier"
 
 #: src/Media/Ingester/Tile.php:455
 #, php-format
