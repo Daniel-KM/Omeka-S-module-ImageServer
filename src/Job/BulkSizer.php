@@ -16,12 +16,20 @@ class BulkSizer extends AbstractJob
      */
     const SQL_LIMIT = 25;
 
+    /**
+     * @var int
+     */
     protected $totalImages;
+
+    /**
+     * @var int
+     */
     protected $totalProcessed;
+
+    /**
+     * @var int
+     */
     protected $totalToProcess;
-    protected $totalSucceed;
-    protected $totalFailed;
-    protected $totalSkipped;
 
     public function perform(): void
     {

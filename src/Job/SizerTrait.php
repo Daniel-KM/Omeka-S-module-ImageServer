@@ -37,6 +37,21 @@ trait SizerTrait
      */
     protected $imageTypes;
 
+    /**
+     * @var int
+     */
+    protected $totalSucceed;
+
+    /**
+     * @var int
+     */
+    protected $totalFailed;
+
+    /**
+     * @var int
+     */
+    protected $totalSkipped;
+
     protected function prepareSizer(): void
     {
         $services = $this->getServiceLocator();

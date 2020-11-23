@@ -18,21 +18,19 @@ class BulkTilerAndSizer extends AbstractJob
     const SQL_LIMIT = 25;
 
     /**
-     * @var \Omeka\Mvc\Controller\Plugin\Logger
+     * @var int
      */
-    protected $logger;
+    protected $totalImages;
 
     /**
-     * @var \Doctrine\ORM\EntityManager $entityManager
+     * @var int
      */
-    protected $entityManager;
-
-    protected $totalImages;
     protected $totalProcessed;
+
+    /**
+     * @var int
+     */
     protected $totalToProcess;
-    protected $totalSucceed;
-    protected $totalFailed;
-    protected $totalSkipped;
 
     public function perform(): void
     {
@@ -45,7 +43,7 @@ class BulkTilerAndSizer extends AbstractJob
         $tasks = array_intersect($this->getArg('tasks', ['size', 'tile']), ['size', 'tile']);
         if (empty($tasks)) {
             $this->logger->warn(new Message(
-                'The job was stopped: no tasks (tile or size) defined.' // @translate
+                'The job ended: no tasks (tile or size) defined.' // @translate
             ));
             return;
         }

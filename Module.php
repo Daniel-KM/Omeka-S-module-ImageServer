@@ -480,44 +480,28 @@ class Module extends AbstractModule
             return;
         }
 
-        // Check is not done on original, because in some case, the original
+        // Check is not done on original, because in some cases, the original
         // file is removed.
         $mediaData = $media->getData() ?: [];
-        if (!empty($mediaData['dimensions']['large']['width'])) {
+        $hasSize = !empty($mediaData['dimensions']['large']['width']);
+        if ($hasSize) {
             return;
         }
 
-        // Reset dimensions to make the sizer working.
-        // TODO In some cases, the original file is removed once the thumbnails are built.
-        $mediaData['dimensions'] = [];
-        $media->setData($mediaData);
-
         $services = $this->getServiceLocator();
-        $sizer = $services->get('ControllerPluginManager')->get('imageSize');
-        $imageTypes = array_keys($services->get('Config')['thumbnails']['types']);
-        array_unshift($imageTypes, 'original');
 
-        $failedTypes = [];
-        foreach ($imageTypes as $imageType) {
-            $result = $sizer($media, $imageType);
-            if (!array_filter($result)) {
-                $failedTypes[] = $imageType;
-            }
-            $mediaData['dimensions'][$imageType] = $result;
-        }
-        if (count($failedTypes)) {
-            $services->get('Omeka\Logger')->err(new Message(
-                'Error getting dimensions of media #%1$d for types "%2$s".', // @translate
-                $media->getId(),
-                implode('", "', $failedTypes)
-            ));
-        }
+        $tasks = [];
+        $tasks[] = 'size';
 
-        $media->setData($mediaData);
+        // Media Sizer
+        $params = [
+            'tasks' => $tasks,
+            'query' => ['id' => $media->getId()],
+            'filter' => 'all',
+        ];
 
-        $entityManager = $services->get('Omeka\EntityManager');
-        $entityManager->persist($media);
-        // Flush one time only.
+        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+        $dispatcher->dispatch(\ImageServer\Job\MediaSizer::class, $params);
     }
 
     /**

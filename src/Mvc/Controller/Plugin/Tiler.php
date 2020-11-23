@@ -34,7 +34,7 @@ class Tiler extends AbstractPlugin
      *
      * @var MediaRepresentation $media
      * @var bool $removeDestination
-     * @return array|bool False on error, else data about tiling, with a boolean
+     * @return array|null Null on error, else data about tiling, with a boolean
      * for key "result".
      */
     public function __invoke(MediaRepresentation $media, $removeDestination = false)
@@ -42,7 +42,7 @@ class Tiler extends AbstractPlugin
         if (!$media->hasOriginal()
             || strtok((string) $media->mediaType(), '/') !== 'image'
         ) {
-            return false;
+            return null;
         }
 
         // Use a local sub-folder to create the tiles when Amazon s3 is used.
@@ -76,7 +76,7 @@ class Tiler extends AbstractPlugin
                 $media->id()
             );
             $this->logger->err($message);
-            return false;
+            return null;
         }
 
         // When a specific store or Archive Repertory are used, the storage id
@@ -98,7 +98,7 @@ class Tiler extends AbstractPlugin
                 $e
             );
             $this->logger->err($message);
-            return false;
+            return null;
         }
 
         return $result;

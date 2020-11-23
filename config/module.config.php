@@ -98,6 +98,7 @@ return [
         ],
         'factories' => [
             'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,
+            'sizer' => Service\ControllerPlugin\SizerFactory::class,
             'tileInfo' => Service\ControllerPlugin\TileInfoFactory::class,
             'tiler' => Service\ControllerPlugin\TilerFactory::class,
         ],
