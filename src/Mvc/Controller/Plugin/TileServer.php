@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2015-2018 Daniel Berthereau
+ * Copyright 2015-2020 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -53,7 +53,7 @@ class TileServer extends AbstractPlugin
      * @param array $transform
      * @return array|null
      */
-    public function __invoke(array $tileInfo, array $transform)
+    public function __invoke(array $tileInfo, array $transform): ?array
     {
         if (empty($tileInfo)) {
             return null;
@@ -71,8 +71,9 @@ class TileServer extends AbstractPlugin
                 return $this->serveTilesDeepzoom($tileInfo, $transform);
             case 'zoomify':
                 return $this->serveTilesZoomify($tileInfo, $transform);
+            default:
+                return null;
         }
-        return null;
     }
 
     /**
@@ -87,7 +88,7 @@ class TileServer extends AbstractPlugin
      * @param array $transform
      * @return array|null
      */
-    protected function serveTilesDeepzoom($tileInfo, $transform)
+    protected function serveTilesDeepzoom(array $tileInfo, array $transform): ?array
     {
         $data = $this->getLevelAndPosition(
             $tileInfo,
@@ -97,7 +98,7 @@ class TileServer extends AbstractPlugin
             true
         );
         if (is_null($data)) {
-            return;
+            return null;
         }
 
         // To manage Windows, the same path cannot be used for url and local.
@@ -125,7 +126,7 @@ class TileServer extends AbstractPlugin
      * @param array $transform
      * @return array|null
      */
-    protected function serveTilesZoomify($tileInfo, $transform)
+    protected function serveTilesZoomify(array $tileInfo, array $transform): ?array
     {
         $data = $this->getLevelAndPosition(
             $tileInfo,
@@ -135,7 +136,7 @@ class TileServer extends AbstractPlugin
             false
         );
         if (is_null($data)) {
-            return;
+            return null;
         }
 
         $imageSize = [
@@ -144,7 +145,7 @@ class TileServer extends AbstractPlugin
         ];
         $tileGroup = $this->getTileGroup($imageSize, $data);
         if (is_null($tileGroup)) {
-            return;
+            return null;
         }
 
         // To manage Windows, the same path cannot be used for url and local.
@@ -176,8 +177,12 @@ class TileServer extends AbstractPlugin
      * @param string $relativePath
      * @return array
      */
-    protected function serveTiles($tileInfo, $cellData, $relativeUrl, $relativePath)
-    {
+    protected function serveTiles(
+        array $tileInfo,
+        array $cellData,
+        string $relativeUrl,
+        string $relativePath
+    ): array {
         // The image url is used when there is no transformation.
         $imageUrl = $tileInfo['url_base']
             . '/' . $tileInfo['media_path']
@@ -211,8 +216,13 @@ class TileServer extends AbstractPlugin
      * it starts at the tile size.
      * @return array|null
      */
-    protected function getLevelAndPosition($tileInfo, $source, $region, $size, $isOneBased)
-    {
+    protected function getLevelAndPosition(
+        array $tileInfo,
+        array $source,
+        array $region,
+        array $size,
+        bool $isOneBased
+    ): ?array {
         // Initialize with default values.
         $level = 0;
         $cellX = 0;
@@ -310,7 +320,7 @@ class TileServer extends AbstractPlugin
                     break;
 
                 default:
-                    return;
+                    return null;
             }
 
             // Get the list of squale factors.
@@ -362,7 +372,7 @@ class TileServer extends AbstractPlugin
                     }
                 }
                 if (!$isLevelFound) {
-                    return;
+                    return null;
                 }
             }
         }
@@ -394,10 +404,9 @@ class TileServer extends AbstractPlugin
      * @param int $maxDimension
      * @return int
      */
-    protected function getNumLevels($maxDimension)
+    protected function getNumLevels($maxDimension): int
     {
-        $result = (int) ceil(log($maxDimension, 2)) + 1;
-        return $result;
+        return (int) ceil(log($maxDimension, 2)) + 1;
     }
 
     /**
@@ -408,7 +417,7 @@ class TileServer extends AbstractPlugin
      * @param int $numLevels
      * @return array
      */
-    protected function getScaleFactors($numLevels)
+    protected function getScaleFactors($numLevels): array
     {
         $result = [];
         foreach (range(0, $numLevels - 1) as $level) {
@@ -426,10 +435,10 @@ class TileServer extends AbstractPlugin
      * @param array $tile
      * @return int|null
      */
-    protected function getTileGroup($image, $tile)
+    protected function getTileGroup(array $image, array $tile): ?int
     {
         if (empty($image) || empty($tile)) {
-            return;
+            return null;
         }
 
         $tierSizeCalculation = 'default';
@@ -463,7 +472,7 @@ class TileServer extends AbstractPlugin
                 break;
 
             default:
-                return;
+                return null;
         }
 
         $tierSizeInTiles[] = [1, 1];
@@ -490,9 +499,9 @@ class TileServer extends AbstractPlugin
      *
      * @param string $filepath This should be an image (no check here).
      * @return array Associative array of width and height of the image file.
-     * If the file is not an image, the width and the height will be null.
+     * Values are empty when the size is undetermined.
      */
-    protected function getWidthAndHeight($filepath)
+    protected function getWidthAndHeight(string $filepath): array
     {
         if (file_exists($filepath)) {
             list($width, $height) = getimagesize($filepath);
