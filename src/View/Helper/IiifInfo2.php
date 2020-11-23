@@ -174,21 +174,21 @@ class IiifInfo2 extends AbstractHelper
     {
         $tile = [];
 
-        $squaleFactors = [];
+        $scaleFactors = [];
         $maxSize = max($tileInfo['source']['width'], $tileInfo['source']['height']);
         $tileSize = $tileInfo['size'];
         $total = (int) ceil($maxSize / $tileSize);
         $factor = 1;
         while ($factor / 2 <= $total) {
-            $squaleFactors[] = $factor;
+            $scaleFactors[] = $factor;
             $factor = $factor * 2;
         }
-        if (count($squaleFactors) <= 1) {
+        if (count($scaleFactors) <= 1) {
             return;
         }
 
         $tile['width'] = $tileSize;
-        $tile['scaleFactors'] = $squaleFactors;
+        $tile['scaleFactors'] = $scaleFactors;
         return $tile;
     }
 

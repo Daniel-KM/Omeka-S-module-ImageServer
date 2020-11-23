@@ -212,18 +212,18 @@ OUTPUT;
      */
     protected function getDataIiifFull(MediaRepresentation $media, PhpRenderer $view, array $tileInfo)
     {
-        $squaleFactors = $this->getSqualeFactors(
+        $scaleFactors = $this->getScaleFactors(
             $tileInfo['source']['width'],
             $tileInfo['source']['height'],
             $tileInfo['size']
         );
-        if (empty($squaleFactors)) {
+        if (empty($scaleFactors)) {
             return;
         }
 
         $tile = [];
         $tile['width'] = $tileInfo['size'];
-        $tile['scaleFactors'] = $squaleFactors;
+        $tile['scaleFactors'] = $scaleFactors;
 
         $data = [];
         $data['width'] = $tileInfo['source']['width'];
@@ -246,26 +246,26 @@ OUTPUT;
     }
 
     /**
-     * Get the squale factors of an tiled image for iiif.
+     * Get the scale factors of a tiled image for iiif.
      *
      * @param int $width
      * @param int $height
      * @param int $tileSize
      * @return array|null
      */
-    protected function getSqualeFactors($width, $height, $tileSize)
+    protected function getScaleFactors($width, $height, $tileSize)
     {
-        $squaleFactors = [];
+        $scaleFactors = [];
         $maxSize = max($width, $height);
         $total = (int) ceil($maxSize / $tileSize);
         $factor = 1;
         while ($factor / 2 <= $total) {
-            $squaleFactors[] = $factor;
+            $scaleFactors[] = $factor;
             $factor = $factor * 2;
         }
-        if (count($squaleFactors) <= 1) {
+        if (count($scaleFactors) <= 1) {
             return;
         }
-        return $squaleFactors;
+        return $scaleFactors;
     }
 }

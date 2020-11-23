@@ -318,15 +318,15 @@ class TileServer extends AbstractPlugin
             $numLevels = $this->getNumLevels($maxDimension);
             // In IIIF, levels start at the tile size.
             $numLevels -= (int) log($cellSize, 2);
-            $squaleFactors = $this->getScaleFactors($numLevels);
+            $scaleFactors = $this->getScaleFactors($numLevels);
             // TODO Find why maxSize and total were needed.
             // $maxSize = max($source['width'], $source['height']);
             // $total = (int) ceil($maxSize / $tileInfo['size']);
             // If level is set, count is not set and useless.
             $level = isset($level) ? $level : 0;
             $count = isset($count) ? $count : 0;
-            foreach ($squaleFactors as $squaleFactor) {
-                if ($squaleFactor >= $count) {
+            foreach ($scaleFactors as $scaleFactor) {
+                if ($scaleFactor >= $count) {
                     break;
                 }
                 ++$level;
@@ -338,9 +338,9 @@ class TileServer extends AbstractPlugin
                 // Because the default size of the region lacks, it is simpler
                 // to check if an image of the zoomed file is the same using the
                 // tile size from properties, for each possible factor.
-                $reversedSqualeFactors = array_reverse($squaleFactors);
+                $reversedScaleFactors = array_reverse($scaleFactors);
                 $isLevelFound = false;
-                foreach ($reversedSqualeFactors as $level => $reversedFactor) {
+                foreach ($reversedScaleFactors as $level => $reversedFactor) {
                     $tileFactor = $reversedFactor * $tileInfo['size'];
                     $countX = (int) ceil($source['width'] / $tileFactor);
                     $countY = (int) ceil($source['height'] / $tileFactor);
