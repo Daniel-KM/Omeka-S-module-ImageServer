@@ -209,7 +209,10 @@ class ImageController extends AbstractActionController
             && $transform['quality']['feature'] == 'default'
             && $transform['format']['feature'] == $media->mediaType()
         ) {
-            $imageUrl = $media->originalUrl();
+            // The transform set the source as original or thumbnail url.
+            $imageUrl = $transform['source']['type'] === 'original'
+                ? $media->originalUrl()
+                : $media->thumbnailUrl($transform['source']['type']);
         }
 
         // A transformation is needed.
@@ -371,6 +374,7 @@ class ImageController extends AbstractActionController
 
         $transform['version'] = $this->version;
 
+        $transform['source']['type'] = 'original';
         $transform['source']['filepath'] = $this->_getImagePath($media, 'original');
         $transform['source']['media_type'] = $media->mediaType();
 
@@ -604,10 +608,15 @@ class ImageController extends AbstractActionController
                                 // Change the source file to avoid a transformation.
                                 // TODO Check the format?
                                 if ($imageType != 'original') {
+                                    $transform['source']['type'] = $imageType;
                                     $transform['source']['filepath'] = $filepath;
                                     $transform['source']['media_type'] = 'image/jpeg';
                                     $transform['source']['width'] = $imageSize['width'];
                                     $transform['source']['height'] = $imageSize['height'];
+                                    $transform['region']['x'] = 0;
+                                    $transform['region']['y'] = 0;
+                                    $transform['region']['width'] = $imageSize['width'];
+                                    $transform['region']['height'] = $imageSize['height'];
                                 }
                                 break;
                             }
@@ -719,7 +728,7 @@ class ImageController extends AbstractActionController
      *
      * Omeka derivative are light and basic pretiled files, that can be used for
      * a request of a full region as a fullsize.
-     * @todo To be improved. Currently, thumbnails are not used.
+     * @todo To be improved. Currently, thumbnails are used only with exact sizes.
      *
      * @param MediaRepresentation $file
      * @param array $transform
@@ -736,52 +745,64 @@ class ImageController extends AbstractActionController
         // Check size. Here, the "full" is already checked.
         $useDerivativePath = false;
 
-        // Currently, the check is done only on fullsize.
-        $derivativeType = 'large';
-        $imageSize = $this->imageSize($media, $derivativeType);
-        $derivativeWidth = $imageSize['width'];
-        $derivativeHeight = $imageSize['height'];
-        switch ($transform['size']['feature']) {
-            case 'sizeByW':
-            case 'sizeByH':
-                $constraint = $transform['size']['feature'] == 'sizeByW'
-                    ? $transform['size']['width']
-                    : $transform['size']['height'];
+        // Currently, the check is not done on square and original sizes.
+        $availableTypes = ['medium', 'large'];
+        foreach ($availableTypes as $derivativeType) {
+            $imageSize = $this->imageSize($media, $derivativeType);
+            $derivativeWidth = $imageSize['width'];
+            $derivativeHeight = $imageSize['height'];
+            switch ($transform['size']['feature']) {
+                case 'sizeByW':
+                case 'sizeByH':
+                    $constraint = $transform['size']['feature'] == 'sizeByW'
+                        ? $transform['size']['width']
+                        : $transform['size']['height'];
 
-                // Check if width is lower than fulllsize or thumbnail.
-                // Omeka and IIIF doesn't use the same type of constraint, so
-                // a double check is done.
-                // TODO To be improved.
-                if ($constraint <= $derivativeWidth || $constraint <= $derivativeHeight) {
-                    $useDerivativePath = true;
-                }
-                break;
+                    // Check if width is lower than fulllsize or thumbnail.
+                    // Omeka and IIIF doesn't use the same type of constraint, so
+                    // a double check is done.
+                    // TODO To be improved.
+                    if ($constraint <= $derivativeWidth || $constraint <= $derivativeHeight) {
+                        $useDerivativePath = true;
+                        break 2;
+                    }
+                    break;
 
-            case 'sizeByWh':
-            case 'sizeByConfinedWh':
-            case 'sizeByWhListed':
-            case 'sizeByForcedWh':
-                $constraintW = $transform['size']['width'];
-                $constraintH = $transform['size']['height'];
+                case 'sizeByWh':
+                case 'sizeByConfinedWh':
+                case 'sizeByWhListed':
+                case 'sizeByForcedWh':
+                    $constraintW = $transform['size']['width'];
+                    $constraintH = $transform['size']['height'];
 
-                // Check if width is lower than fulllsize or thumbnail.
-                if ($constraintW <= $derivativeWidth || $constraintH <= $derivativeHeight) {
-                    $useDerivativePath = true;
-                }
-                break;
+                    // Check if width is lower than fulllsize or thumbnail.
+                    if ($constraintW <= $derivativeWidth || $constraintH <= $derivativeHeight) {
+                        $useDerivativePath = true;
+                        break 2;
+                    }
+                    break;
 
-            case 'sizeByPct':
-                // TODO Check the height too? Anyway, it requires to update the percent in $transform (percent x source width / derivative width).
-                if ($transform['size']['percentage'] <= ($derivativeWidth * 100 / $transform['source']['width'])) {
-                    // $useDerivativePath = true;
-                }
-                break;
+                case 'sizeByPct':
+                    // TODO Check the height too? Anyway, it requires to update the percent in $transform (percent x source width / derivative width).
+                    if ($transform['size']['percentage'] <= ($derivativeWidth * 100 / $transform['source']['width'])) {
+                        // $useDerivativePath = true;
+                    }
+                    break;
 
-            case 'full':
-            case 'max':
-                // Not possible to use a derivative, because the region is max/full.
-            default:
-                return null;
+                case 'full':
+                case 'max':
+                    // The derivative type is already checked in the previous step,
+                    // so source and region contain already the derivative file path
+                    // and size.
+                    if ($derivativeType === $transform['source']['type']) {
+                        $useDerivativePath = true;
+                        break 2;
+                    }
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         if ($useDerivativePath) {
@@ -795,6 +816,8 @@ class ImageController extends AbstractActionController
                 'height' => $derivativeHeight,
             ];
         }
+
+        return null;
     }
 
     /**
