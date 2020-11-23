@@ -73,15 +73,17 @@ class MediaController extends AbstractActionController
     {
         $settings = $this->settings();
         $id = $this->params('id');
+        $version = $this->params('version') ?: $settings->get('imageserver_info_default_version', '2');
         $url = $this->url()->fromRoute('mediaserver/info', [
             'id' => $id,
-            'version' => $this->params('version') ?: $settings->get('imageserver_info_default_version', '2'),
+            'version' => $version,
             'prefix' => $this->params('prefix') ?: $settings->get('cleanurl_identifier_prefix'),
         ], ['force_canonical' => true]);
-        return $this->getResponse()
+        $this->getResponse()
             // TODO The iiif image api specification recommands 303, not 302.
             ->setStatusCode(\Laminas\Http\Response::STATUS_CODE_303)
             ->getHeaders()->addHeaderLine('Location', $url);
+        return $this->iiifImageJsonLd('', $version);
     }
 
     /**
