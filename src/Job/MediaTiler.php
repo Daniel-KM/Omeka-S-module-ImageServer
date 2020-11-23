@@ -44,12 +44,5 @@ class MediaTiler extends AbstractJob
 
         $this->prepareTiler();
         $this->prepareTile($media);
-
-        if ($this->totalSucceed) {
-            $this->logger->notice(new Message(
-                'Media #%1$d: tile saved.', // @translate
-                $media->id()
-            ));
-        }
     }
 }

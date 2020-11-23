@@ -37,12 +37,5 @@ class MediaSizer extends AbstractJob
 
         $this->prepareSizer();
         $this->prepareSize($media);
-
-        if ($this->totalSucceed) {
-            $this->logger->notice(new Message(
-                'Media #%1$d: size saved.', // @translate
-                $media->id()
-            ));
-        }
     }
 }

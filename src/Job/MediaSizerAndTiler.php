@@ -43,38 +43,15 @@ class MediaSizerAndTiler extends AbstractJob
             return;
         }
 
-        $this->totalSucceed = 0;
         if (in_array('size', $tasks)) {
             $this->prepareSizer();
             $this->prepareSize($media);
-            if ($this->totalSucceed) {
-                $this->logger->notice(new Message(
-                    'Media #%1$d: size saved.', // @translate
-                    $media->id()
-                ));
-            } else {
-                $this->logger->err(new Message(
-                    'Media #%1$d: size not saved.', // @translate
-                    $media->id()
-                ));
-            }
         }
 
         if (in_array('tile', $tasks)) {
             $this->totalSucceed = 0;
             $this->prepareTiler();
             $this->prepareTile($media);
-            if ($this->totalSucceed) {
-                $this->logger->notice(new Message(
-                    'Media #%1$d: tile saved.', // @translate
-                    $media->id()
-                ));
-            } else {
-                $this->logger->err(new Message(
-                    'Media #%1$d: tile not saved.', // @translate
-                    $media->id()
-                ));
-            }
         }
     }
 }

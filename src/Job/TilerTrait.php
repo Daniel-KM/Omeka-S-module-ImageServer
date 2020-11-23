@@ -80,7 +80,7 @@ trait TilerTrait
         }
 
         $this->logger->info(new Message(
-            'Starting tiling media #%d.', // @translate
+            'Media #%d: Starting tiling', // @translate
             $media->id()
         ));
 
@@ -89,7 +89,7 @@ trait TilerTrait
         if ($result && !empty($result['result'])) {
             if (!empty($result['skipped'])) {
                 $this->logger->info(new Message(
-                    'Media #%d skipped: already tiled.', // @translate
+                    'Media #%d: Skipped because already tiled.', // @translate
                     $media->id()
                 ));
                 ++$this->totalSkipped;
@@ -103,21 +103,21 @@ trait TilerTrait
                     $this->entityManager->flush();
                     unset($mediaEntity);
                     $this->logger->info(new Message(
-                        'Renderer "%1$s" of media #%2$d updated to "%3$s".', // @translate
-                        $renderer,
+                        'Media #%1$d: Renderer "%2$s" updated to "%3$s".', // @translate
                         $media->id(),
+                        $renderer,
                         $this->updateRenderer
                     ));
                 }
                 $this->logger->info(new Message(
-                    'End tiling media #%d.', // @translate
+                    'Media #%d: End tiling', // @translate
                     $media->id()
                 ));
                 ++$this->totalSucceed;
             }
         } else {
             $this->logger->err(new Message(
-                'Error during tiling of media #%d.', // @translate
+                'Media #%d: Error during tiling', // @translate
                 $media->id()
             ));
             ++$this->totalFailed;

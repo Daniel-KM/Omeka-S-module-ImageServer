@@ -71,9 +71,9 @@ class Tiler extends AbstractPlugin
 
         if ($isMissingFile) {
             $message = new Message(
-                'The file "%s" of media #%d is missing', // @translate
-                $media->filename(),
-                $media->id()
+                'Media #%1$d: The file "%2$s" is missing.', // @translate
+                $media->id(),
+                $media->filename()
             );
             $this->logger->err($message);
             return null;
@@ -94,7 +94,8 @@ class Tiler extends AbstractPlugin
             $result = $tileBuilder($sourcePath, $tileDir, $this->params);
         } catch (\Exception $e) {
             $message = new Message(
-                'The tiler failed: %s', // @translate
+                'Media #%1$d: The tiler failed: %2$s', // @translate
+                $media->id(),
                 $e
             );
             $this->logger->err($message);
