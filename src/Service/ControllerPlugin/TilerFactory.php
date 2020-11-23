@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\Mvc\Controller\Plugin\Tiler;
@@ -40,6 +41,12 @@ class TilerFactory implements FactoryInterface
         $module = $moduleManager->getModule('ArchiveRepertory');
         $params['hasArchiveRepertory'] = $module
             && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+
+        // If there is an overlap, the tile is usually transformed a second time
+        // because OpenSeadragon asks for a multiple of the cell size.
+        // So the overlap prevents simple redirect and so it is not recommended.
+        // This param overrides the default of DeepZoom.
+        $params['tileOverlap'] = 0;
 
         return new Tiler(
             $params,

@@ -89,6 +89,9 @@ class Tiler extends AbstractJob
     {
         // If no media, the event "api.create.post" may be not finished, so wait
         // 300 sec.
+        // The issue can occur when there are multiple big files. In that case,
+        // it is recommenced to use the bulk tiler.
+        // TODO Integrate a queue in Omeka.
         $mediaId = $this->getMediaIdViaSql();
 
         if (empty($mediaId)) {

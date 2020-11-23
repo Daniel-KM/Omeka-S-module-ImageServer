@@ -31,6 +31,14 @@ namespace ImageServer\Mvc\Controller\Plugin;
 
 class TileServerDeepZoom extends TileServer
 {
+    /**
+     * If there is an overlap, the tile is usually transformed a second time
+     * because OpenSeadragon asks for a multiple of the cell size.
+     * So the overlap prevents simple redirect and so it is not recommended.
+     *
+     * {@inheritDoc}
+     * @see \ImageServer\Mvc\Controller\Plugin\TileServer::__invoke()
+     */
     public function __invoke(array $tileInfo, array $transform): ?array
     {
         if (empty($tileInfo) || $tileInfo['tile_type'] !== 'deepzoom') {
