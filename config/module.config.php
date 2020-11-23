@@ -41,6 +41,12 @@ if ($prefix) {
 }
 
 return [
+    'file_renderers' => [
+        // It is not simple to use a factory, because the core invokable overrides it.
+        'invokables' => [
+            'thumbnail' => Media\FileRenderer\ThumbnailRenderer::class,
+        ],
+    ],
     'view_manager' => [
         'template_path_stack' => [
             dirname(__DIR__) . '/view',
@@ -68,6 +74,9 @@ return [
     'form_elements' => [
         'invokables' => [
             Form\Element\Note::class => Form\Element\Note::class,
+            Form\Element\OptionalRadio::class => Form\Element\OptionalRadio::class,
+            Form\SettingsFieldset::class => Form\SettingsFieldset::class,
+            Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
         ],
         'factories' => [
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
@@ -356,9 +365,17 @@ return [
             'imageserver_image_creator' => 'Auto',
             'imageserver_image_max_size' => 10000000,
             'imageserver_image_tile_type' => 'deepzoom',
-            // This param may be change locally.
+            // This param may be changed locally.
             // If updated, the path for the ArchiveRepertory ingester should be changed.
             'imageserver_image_tile_dir' => 'tile',
+        ],
+        'settings' => [
+            'imageserver_default_thumbnail_type' => 'tile',
+            'imageserver_tile_fallback' => 'tile_large',
+        ],
+        'site_settings' => [
+            'imageserver_default_thumbnail_type' => 'tile',
+            'imageserver_tile_fallback' => 'tile_large',
         ],
     ],
 ];

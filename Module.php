@@ -229,6 +229,17 @@ class Module extends AbstractModule
             'entity.remove.post',
             [$this, 'deleteMediaTiles']
         );
+
+        $sharedEventManager->attach(
+            \Omeka\Form\SettingForm::class,
+            'form.add_elements',
+            [$this, 'handleMainSettings']
+        );
+        $sharedEventManager->attach(
+            \Omeka\Form\SiteSettingsForm::class,
+            'form.add_elements',
+            [$this, 'handleSiteSettings']
+        );
     }
 
     public function handleConfigForm(AbstractController $controller)
