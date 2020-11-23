@@ -35,6 +35,7 @@ use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\File\Store\StoreInterface;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
 
@@ -177,7 +178,7 @@ class MediaController extends AbstractActionController
      * @return string
      * @todo Refactorize.
      */
-    protected function getStoragePath($prefix, $name, $extension = null)
+    protected function getStoragePath(string $prefix, string $name, $extension = null): string
     {
         return sprintf('%s/%s%s', $prefix, $name, $extension ? ".$extension" : null);
     }
@@ -188,7 +189,7 @@ class MediaController extends AbstractActionController
      * @param string $resourceType
      * @return \Omeka\Api\Representation\AbstractResourceEntityRepresentation|null
      */
-    protected function fetchResource($resourceType)
+    protected function fetchResource(string $resourceType): ?AbstractResourceEntityRepresentation
     {
         $id = $this->params('id');
 
@@ -205,7 +206,7 @@ class MediaController extends AbstractActionController
         }
     }
 
-    protected function useCleanIdentifier()
+    protected function useCleanIdentifier(): bool
     {
         return $this->viewHelpers()->has('getResourcesFromIdentifiers')
             && $this->settings()->get('iiifserver_identifier_clean');
@@ -218,7 +219,7 @@ class MediaController extends AbstractActionController
      *
      * @return string|null
      */
-    protected function requestedVersion()
+    protected function requestedVersion(): string
     {
         // Check the version from the url first.
         $version = $this->params('version');
@@ -233,10 +234,10 @@ class MediaController extends AbstractActionController
         if (strpos($accept, 'iiif.io/api/image/2/context.json')) {
             return '2';
         }
-        return null;
+        return $this->settings()->get('imageserver_info_default_version', '2') ?: '2';
     }
 
-    protected function jsonError(\Exception $exception, $statusCode = 500)
+    protected function jsonError(\Exception $exception, $statusCode = 500): JsonModel
     {
         /* @var \Laminas\Http\Response $response */
         $this->getResponse()->setStatusCode($statusCode);
@@ -246,7 +247,7 @@ class MediaController extends AbstractActionController
         ]);
     }
 
-    protected function viewError(\Exception $exception, $statusCode = 500)
+    protected function viewError(\Exception $exception, $statusCode = 500): ViewModel
     {
         /* @var \Laminas\Http\Response $response */
         $this->getResponse()->setStatusCode($statusCode);

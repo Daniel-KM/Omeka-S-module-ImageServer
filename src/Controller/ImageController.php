@@ -37,6 +37,7 @@ use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
@@ -362,7 +363,7 @@ class ImageController extends AbstractActionController
      * @param MediaRepresentation $media
      * @return array|null Array of cleaned requested image, else null.
      */
-    protected function _cleanRequest(MediaRepresentation $media)
+    protected function _cleanRequest(MediaRepresentation $media): ?array
     {
         $transform = [];
 
@@ -723,7 +724,7 @@ class ImageController extends AbstractActionController
      * @return array|null Associative array with the file path, the derivative
      * type, the width and the height. Null if none.
      */
-    protected function _useOmekaDerivative(MediaRepresentation $media, $transform)
+    protected function _useOmekaDerivative(MediaRepresentation $media, array $transform): ?array
     {
         // Some requirements to get tiles.
         if ($transform['region']['feature'] != 'full') {
@@ -804,7 +805,7 @@ class ImageController extends AbstractActionController
      * @return array|null Associative array with the file path, the derivative
      * type, the width and the height. Null if none.
      */
-    protected function _usePreTiled(MediaRepresentation $media, $transform)
+    protected function _usePreTiled(MediaRepresentation $media, array $transform): ?array
     {
         // TODO Fix the use of pre-tiled images with an arbitrary size.
         $tileInfo = $this->tileInfo($media);
@@ -819,7 +820,7 @@ class ImageController extends AbstractActionController
      * @param array $args Contains the filepath and the parameters.
      * @return string|null The filepath to the temp image if success.
      */
-    protected function _transformImage($args)
+    protected function _transformImage(array $args): ?string
     {
         $imageServer = new ImageServer($this->tempFileFactory, $this->store, $this->commandLineArgs, $this->settings());
         return $imageServer
@@ -828,7 +829,7 @@ class ImageController extends AbstractActionController
             ->transform($args);
     }
 
-    protected function _mediaPath(MediaRepresentation $media, $imageType = 'original')
+    protected function _mediaPath(MediaRepresentation $media, string $imageType = 'original'): string
     {
         $storagePath = $imageType == 'original'
             ? $this->getStoragePath($imageType, $media->filename())
@@ -850,7 +851,7 @@ class ImageController extends AbstractActionController
      * @return string|null Null if not exists.
      * @see \ImageServer\View\Helper\IiifInfo::_getImagePath()
      */
-    protected function _getImagePath(MediaRepresentation $media, $imageType = 'original')
+    protected function _getImagePath(MediaRepresentation $media, string $imageType = 'original'): ?string
     {
         return strpos($media->mediaType(), 'image/') === 0
             ? $this->_mediaPath($media, $imageType)
@@ -866,7 +867,7 @@ class ImageController extends AbstractActionController
      * @return string
      * @todo Refactorize.
      */
-    protected function getStoragePath($prefix, $name, $extension = null)
+    protected function getStoragePath(string $prefix, string $name, $extension = null): string
     {
         return sprintf('%s/%s%s', $prefix, $name, strlen((string) $extension) ? '.' . $extension : '');
     }
@@ -877,7 +878,7 @@ class ImageController extends AbstractActionController
      * @param string $resourceType
      * @return \Omeka\Api\Representation\AbstractResourceEntityRepresentation|null
      */
-    protected function fetchResource($resourceType)
+    protected function fetchResource(string $resourceType): ?AbstractResourceEntityRepresentation
     {
         $id = $this->params('id');
 
@@ -894,7 +895,7 @@ class ImageController extends AbstractActionController
         }
     }
 
-    protected function useCleanIdentifier()
+    protected function useCleanIdentifier(): bool
     {
         return $this->viewHelpers()->has('getResourcesFromIdentifiers')
             && $this->settings()->get('iiifserver_identifier_clean');
@@ -907,7 +908,7 @@ class ImageController extends AbstractActionController
      *
      * @return string
      */
-    protected function requestedVersion()
+    protected function requestedVersion(): string
     {
         // Check the version from the url first.
         $this->version = $this->params('version');
@@ -926,7 +927,7 @@ class ImageController extends AbstractActionController
         return $this->version;
     }
 
-    protected function jsonError(\Exception $exception, $statusCode = 500)
+    protected function jsonError(\Exception $exception, $statusCode = 500): JsonModel
     {
         $this->getResponse()->setStatusCode($statusCode);
         return new JsonModel([
@@ -935,12 +936,13 @@ class ImageController extends AbstractActionController
         ]);
     }
 
-    protected function viewError(\Exception $exception, $statusCode = 500)
+    protected function viewError(\Exception $exception, $statusCode = 500): ViewModel
     {
         $this->getResponse()->setStatusCode($statusCode);
-        $view = new ViewModel;
+        $view = new ViewModel([
+            'message' => $exception->getMessage(),
+        ]);
         return $view
-            ->setTemplate('image-server/image/error')
-            ->setVariable('message', $exception->getMessage());
+            ->setTemplate('image-server/image/error');
     }
 }
