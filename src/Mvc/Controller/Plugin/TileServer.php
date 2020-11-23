@@ -98,17 +98,69 @@ class TileServer extends AbstractPlugin
         // processor.
         $cellSize = $tileInfo['size'];
 
+        // Return only direct single tile, or smaller.
+        $isNotTile = $region['x'] % $cellSize !== 0 || $region['y'] % $cellSize !== 0;
+        if ($isNotTile) {
+            return null;
+        }
+
         // Check if the tile may be cropped.
         $isFirstColumn = $region['x'] == 0;
         $isFirstRow = $region['y'] == 0;
         $isFirstCell = $isFirstColumn && $isFirstRow;
-        $isLastColumn = $source['width'] == ($region['x'] + $region['width']);
-        $isLastRow = $source['height'] == ($region['y'] + $region['height']);
+        $isLastColumn = $source['width'] <= ($region['x'] + $region['width']);
+        $isLastRow = $source['height'] <= ($region['y'] + $region['height']);
         $isLastCell = $isLastColumn && $isLastRow;
         $isSingleCell = $isFirstCell && $isLastCell;
 
-        // No process is needed when the requested cell is single.
-        if (!$isSingleCell) {
+        if ($isSingleCell) {
+            // The whole image should be returned, so only check the biggest
+            // whole image. With Zoomify, image is always "TileGroup0/0-0-0.jpg".
+            // So only check the requested size.
+            // Inside Omeka, it is never the case, because the thumbnails are
+            // already returned.
+            switch ($size['feature']) {
+                case 'sizeByW':
+                    if ($size['width'] > $cellSize
+                        || ($source['height'] * $size['width'] * $source['width'] > $cellSize)
+                    ) {
+                        return null;
+                    }
+                    break;
+
+                case 'sizeByH':
+                    if ($size['height'] > $cellSize
+                        || ($source['width'] * $size['height'] / $source['height'] > $cellSize)
+                    ) {
+                        return null;
+                    }
+                    break;
+
+                case 'sizeByConfinedWh':
+                case 'sizeByWh':
+                case 'sizeByWhListed':
+                    if ($size['width'] > $cellSize
+                        || ($source['height'] * $size['width'] * $source['width'] > $cellSize)
+                        || $size['height'] > $cellSize
+                        || ($source['width'] * $size['height'] / $source['height'] > $cellSize)
+                    ) {
+                        return null;
+                    }
+                    break;
+
+                case 'full':
+                case 'max':
+                    if ($size['width'] > $cellSize
+                        || $size['height'] > $cellSize
+                    ) {
+                        return null;
+                    }
+                    break;
+
+                default:
+                    return null;
+            }
+        } else {
             // Determine the position of the cell from the source and the
             // region.
             switch ($size['feature']) {
@@ -242,8 +294,6 @@ class TileServer extends AbstractPlugin
                 }
             }
         }
-
-        // TODO Check if the cell size is the required one (always true for image tiled here).
 
         if ($isOneBased) {
             $level += (int) log($cellSize, 2);
