@@ -360,6 +360,7 @@ return [
         'config' => [
             'imageserver_info_default_version' => '2',
             'imageserver_info_version_append' => false,
+            'imageserver_identifier_prefix' => '',
             'imageserver_info_rights' => 'property_or_url',
             'imageserver_info_rights_property' => 'dcterms:license',
             'imageserver_info_rights_url' => 'http://rightsstatements.org/vocab/CNE/1.0/',

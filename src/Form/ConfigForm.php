@@ -44,6 +44,20 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
 
+            /**
+            ->add([
+                'name' => 'imageserver_identifier_prefix',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Append a prefix to the url (to be set inside module.config.php currently)', // @translate
+                    'info' => 'If set, the prefix will be added after the version: "iiif-img/3/xxx".', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_identifier_prefix',
+                ],
+            ])
+            */
+
             ->add([
                 'name' => 'imageserver_info_rights',
                 'type' => Element\Select::class,

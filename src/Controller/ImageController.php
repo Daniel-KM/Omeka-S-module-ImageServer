@@ -80,7 +80,7 @@ class ImageController extends AbstractActionController
         $url = $this->url()->fromRoute('imageserver/info', [
             'id' => $id,
             'version' => $version,
-            'prefix' => $this->params('prefix') ?: $settings->get('cleanurl_identifier_prefix'),
+            'prefix' => $this->params('prefix') ?: $settings->get('imageserver_identifier_prefix', ''),
         ], ['force_canonical' => true]);
         $this->getResponse()
             // The iiif image api specification recommands 303, not 302.
