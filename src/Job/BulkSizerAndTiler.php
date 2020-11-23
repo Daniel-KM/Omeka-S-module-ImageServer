@@ -5,7 +5,7 @@ namespace ImageServer\Job;
 use Omeka\Job\AbstractJob;
 use Omeka\Stdlib\Message;
 
-class BulkTilerAndSizer extends AbstractJob
+class BulkSizerAndTiler extends AbstractJob
 {
     use SizerTrait;
     use TilerTrait;

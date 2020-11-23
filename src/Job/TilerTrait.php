@@ -30,7 +30,33 @@ trait TilerTrait
     /**
      * @var bool
      */
+    protected $setRendererTile;
+
+    /**
+     * @var bool
+     */
     protected $removeDestination;
+
+    /**
+     * @var string|bool
+     */
+    protected $updateRenderer;
+
+
+    /**
+     * @var int
+     */
+    protected $totalSucceed;
+
+    /**
+     * @var int
+     */
+    protected $totalFailed;
+
+    /**
+     * @var int
+     */
+    protected $totalSkipped;
 
     protected function prepareTiler(): void
     {
@@ -42,6 +68,7 @@ trait TilerTrait
         $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
 
         $this->removeDestination = (bool) $this->getArg('remove_destination', false);
+        $this->updateRenderer = $this->getArg('update_renderer', false) ?: false;
     }
 
     protected function prepareTile(MediaRepresentation $media): void
@@ -68,17 +95,18 @@ trait TilerTrait
                 ++$this->totalSkipped;
             } else {
                 $renderer = $media->renderer();
-                if ($renderer !== 'tile') {
+                if ($this->updateRenderer && $renderer !== $this->updateRenderer) {
                     /** @var \Omeka\Entity\Media $mediaEntity  */
                     $mediaEntity = $this->mediaRepository->find($media->id());
-                    $mediaEntity->setRenderer('tile');
+                    $mediaEntity->setRenderer($this->updateRenderer);
                     $this->entityManager->persist($mediaEntity);
                     $this->entityManager->flush();
                     unset($mediaEntity);
                     $this->logger->info(new Message(
-                        'Renderer "%1$s" of media #%2$d updated to "tile".', // @translate
+                        'Renderer "%1$s" of media #%2$d updated to "%3$s".', // @translate
                         $renderer,
-                        $media->id()
+                        $media->id(),
+                        $this->updateRenderer
                     ));
                 }
                 $this->logger->info(new Message(

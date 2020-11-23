@@ -133,6 +133,15 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
 
+        // Convert all media renderer tiles into files.
+        $sql = <<<SQL
+UPDATE `media`
+SET `renderer` = "file"
+WHERE `renderer` = "tile";
+SQL;
+        $connection = $services->get('Omeka\Connection');
+        $connection->exec($sql);
+
         // Nuke all the tiles.
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $settings->get('imageserver_image_tile_dir');
@@ -141,7 +150,6 @@ class Module extends AbstractModule
             $messenger->addWarning('The tile dir is not defined and was not removed.'); // @translate
         } else {
             $tileDir = $basePath . '/' . $tileDir;
-
             // A security check.
             $removable = $tileDir == realpath($tileDir);
             if ($removable) {
@@ -196,6 +204,12 @@ class Module extends AbstractModule
             );
             $html .= '</p>';
         }
+        $html .= '<p>';
+        $html .= new Message(
+            'All media rendered as "tile" will be rendered as "file".' // @translate
+        );
+        $html .= '</p>';
+
         echo $html;
     }
 
@@ -259,20 +273,20 @@ class Module extends AbstractModule
         $params = $params['imageserver_bulk_prepare'];
 
         if (in_array('tile', $params['tasks']) && in_array('size', $params['tasks'])) {
-            $this->processTilerAndSizer($params);
+            $this->processSizerAndTiler($params);
         } elseif (in_array('size', $params['tasks'])) {
             $sizerParams = array_intersect_key($params, ['query' => null, 'filter' => null]);
             $sizerParams['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
             $this->processSizer($sizerParams);
         } elseif (in_array('tile', $params['tasks'])) {
-            $tilerParams = array_intersect_key($params, ['query' => null, 'remove_destination' => null]);
+            $tilerParams = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
             $this->processTiler($tilerParams);
         }
 
         return true;
     }
 
-    protected function processTilerAndSizer(array $params)
+    protected function processSizerAndTiler(array $params)
     {
         $services = $this->getServiceLocator();
         $plugins = $services->get('ControllerPluginManager');
@@ -285,8 +299,9 @@ class Module extends AbstractModule
         $params['query'] = $query;
 
         $params['remove_destination'] = (bool) $params['remove_destination'];
+        $params['update_renderer'] = empty($params['update_renderer']) ? false : $params['update_renderer'];
         $params['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
-        $params = array_intersect_key($params, ['query' => null, 'tasks' => null, 'remove_destination' => null, 'filter' => null]);
+        $params = array_intersect_key($params, ['query' => null, 'tasks' => null, 'remove_destination' => null, 'filter' => null, 'update_renderer' => null]);
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
@@ -323,6 +338,7 @@ class Module extends AbstractModule
         unset($params['process']);
 
         $params['remove_destination'] = (bool) $params['remove_destination'];
+        $params['update_renderer'] = empty($params['update_renderer']) ? false : $params['update_renderer'];
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
@@ -470,7 +486,7 @@ class Module extends AbstractModule
     }
 
     /**
-     * Save dimensions of a media.
+     * Save dimensions of a media and create tiles.
      *
      * @param Media $media
      */
@@ -480,28 +496,45 @@ class Module extends AbstractModule
             return;
         }
 
+        $services = $this->getServiceLocator();
+        $mediaRepr = $services->get('Omeka\ApiAdapterManager')->get('media')->getRepresentation($media);
+        /** @var \ImageServer\Mvc\Controller\Plugin\TileInfo $tileInfo */
+        $tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
+
         // Check is not done on original, because in some cases, the original
         // file is removed.
         $mediaData = $media->getData() ?: [];
         $hasSize = !empty($mediaData['dimensions']['large']['width']);
-        if ($hasSize) {
+        $hasTile = $tileInfo($mediaRepr);
+        if ($hasSize && $hasTile) {
             return;
         }
 
-        $services = $this->getServiceLocator();
-
         $tasks = [];
-        $tasks[] = 'size';
+        if (!$hasSize) {
+            $tasks[] = 'size';
+        }
+        if (!$hasTile) {
+            $tasks[] = 'tile';
+        }
 
-        // Media Sizer
+        // Media sizer and tiler.
         $params = [
             'tasks' => $tasks,
             'query' => ['id' => $media->getId()],
             'filter' => 'all',
+            'remove_destination' => true,
+            'update_renderer' => false,
         ];
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        $dispatcher->dispatch(\ImageServer\Job\MediaSizer::class, $params);
+        if ($hasSize && $hasTile) {
+            $dispatcher->dispatch(\ImageServer\Job\MediaSizerAndTiler::class, $params);
+        } elseif ($hasSize) {
+            $dispatcher->dispatch(\ImageServer\Job\MediaSizer::class, $params);
+        } else {
+            $dispatcher->dispatch(\ImageServer\Job\MediaTiler::class, $params);
+        }
     }
 
     /**

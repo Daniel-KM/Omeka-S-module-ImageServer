@@ -91,6 +91,7 @@ class TileServerDeepZoom extends TileServer
         $result = [
             'fileurl' => $imageUrl,
             'filepath' => $imagePath,
+            // Useful?
             'derivativeType' => 'tile',
             'media_type' => 'image/jpeg',
             'width' => $tileWidth,

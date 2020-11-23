@@ -207,7 +207,23 @@ To save the height and the width of all images and derivatives allows to speed u
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'remove-destination',
+                    'id' => 'remove_destination',
+                    'value' => '0',
+                ],
+            ])
+            ->add([
+                'name' => 'update_renderer',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Renderer', // @translate
+                    'value_options' => [
+                        '0' => 'Keep existing', // @translate
+                        'file' => 'File', // @translate
+                        'tile' => 'Tile', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'update_renderer',
                     'value' => '0',
                 ],
             ])
@@ -271,6 +287,10 @@ To save the height and the width of all images and derivatives allows to speed u
             ])
             ->add([
                 'name' => 'remove_destination',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'update_renderer',
                 'required' => false,
             ])
             ->add([
