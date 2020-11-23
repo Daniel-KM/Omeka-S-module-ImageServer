@@ -135,7 +135,7 @@ class MediaController extends AbstractActionController
 
         // Because there is no conversion currently, the format should be
         // checked.
-        $format = strtolower($this->params('format'));
+        $format = strtolower((string) $this->params('format'));
         if (pathinfo($media->filename(), PATHINFO_EXTENSION) != $format) {
             return $this->viewError(new UnsupportedMediaTypeException(
                 'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.', // @translate
