@@ -263,7 +263,7 @@ class ImageController extends AbstractActionController
                             \Laminas\Http\Response::STATUS_CODE_500
                         ));
                     }
-                    $imagePath = $this->imageServer()->transform($args);
+                    $imagePath = $this->imageServer()->transform($transform);
                 }
             }
         }
