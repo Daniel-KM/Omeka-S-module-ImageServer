@@ -52,14 +52,23 @@ return [
     'view_helpers' => [
         'invokables' => [
             'iiifInfo' => View\Helper\IiifInfo::class,
+            'formNote' => View\Helper\FormNote::class,
         ],
         'factories' => [
             'iiifInfo2' => Service\ViewHelper\IiifInfo2Factory::class,
             'iiifInfo3' => Service\ViewHelper\IiifInfo3Factory::class,
             'tileInfo' => Service\ViewHelper\TileInfoFactory::class,
         ],
+        'delegators' => [
+            'Laminas\Form\View\Helper\FormElement' => [
+                Service\Delegator\FormElementDelegatorFactory::class,
+            ],
+        ],
     ],
     'form_elements' => [
+        'invokables' => [
+            Form\Element\Note::class => Form\Element\Note::class,
+        ],
         'factories' => [
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
         ],
