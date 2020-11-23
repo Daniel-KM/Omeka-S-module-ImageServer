@@ -75,6 +75,8 @@ return [
             'iiifImageJsonLd' => Mvc\Controller\Plugin\IiifImageJsonLd::class,
             'tileBuilder' => Mvc\Controller\Plugin\TileBuilder::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
+            'tileServerDeepZoom' => Mvc\Controller\Plugin\TileServerDeepZoom::class,
+            'tileServerZoomify' => Mvc\Controller\Plugin\TileServerZoomify::class,
         ],
         'factories' => [
             'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,

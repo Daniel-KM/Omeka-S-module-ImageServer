@@ -36,18 +36,20 @@ class TileServer extends AbstractPlugin
     /**
      * Retrieve tiles for an image, if any, according to the required transform.
      *
-     * @note This tile server was tested only with images tiled from the
-     * integrated tiler.
+     * This tile server returns only the tiles created by the tiler. Optional
+     * transformation is done dynamically. Request of tiles bigger than a tile
+     * at any level should be done dynamically.
      *
-     * @internal Because the position of the requested region may be anything
-     * (it depends of the client), until four images may be needed to build the
-     * resulting image. It's always quicker to reassemble them rather than
-     * extracting the part from the full image, specially with big ones.
-     * Nevertheless, OpenSeadragon tries to ask 0-based tiles, so only this case
-     * is managed currently.
      * @todo For non standard requests, the tiled images may be used to rebuild
      * a fullsize image that is larger the Omeka derivatives. In that case,
      * multiple tiles should be joined.
+     *
+     * Because the position of the requested region may be anything (it depends
+     * of the client), until four images may be needed to build the resulting
+     * image. It may be quicker to reassemble them rather than extracting the
+     * part from the full image, specially with big ones (except with jpeg2000).
+     * Nevertheless, OpenSeadragon tries to ask 0-based tiles, so only this case
+     * is managed currently.
      *
      * @param array $tileInfo
      * @param array $transform
@@ -55,154 +57,18 @@ class TileServer extends AbstractPlugin
      */
     public function __invoke(array $tileInfo, array $transform): ?array
     {
-        if (empty($tileInfo)) {
-            return null;
-        }
-
-        // Quick check of supported transformation of tiles.
-        if (!in_array($transform['region']['feature'], ['regionByPx', 'full'])
-            || !in_array($transform['size']['feature'], ['sizeByW', 'sizeByH', 'sizeByWh', 'sizeByWhListed', 'full', 'max'])
-        ) {
+        if (empty($tileInfo) || empty($tileInfo['tile_type'])) {
             return null;
         }
 
         switch ($tileInfo['tile_type']) {
             case 'deepzoom':
-                return $this->serveTilesDeepzoom($tileInfo, $transform);
+                return $this->getController()->tileServerDeepZoom($tileInfo, $transform);
             case 'zoomify':
-                return $this->serveTilesZoomify($tileInfo, $transform);
+                return $this->getController()->tileServerZoomify($tileInfo, $transform);
             default:
                 return null;
         }
-    }
-
-    /**
-     * Retrieve the data for a transformation.
-     *
-     * @internal See a client implementation of the converter in OpenSeadragon.
-     * @link https://github.com/openseadragon/openseadragon/blob/master/src/iiiftilesource.js
-     * @link https://gist.github.com/jpstroop/4624253#file-dzi_to_iiif_2-py
-     * @see /src/libraries/Deepzoom/Deepzoom.php
-     *
-     * @param array $tileInfo
-     * @param array $transform
-     * @return array|null
-     */
-    protected function serveTilesDeepzoom(array $tileInfo, array $transform): ?array
-    {
-        $data = $this->getLevelAndPosition(
-            $tileInfo,
-            $transform['source'],
-            $transform['region'],
-            $transform['size'],
-            true
-        );
-        if (is_null($data)) {
-            return null;
-        }
-
-        // To manage Windows, the same path cannot be used for url and local.
-        $relativeUrl = sprintf(
-            '%d/%d_%d.jpg',
-            $data['level'],
-            $data['column'],
-            $data['row']
-        );
-        $relativePath = sprintf(
-            '%d%s%d_%d.jpg',
-            $data['level'],
-            DIRECTORY_SEPARATOR,
-            $data['column'],
-            $data['row']
-        );
-
-        return $this->serveTiles($tileInfo, $data, $relativeUrl, $relativePath);
-    }
-
-    /**
-     * Retrieve the data for a transformation.
-     *
-     * @param array $tileInfo
-     * @param array $transform
-     * @return array|null
-     */
-    protected function serveTilesZoomify(array $tileInfo, array $transform): ?array
-    {
-        $data = $this->getLevelAndPosition(
-            $tileInfo,
-            $transform['source'],
-            $transform['region'],
-            $transform['size'],
-            false
-        );
-        if (is_null($data)) {
-            return null;
-        }
-
-        $imageSize = [
-            'width' => $transform['source']['width'],
-            'height' => $transform['source']['height'],
-        ];
-        $tileGroup = $this->getTileGroup($imageSize, $data);
-        if (is_null($tileGroup)) {
-            return null;
-        }
-
-        // To manage Windows, the same path cannot be used for url and local.
-        $relativeUrl = sprintf(
-            'TileGroup%d/%d-%d-%d.jpg',
-            $tileGroup,
-            $data['level'],
-            $data['column'],
-            $data['row']
-        );
-        $relativePath = sprintf(
-            'TileGroup%d%s%d-%d-%d.jpg',
-            $tileGroup,
-            DIRECTORY_SEPARATOR,
-            $data['level'],
-            $data['column'],
-            $data['row']
-        );
-
-        return $this->serveTiles($tileInfo, $data, $relativeUrl, $relativePath);
-    }
-
-    /**
-     * Retrieve the data for a transformation.
-     *
-     * @param array $tileInfo
-     * @param array $cellData
-     * @param string $relativeUrl
-     * @param string $relativePath
-     * @return array
-     */
-    protected function serveTiles(
-        array $tileInfo,
-        array $cellData,
-        string $relativeUrl,
-        string $relativePath
-    ): array {
-        // The image url is used when there is no transformation.
-        $imageUrl = $tileInfo['url_base']
-            . '/' . $tileInfo['media_path']
-            . '/' . $relativeUrl;
-        $imagePath = $tileInfo['path_base']
-            . DIRECTORY_SEPARATOR . $tileInfo['media_path']
-            . DIRECTORY_SEPARATOR . $relativePath;
-
-        list($tileWidth, $tileHeight) = array_values($this->getWidthAndHeight($imagePath));
-
-        $result = [
-            'fileurl' => $imageUrl,
-            'filepath' => $imagePath,
-            'derivativeType' => 'tile',
-            'media_type' => 'image/jpeg',
-            'width' => $tileWidth,
-            'height' => $tileHeight,
-            'overlap' => $tileInfo['overlap'],
-        ];
-        return $result + $cellData;
     }
 
     /**
@@ -412,7 +278,8 @@ class TileServer extends AbstractPlugin
     /**
      * Get the scale factors.
      *
-     * @internal Check the number of levels (1-based or tile based) before.
+     * Note: the check of the number of levels (1-based or tile based) should be
+     * done before.
      *
      * @param int $numLevels
      * @return array
@@ -424,72 +291,6 @@ class TileServer extends AbstractPlugin
             $result[] = 2 ** $level;
         }
         return $result;
-    }
-
-    /**
-     * Return the tile group of a tile from level, position and size.
-     *
-     * @link https://github.com/openlayers/openlayers/blob/v4.0.0/src/ol/source/zoomify.js
-     *
-     * @param array $image
-     * @param array $tile
-     * @return int|null
-     */
-    protected function getTileGroup(array $image, array $tile): ?int
-    {
-        if (empty($image) || empty($tile)) {
-            return null;
-        }
-
-        $tierSizeCalculation = 'default';
-        // $tierSizeCalculation = 'truncated';
-
-        $tierSizeInTiles = [];
-
-        switch ($tierSizeCalculation) {
-            case 'default':
-                $tileSize = $tile['size'];
-                while ($image['width'] > $tileSize || $image['height'] > $tileSize) {
-                    $tierSizeInTiles[] = [
-                        ceil($image['width'] / $tileSize),
-                        ceil($image['height'] / $tileSize),
-                    ];
-                    $tileSize += $tileSize;
-                }
-                break;
-
-            case 'truncated':
-                $width = $image['width'];
-                $height = $image['height'];
-                while ($width > $tile['size'] || $height > $tile['size']) {
-                    $tierSizeInTiles[] = [
-                        ceil($width / $tile['size']),
-                        ceil($height / $tile['size']),
-                    ];
-                    $width >>= 1;
-                    $height >>= 1;
-                }
-                break;
-
-            default:
-                return null;
-        }
-
-        $tierSizeInTiles[] = [1, 1];
-        $tierSizeInTiles = array_reverse($tierSizeInTiles);
-
-        $tileCountUpToTier = [0];
-        for ($i = 1, $ii = count($tierSizeInTiles); $i < $ii; $i++) {
-            $tileCountUpToTier[] =
-                $tierSizeInTiles[$i - 1][0] * $tierSizeInTiles[$i - 1][1]
-                + $tileCountUpToTier[$i - 1];
-        }
-
-        $tileIndex = $tile['column']
-            + $tile['row'] * $tierSizeInTiles[$tile['level']][0]
-            + $tileCountUpToTier[$tile['level']];
-        $tileGroup = ($tileIndex / $tile['size']) ?: 0;
-        return (int) $tileGroup;
     }
 
     /**
