@@ -153,6 +153,17 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
             ->add([
+                'name' => 'imageserver_auto_tile',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Tile images automatically when saved (important: enable it only when all images are already tiled)', // @translate
+                    'info' => 'If set, any action on items will create tiles if they are not present, so it can overload the server. So bulk tile all items first below.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_auto_tile',
+                ],
+            ])
+            ->add([
                 'name' => 'imageserver_imager',
                 'type' => Element\Select::class,
                 'options' => [
