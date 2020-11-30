@@ -1,24 +1,16 @@
 {
     "name": "daniel-km/image-server",
+    "description": "Provide an IIIF compliant simple image server to allow to process and share instantly images of any size, and audio/video.",
     "type": "library",
-    "description": "Provide an IIIF compliant simple image server to allow to process and share instantly images of any size, and audio, and video.",
-    "license": "CECILL-2.1",
     "require": {
-        "daniel-km/deepzoom": "dev-master",
-        "daniel-km/zoomify": "dev-master"
+        "daniel-km/deepzoom": "^0.6.2",
+        "daniel-km/zoomify": "^1.0"
     },
-    "require-dev": {
-        "biblibre/omeka-s-test-helper": "dev-master"
-    },
-    "autoload": {
-        "psr-4": {
-            "DanielKm\\Deepzoom\\": "vendor/daniel-km/deepzoom/src/",
-            "DanielKm\\Zoomify\\": "vendor/daniel-km/zoomify/src/"
+    "license": "CECILL-2.1",
+    "authors": [
+        {
+            "name": "Daniel Berthereau",
+            "email": "Daniel.git@Berthereau.net"
         }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "IiifServerTest\\": "test/IiifServerTest/"
-        }
-    }
+    ]
 }
