@@ -137,6 +137,7 @@ class Vips extends AbstractImager
      */
     public function transform(array $args): ?string
     {
+        static $version;
         static $isOldVersion;
 
         if (!count($args)) {
@@ -171,7 +172,7 @@ class Vips extends AbstractImager
 
         if (is_null($isOldVersion)) {
             $version = (string) $this->cli->execute($this->vipsPath . ' --version');
-            $isOldVersion = version_compare($version, 'vips-8.6' , '<');
+            $isOldVersion = version_compare($version, 'vips-8.10' , '<');
         }
 
         list(
@@ -326,6 +327,12 @@ class Vips extends AbstractImager
                 // Option "depth=onepixel" is not supported on old vips.
                 $destParams = '[compression=jpeg,Q=88,tile,tile-width=256,tile-height=256,pyramid,background=0 0 0]';
             }
+        }
+        // Fix the icc profile for old versions to bypass a source file with an
+        // unmanaged profile.
+        // @link https://phabricator.wikimedia.org/T219569
+        elseif ($isOldVersion && $this->args['format']['feature'] === 'image/png') {
+            $destParams = '[profile=' . dirname(__DIR__, 2) .'/asset/icc/sRGBz.icc' . ']';
         }
 
         $intermediates = [];
