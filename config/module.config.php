@@ -41,10 +41,20 @@ if ($prefix) {
 }
 
 return [
+    'thumbnails' => [
+        'thumbnailer_options' => [
+            'vips_dir' => null,
+        ],
+    ],
     'file_renderers' => [
         // It is not simple to use a factory, because the core invokable overrides it.
         'invokables' => [
             'thumbnail' => Media\FileRenderer\ThumbnailRenderer::class,
+        ],
+    ],
+    'service_manager' => [
+        'factories' => [
+            File\Thumbnailer\Vips::class => Service\File\Thumbnailer\VipsFactory::class,
         ],
     ],
     'view_manager' => [
