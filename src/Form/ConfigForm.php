@@ -247,14 +247,14 @@ To save the height and the width of all images and derivatives allows to speed u
                 'options' => [
                     'label' => 'Limit process to get sizes', // @translate
                     'value_options' => [
-                        'all' => 'All', // @translate
+                        'unsized' => 'Keep existing', // @translate
                         'sized' => 'Only already sized', // @translate
-                        'unsized' => 'Only not yet sized', // @translate
+                        'all' => 'All', // @translate
                     ],
                 ],
                 'attributes' => [
                     'id' => 'filter_sized',
-                    'value' => 'all',
+                    'value' => 'unsized',
                 ],
             ])
             ->add([
