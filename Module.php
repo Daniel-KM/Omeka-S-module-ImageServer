@@ -222,6 +222,12 @@ SQL;
         );
 
         // There are no event "api.create.xxx" for media.
+        // Save dimensions before and create tiles after.
+        $sharedEventManager->attach(
+            \Omeka\Api\Adapter\MediaAdapter::class,
+            'api.hydrate.post',
+            [$this, 'handleBeforeSaveMedia']
+        );
         $sharedEventManager->attach(
             \Omeka\Api\Adapter\ItemAdapter::class,
             'api.create.post',
@@ -392,6 +398,42 @@ SQL;
             $basePath . '/' . 'index.html',
             $dir . '/' . 'index.html'
         );
+    }
+
+    public function handleBeforeSaveMedia(Event $event): void
+    {
+        static $imageSize;
+        static $imageTypes;
+
+        /** @var \Omeka\Entity\Media $media */
+        $media = $event->getParam('entity');
+        if (strtok((string) $media->getMediaType(), '/') !== 'image') {
+            return;
+        }
+
+        // Check is not done on original, because in some cases, the original
+        // file is removed.
+        $mediaData = $media->getData() ?: [];
+        $hasSize = !empty($mediaData['dimensions']['large']['width']);
+        if ($hasSize) {
+            return;
+        }
+
+        if (is_null($imageSize)) {
+            $services = $this->getServiceLocator();
+            $imageSize = $services->get('ControllerPluginManager')->get('imageSize');
+            $imageTypes = array_keys($services->get('Config')['thumbnails']['types']);
+            array_unshift($imageTypes, 'original');
+        }
+
+        $mediaData['dimensions'] = [];
+        foreach ($imageTypes as $imageType) {
+            $result = $imageSize($media, $imageType);
+            $mediaData['dimensions'][$imageType] = $result;
+        }
+
+        $media->setData($mediaData);
+        // No flush.
     }
 
     public function handleAfterSaveItem(Event $event): void
