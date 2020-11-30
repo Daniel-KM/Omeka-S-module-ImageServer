@@ -261,11 +261,19 @@ class Vips extends AbstractImager
                 break;
 
             case 'rotationArbitrary':
-                $chain[] = sprintf(
-                    '%s rotate _input_ _output_ %s --background "0 0 0"',
-                    $this->vipsPath,
-                    $args['rotation']['degrees']
-                );
+                if (version_compare($version, 'vips-8.7' , '<')) {
+                    $chain[] = sprintf(
+                        '%s similarity _input_ _output_ --angle %s',
+                        $this->vipsPath,
+                        $args['rotation']['degrees']
+                    );
+                } else {
+                    $chain[] = sprintf(
+                        '%s rotate _input_ _output_ %s --background "0 0 0"',
+                        $this->vipsPath,
+                        $args['rotation']['degrees']
+                    );
+                }
                 break;
 
             default:
@@ -283,7 +291,11 @@ class Vips extends AbstractImager
                 break;
 
             case 'gray':
-                $chain[] = $this->vipsPath . ' colourspace _input_ _output_ grey16';
+                if ($isOldVersion && $this->args['format']['feature'] === 'image/png') {
+                    // FIXME Remove this feature from the iiif services.
+                } else {
+                    $chain[] = $this->vipsPath . ' colourspace _input_ _output_ grey16';
+                }
                 break;
 
             case 'bitonal':
