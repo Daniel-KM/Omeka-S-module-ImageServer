@@ -361,6 +361,10 @@ return [
                     '_files',
                     // TileInfo::FOLDER_EXTENSION_ZOOMIFY,
                     '_zdata',
+                    // Jpeg 2000 files.
+                    '.jp2',
+                    // Tiled pyramidal tiff.
+                    '.tif',
                 ],
             ],
         ],
