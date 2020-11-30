@@ -85,7 +85,7 @@ class ImageServer implements LoggerAwareInterface
         $this->store = $store;
         $this->commandLineArgs = $commandLineArgs;
         $this->setLogger($logger);
-        $imagerClass = $settings->get('imageserver_image_creator', 'Auto');
+        $imagerClass = $settings->get('imageserver_imager', 'Auto');
         $this->setImager('\\ImageServer\\ImageServer\\' . $imagerClass);
     }
 

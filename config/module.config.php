@@ -368,7 +368,7 @@ return [
             'imageserver_info_rights_property' => 'dcterms:license',
             'imageserver_info_rights_url' => 'http://rightsstatements.org/vocab/CNE/1.0/',
             'imageserver_info_rights_text' => '',
-            'imageserver_image_creator' => 'Auto',
+            'imageserver_imager' => 'Auto',
             'imageserver_image_max_size' => 10000000,
             'imageserver_image_tile_type' => 'deepzoom',
             // This param may be changed locally.

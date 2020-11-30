@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace ImageServer\Form;
 
 use ImageServer\Form\Element\Note;
@@ -12,6 +13,11 @@ use Omeka\Form\Element\PropertySelect;
 class ConfigForm extends Form implements TranslatorAwareInterface
 {
     use TranslatorAwareTrait;
+
+    /**
+     * @var array
+     */
+    protected $imagers = [];
 
     public function init(): void
     {
@@ -136,16 +142,16 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
             ->add([
-                'name' => 'imageserver_image_creator',
+                'name' => 'imageserver_imager',
                 'type' => Element\Select::class,
                 'options' => [
                     'label' => 'Image processor', // @translate
                     'info' => $this->translate('Generally, GD is a little faster than ImageMagick, but ImageMagick manages more formats.') // @translate
                         . ' ' . $this->translate('Nevertheless, the performance depends on your installation and your server.'), // @translate
-                    'value_options' => $this->listImageProcessors(),
+                    'value_options' => $this->getImagers(),
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_image_creator',
+                    'id' => 'imageserver_imager',
                 ],
             ])
             ->add([
@@ -305,7 +311,7 @@ To save the height and the width of all images and derivatives allows to speed u
                 'required' => false,
             ])
             ->add([
-                'name' => 'imageserver_image_creator',
+                'name' => 'imageserver_imager',
                 'required' => false,
             ])
             ->add([
@@ -342,24 +348,20 @@ To save the height and the width of all images and derivatives allows to speed u
     }
 
     /**
-     * Check and return the list of available processors.
-     *
-     * @todo Merge with ImageServer\Module::listImageProcessors()
-     *
-     * @return array Associative array of available processors.
+     * @param array $imagers
+     * @return self
      */
-    protected function listImageProcessors()
+    public function setImagers(array $imagers): self
     {
-        $processors = [];
-        $processors['Auto'] = 'Automatic (GD when possible, else Imagick, else command line)'; // @translate
-        if (extension_loaded('gd')) {
-            $processors['GD'] = 'GD (php extension)'; // @translate
-        }
-        if (extension_loaded('imagick')) {
-            $processors['Imagick'] = 'Imagick (php extension)'; // @translate
-        }
-        // TODO Check if ImageMagick cli is available.
-        $processors['ImageMagick'] = 'ImageMagick (command line)'; // @translate
-        return $processors;
+        $this->imagers = $imagers;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getImagers(): array
+    {
+        return $this->imagers;
     }
 }

@@ -50,6 +50,9 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
     );
     $messenger->addWarning($message);
 
+    $settings->set('imageserver_imager', $settings->get('imageserver_image_creator') ?: 'Auto');
+    $settings->delete('imageserver_image_creator');
+
     $args = [
         'tasks' => [
             'size',

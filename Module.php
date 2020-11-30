@@ -100,14 +100,6 @@ class Module extends AbstractModule
             );
         }
 
-        $processors = $this->listImageProcessors($services);
-        if (empty($processors)) {
-            throw new ModuleCannotInstallException(
-                $t->translate('The module requires an image processor (ImageMagick, Imagick or GD).') // @translate
-                    . ' ' . $t->translate('See module’s installation documentation.') // @translate
-            );
-        }
-
         $module = $moduleManager->getModule('ArchiveRepertory');
         if ($module) {
             $version = $module->getDb('version');
@@ -323,29 +315,6 @@ SQL;
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
         return true;
-    }
-
-    /**
-     * Check and return the list of available image processors.
-     *
-     * @param ServiceLocatorInterface $services
-     * @return array Associative array of available image processors.
-     */
-    protected function listImageProcessors(ServiceLocatorInterface $services)
-    {
-        $translator = $services->get('MvcTranslator');
-
-        $processors = [];
-        $processors['Auto'] = $translator->translate('Automatic'); // @translate
-        if (extension_loaded('gd')) {
-            $processors['GD'] = 'GD (php extension)'; // @translate
-        }
-        if (extension_loaded('imagick')) {
-            $processors['Imagick'] = 'Imagick (php extension)'; // @translate
-        }
-        // TODO Check if ImageMagick cli is available.
-        $processors['ImageMagick'] = 'ImageMagick (command line)'; // @translate
-        return $processors;
     }
 
     protected function createTilesMainDir(ServiceLocatorInterface $services): void

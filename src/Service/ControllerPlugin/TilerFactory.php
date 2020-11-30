@@ -25,7 +25,7 @@ class TilerFactory implements FactoryInterface
         $params['tile_dir'] = $tileDir;
         $params['tile_type'] = $settings->get('imageserver_image_tile_type');
 
-        $processor = $settings->get('imageserver_image_creator');
+        $processor = $settings->get('imageserver_imager');
         $params['processor'] = $processor === 'Auto' ? '' : $processor;
 
         $convertDir = $config['thumbnails']['thumbnailer_options']['imagemagick_dir'];
