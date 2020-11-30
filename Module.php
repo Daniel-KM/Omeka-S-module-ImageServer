@@ -272,22 +272,6 @@ SQL;
 
         $params = $params['imageserver_bulk_prepare'];
 
-        if (in_array('tile', $params['tasks']) && in_array('size', $params['tasks'])) {
-            $this->processSizerAndTiler($params);
-        } elseif (in_array('size', $params['tasks'])) {
-            $sizerParams = array_intersect_key($params, ['query' => null, 'filter' => null]);
-            $sizerParams['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
-            $this->processSizer($sizerParams);
-        } elseif (in_array('tile', $params['tasks'])) {
-            $tilerParams = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
-            $this->processTiler($tilerParams);
-        }
-
-        return true;
-    }
-
-    protected function processSizerAndTiler(array $params)
-    {
         $services = $this->getServiceLocator();
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
@@ -304,9 +288,20 @@ SQL;
         $params = array_intersect_key($params, ['query' => null, 'tasks' => null, 'remove_destination' => null, 'filter' => null, 'update_renderer' => null]);
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
+        if (in_array('tile', $params['tasks']) && in_array('size', $params['tasks'])) {
+            $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
+        } elseif (in_array('size', $params['tasks'])) {
+            $params = array_intersect_key($params, ['query' => null, 'filter' => null]);
+            $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
+        } elseif (in_array('tile', $params['tasks'])) {
+            $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
+            $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
+        } else {
+            return true;
+        }
+
         $message = new Message(
-            'Creating tiles and dimensions for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
+            'Creating tiles and/or dimensions for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
             sprintf('<a href="%s">',
                 htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
             ),
@@ -321,77 +316,7 @@ SQL;
         );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
-    }
-
-    protected function processTiler(array $params)
-    {
-        $services = $this->getServiceLocator();
-        $plugins = $services->get('ControllerPluginManager');
-        $messenger = $plugins->get('messenger');
-        $urlHelper = $plugins->get('url');
-
-        $query = [];
-        parse_str($params['query'], $query);
-        unset($query['submit']);
-        $params['query'] = $query;
-
-        unset($params['process']);
-
-        $params['remove_destination'] = (bool) $params['remove_destination'];
-        $params['update_renderer'] = empty($params['update_renderer']) ? false : $params['update_renderer'];
-
-        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
-        $message = new Message(
-            'Creating tiles for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
-            sprintf('<a href="%s">',
-                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
-            ),
-            $job->getId(),
-            '</a>',
-            sprintf('<a href="%s">',
-                htmlspecialchars($this->isModuleActive('Log')
-                    ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                    : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
-                )
-            )
-        );
-        $message->setEscapeHtml(false);
-        $messenger->addSuccess($message);
-    }
-
-    protected function processSizer(array $params)
-    {
-        $services = $this->getServiceLocator();
-        $plugins = $services->get('ControllerPluginManager');
-        $messenger = $plugins->get('messenger');
-        $urlHelper = $plugins->get('url');
-
-        $query = [];
-        parse_str((string) $params['query'], $query);
-        unset($query['submit']);
-        $params['query'] = $query;
-
-        unset($params['process']);
-
-        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
-        $message = new Message(
-            'Saving sizes for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
-            sprintf('<a href="%s">',
-                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
-            ),
-            $job->getId(),
-            '</a>',
-            sprintf('<a href="%s">',
-                htmlspecialchars($this->isModuleActive('Log')
-                    ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                    : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
-                )
-            )
-        );
-        $message->setEscapeHtml(false);
-        $messenger->addSuccess($message);
+        return true;
     }
 
     /**
@@ -471,18 +396,39 @@ SQL;
 
     public function handleAfterSaveItem(Event $event): void
     {
+        /** @var \Omeka\Entity\Item $item */
         $item = $event->getParam('response')->getContent();
-        foreach ($item->getMedia() as $media) {
-            $this->afterSaveMedia($media);
+
+        $medias = $item->getMedia();
+        if (!count($medias)) {
+            return;
         }
-        $this->getServiceLocator()->get('Omeka\EntityManager')->flush();
+
+        $services = $this->getServiceLocator();
+
+        // This is the most common case.
+        if (count($medias) === 1) {
+            $this->afterSaveMedia($medias->current());
+            return;
+        }
+
+        // Use bulk tiler instead of media tiler, to avoid to multiply jobs.
+        $params = [
+            'tasks' => ['size', 'tile'],
+            'query' => ['id' => $item->getId()],
+            'filter' => 'unsized',
+            'remove_destination' => false,
+            'update_renderer' => false,
+        ];
+
+        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+        $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
     }
 
     public function handleAfterSaveMedia(Event $event): void
     {
         $media = $event->getParam('response')->getContent();
         $this->afterSaveMedia($media);
-        $this->getServiceLocator()->get('Omeka\EntityManager')->flush();
     }
 
     /**
@@ -501,6 +447,7 @@ SQL;
         /** @var \ImageServer\Mvc\Controller\Plugin\TileInfo $tileInfo */
         $tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
 
+        // A quick check to avoid a useless job.
         // Check is not done on original, because in some cases, the original
         // file is removed.
         $mediaData = $media->getData() ?: [];
@@ -528,11 +475,13 @@ SQL;
         ];
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        if ($hasSize && $hasTile) {
+        if (!$hasSize && !$hasTile) {
             $dispatcher->dispatch(\ImageServer\Job\MediaSizerAndTiler::class, $params);
-        } elseif ($hasSize) {
+        } elseif (!$hasSize) {
+            $params = array_intersect_key($params, ['query' => null, 'filter' => null]);
             $dispatcher->dispatch(\ImageServer\Job\MediaSizer::class, $params);
         } else {
+            $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
             $dispatcher->dispatch(\ImageServer\Job\MediaTiler::class, $params);
         }
     }
