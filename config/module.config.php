@@ -383,6 +383,8 @@ return [
             'imageserver_imager' => 'Auto',
             'imageserver_image_max_size' => 10000000,
             'imageserver_image_tile_type' => 'deepzoom',
+            // Internal option to get Omeka url in background process.
+            'imageserver_base_url' => '',
             // This param may be changed locally.
             // If updated, the path for the ArchiveRepertory ingester should be changed.
             'imageserver_image_tile_dir' => 'tile',

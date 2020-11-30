@@ -53,6 +53,10 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
     $settings->set('imageserver_imager', $settings->get('imageserver_image_creator') ?: 'Auto');
     $settings->delete('imageserver_image_creator');
 
+    $urlHelper = $services->get('ViewHelperManager')->get('url');
+    $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
+    $settings->set('imageserver_base_url', $top);
+
     $settings->set('imageserver_auto_tile', false);
 
     $args = [

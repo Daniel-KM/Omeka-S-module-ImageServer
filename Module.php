@@ -260,6 +260,12 @@ SQL;
             return false;
         }
 
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+        $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
+        $settings->set('imageserver_base_url', $top);
+
         // Form is already validated in parent.
         $params = (array) $controller->getRequest()->getPost();
         if (empty($params['imageserver_bulk_prepare']['process'])
@@ -270,7 +276,6 @@ SQL;
 
         $params = $params['imageserver_bulk_prepare'];
 
-        $services = $this->getServiceLocator();
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
         $urlHelper = $plugins->get('url');

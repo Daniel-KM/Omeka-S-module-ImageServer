@@ -17,8 +17,9 @@ class TileInfoFactory implements FactoryInterface
             throw new ConfigException('The tile dir is not defined.'); // @translate
         }
 
+        $localConfig = $services->get('Config')['file_store']['local'];
         $viewHelpers = $services->get('ViewHelperManager');
-        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $basePath = $localConfig['base_path'] ?: (OMEKA_PATH . '/files');
         $module = $services->get('Omeka\ModuleManager')->getModule('AmazonS3');
         $hasAmazonS3 = $module
             && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
@@ -35,13 +36,22 @@ class TileInfoFactory implements FactoryInterface
                 list($tileBaseUrl, $tileBaseQuery) = explode('?', $baseUrl, 2);
             }
         } else {
-            $tileBaseDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
             // A full url avoids some complexity when Omeka is not the root of
             // the server.
-            $serverUrl = $viewHelpers->get('ServerUrl');
-            // The local store base path is totally different from url base path.
-            $basePath = $viewHelpers->get('BasePath');
-            $tileBaseUrl = $serverUrl() . $basePath('files' . '/' . $tileDir);
+            $tileBaseDir = $basePath . DIRECTORY_SEPARATOR . $tileDir;
+            if ($localConfig['base_uri']) {
+                $tileBaseUrl = rtrim($localConfig['base_uri'], '/') . '/' . $tileDir;
+            } else {
+                $baseUrl = $settings->get('imageserver_base_url', '');
+                if ($baseUrl) {
+                    $tileBaseUrl = $baseUrl . 'files/' . $tileDir;
+                } else {
+                    $serverUrl = $viewHelpers->get('ServerUrl')->__invoke();
+                    // Local store base path is different from url base path.
+                    $basePath = $viewHelpers->get('BasePath');
+                    $tileBaseUrl = $serverUrl . $basePath('files/' . $tileDir);
+                }
+            }
             $tileBaseQuery = '';
             $store = null;
         }
