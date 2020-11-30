@@ -50,7 +50,8 @@ class TilerFactory implements FactoryInterface
 
         return new Tiler(
             $params,
-            $services->get('Omeka\Logger')
+            $services->get('Omeka\EntityManager'),
+            $services->get('ControllerPluginManager')
         );
     }
 

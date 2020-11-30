@@ -2,8 +2,9 @@
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
-use Laminas\Log\LoggerInterface;
+use Doctrine\ORM\EntityManager;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use Laminas\Mvc\Controller\PluginManager as ControllerPlugins;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Stdlib\Message;
 
@@ -15,18 +16,28 @@ class Tiler extends AbstractPlugin
     protected $params;
 
     /**
-     * @var LoggerInterface
+     * @var EntityManager
      */
-    protected $logger;
+    protected $entityManager;
+
+    /**
+     * @var ControllerPlugins
+     */
+    protected $controllerPlugins;
 
     /**
      * @param array $params
-     * @param LoggerInterface $logger
+     * @param EntityManager $entityManager
+     * @param ControllerPlugins $controllerPlugins
      */
-    public function __construct(array $params, LoggerInterface $logger)
-    {
+    public function __construct(
+        array $params,
+        EntityManager $entityManager,
+        ControllerPlugins $controllerPlugins
+    ) {
         $this->params = $params;
-        $this->logger = $logger;
+        $this->entityManager = $entityManager;
+        $this->controllerPlugins = $controllerPlugins;
     }
 
     /**
@@ -37,7 +48,7 @@ class Tiler extends AbstractPlugin
      * @return array|null Null on error, else data about tiling, with a boolean
      * for key "result".
      */
-    public function __invoke(MediaRepresentation $media, $removeDestination = false)
+    public function __invoke(MediaRepresentation $media, $removeDestination = false): ?array
     {
         if (!$media->hasOriginal()
             || strtok((string) $media->mediaType(), '/') !== 'image'
@@ -75,7 +86,7 @@ class Tiler extends AbstractPlugin
                 $media->id(),
                 $media->filename()
             );
-            $this->logger->err($message);
+            $this->controllerPlugins->get('logger')->__invoke()->err($message);
             return null;
         }
 
@@ -91,7 +102,10 @@ class Tiler extends AbstractPlugin
             $removeDestination = $removeDestination ? 'specific' : 'skip';
         }
         if ($removeDestination === 'all') {
-            $this->getController()->tileRemover($media);
+            /** @var \Omeka\Entity\Media $mediaEntity  */
+            $mediaEntity = $this->entityManager->find(\Omeka\Entity\Media::class, $media->id());
+            $this->controllerPlugins->get('tileRemover')->__invoke($mediaEntity);
+            $this->removeMediaTleData($media);
         }
         $this->params['destinationRemove'] = in_array($removeDestination, ['specific', 'all']);
 
@@ -104,10 +118,52 @@ class Tiler extends AbstractPlugin
                 $media->id(),
                 $e
             );
-            $this->logger->err($message);
+            $this->controllerPlugins->get('logger')->__invoke()->err($message);
             return null;
         }
 
+        $this->addMediaTleData($media, $this->params);
+
         return $result;
+    }
+
+    protected function removeMediaTleData(MediaRepresentation $media): void
+    {
+        /** @var \Omeka\Entity\Media $mediaEntity  */
+        $mediaEntity = $this->entityManager->find(\Omeka\Entity\Media::class, $media->id());
+        $mediaData = $mediaEntity->getData();
+        if (empty($mediaData) || !array_key_exists('tile', $mediaData)) {
+            return;
+        }
+
+        unset($mediaData['tile']);
+        $mediaEntity->setData($mediaData);
+        $this->entityManager->persist($mediaEntity);
+        $this->entityManager->flush();
+    }
+
+    protected function addMediaTleData(MediaRepresentation $media, array $params): void
+    {
+        /** @var \Omeka\Entity\Media $mediaEntity  */
+        $mediaEntity = $this->entityManager->find(\Omeka\Entity\Media::class, $media->id());
+        $mediaData = $mediaEntity->getData();
+        if (is_null($mediaData)) {
+            $mediaData= ['tile' => []];
+        } elseif (empty($mediaData['tile'])) {
+            $mediaData['tile'] = [];
+        }
+
+        $result = $this->controllerPlugins->get('tileInfo')->__invoke($media, $params['tile_type']);
+        if ($result) {
+            $mediaData['tile'][$params['tile_type']] = $result;
+            // Set the new tile type the first.
+            $mediaData['tile'] = array_replace([$params['tile_type'] => null], $mediaData['tile']);
+        } else {
+            unset($mediaData['tile'][$params['tile_type']]);
+        }
+
+        $mediaEntity->setData($mediaData);
+        $this->entityManager->persist($mediaEntity);
+        $this->entityManager->flush();
     }
 }
