@@ -51,16 +51,16 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
         array $options,
         string $fallback
     ): string {
-        static $tileInfo;
+        static $tileMediaInfo;
         static $headScript;
         static $prefixUrl;
         static $noscript;
 
-        if (is_null($tileInfo)) {
-            $tileInfo = $view->plugin('tileInfo');
+        if (is_null($tileMediaInfo)) {
+            $tileMediaInfo = $view->plugin('tileMediaInfo');
         }
 
-        $mediaTileInfo = $tileInfo($media);
+        $mediaTileInfo = $tileMediaInfo($media);
         if (empty($mediaTileInfo)) {
             if (substr($fallback, 0, 5) !== 'tile_') {
                 return '';
@@ -74,7 +74,17 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
                 'crossOriginPolicy' => 'Anonymous',
                 'ajaxWithCredentials' => false,
             ];
+        } elseif ($mediaTileInfo['tile_type'] === 'zoomify') {
+            $tileSources = [
+                'type' => 'zoomifytileservice',
+                'width' => $mediaTileInfo['source']['width'],
+                'height' => $mediaTileInfo['source']['height'],
+                'tilesUrl' => $mediaTileInfo['url_base'] . '/' . $mediaTileInfo['media_path'] . '/',
+                'crossOriginPolicy' => 'Anonymous',
+                'ajaxWithCredentials' => false,
+            ];
         } else {
+            // Deepzoom just needs the metadata url.
             $tileSources = $mediaTileInfo['url_base'] . '/' . $mediaTileInfo['metadata_path'];
         }
         $tileSources = json_encode($tileSources, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -92,7 +102,7 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
             'options' => $options,
             'tileSources' => $tileSources,
             'prefixUrl' => $prefixUrl,
-            'noScript' => $noscript,
+            'noscript' => $noscript,
         ]);
     }
 }

@@ -444,15 +444,15 @@ SQL;
 
         $services = $this->getServiceLocator();
         $mediaRepr = $services->get('Omeka\ApiAdapterManager')->get('media')->getRepresentation($media);
-        /** @var \ImageServer\Mvc\Controller\Plugin\TileInfo $tileInfo */
-        $tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
+        /** @var \ImageServer\Mvc\Controller\Plugin\TileInfo $tileMediaInfo */
+        $tileMediaInfo = $services->get('ControllerPluginManager')->get('tileMediaInfo');
 
         // A quick check to avoid a useless job.
         // Check is not done on original, because in some cases, the original
         // file is removed.
         $mediaData = $media->getData() ?: [];
         $hasSize = !empty($mediaData['dimensions']['large']['width']);
-        $hasTile = $tileInfo($mediaRepr);
+        $hasTile = $tileMediaInfo($mediaRepr);
         if ($hasSize && $hasTile) {
             return;
         }

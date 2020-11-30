@@ -26,7 +26,7 @@ class TileFactory implements FactoryInterface
             && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
 
         return new Tile(
-            $services->get('ControllerPluginManager')->get('tileInfo'),
+            $services->get('ControllerPluginManager')->get('tileMediaInfo'),
             $tileDir,
             $hasAmazonS3
         );

@@ -83,9 +83,9 @@ class ImageService3 extends AbstractResourceType
     ];
 
     /**
-     * @var \ImageServer\Mvc\Controller\Plugin\TileInfo
+     * @var \ImageServer\Mvc\Controller\Plugin\TileMediaInfo
      */
-    protected $tileInfo;
+    protected $tileMediaInfo;
 
     /**
      * @var \Omeka\Api\Representation\MediaRepresentation
@@ -97,7 +97,7 @@ class ImageService3 extends AbstractResourceType
         parent::__construct($resource, $options);
 
         $plugins = $this->resource->getServiceLocator()->get('ControllerPluginManager');
-        $this->tileInfo = $plugins->get('tileInfo');
+        $this->tileMediaInfo = $plugins->get('tileMediaInfo');
 
         // TODO Use subclass to manage image or media. Currently, only image.
         $this->initImage();
@@ -185,7 +185,7 @@ class ImageService3 extends AbstractResourceType
         $tiles = [];
 
         // TODO Use a standard json-serializable TileInfo.
-        $tilingData = $this->tileInfo->__invoke($this->resource);
+        $tilingData = $this->tileMediaInfo->__invoke($this->resource);
         if ($tilingData) {
             $iiifTileInfo = new Tile($this->resource, ['tilingData' => $tilingData]);
             if ($iiifTileInfo->hasTilingInfo()) {

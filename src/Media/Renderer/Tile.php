@@ -1,7 +1,8 @@
 <?php declare(strict_types=1);
+
 namespace ImageServer\Media\Renderer;
 
-use ImageServer\Mvc\Controller\Plugin\TileInfo;
+use ImageServer\Mvc\Controller\Plugin\TileMediaInfo;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Media\Renderer\RendererInterface;
@@ -10,9 +11,9 @@ use Omeka\Stdlib\Message;
 class Tile implements RendererInterface
 {
     /**
-     * @var \ImageServer\Mvc\Controller\Plugin\TileInfo
+     * @var \ImageServer\Mvc\Controller\Plugin\TileMediaInfo
      */
-    protected $tileInfo;
+    protected $tileMediaInfo;
 
     /**
      * @var string
@@ -25,13 +26,13 @@ class Tile implements RendererInterface
     protected $hasAmazonS3;
 
     /**
-     * @param TileInfo $tileInfo
+     * @param TileMediaInfo $tileMediaInfo
      * @param string $tileDir
      * @param bool $hasAmazonS3
      */
-    public function __construct(TileInfo $tileInfo, $tileDir, $hasAmazonS3)
+    public function __construct(TileMediaInfo $tileMediaInfo, $tileDir, $hasAmazonS3)
     {
-        $this->tileInfo = $tileInfo;
+        $this->tileMediaInfo = $tileMediaInfo;
         $this->tileDir = $tileDir;
         $this->hasAmazonS3 = $hasAmazonS3;
     }
@@ -54,7 +55,7 @@ class Tile implements RendererInterface
     {
         static $firstTile = true;
 
-        $tileInfo = $this->tileInfo->__invoke($media);
+        $tileInfo = $this->tileMediaInfo->__invoke($media);
         if (empty($tileInfo) || empty($tileInfo['tile_type'])) {
             return new Message('No tile or no properties for media #%d.', // @translate
                 $media->id());

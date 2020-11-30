@@ -64,6 +64,7 @@ return [
             'iiifInfo2' => Service\ViewHelper\IiifInfo2Factory::class,
             'iiifInfo3' => Service\ViewHelper\IiifInfo3Factory::class,
             'tileInfo' => Service\ViewHelper\TileInfoFactory::class,
+            'tileMediaInfo' => Service\ViewHelper\TileMediaInfoFactory::class,
         ],
         'delegators' => [
             'Laminas\Form\View\Helper\FormElement' => [
@@ -92,6 +93,7 @@ return [
         'invokables' => [
             'iiifImageJsonLd' => Mvc\Controller\Plugin\IiifImageJsonLd::class,
             'tileBuilder' => Mvc\Controller\Plugin\TileBuilder::class,
+            'tileMediaInfo' => Mvc\Controller\Plugin\TileMediaInfo::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
             'tileServerDeepZoom' => Mvc\Controller\Plugin\TileServerDeepZoom::class,
             'tileServerZoomify' => Mvc\Controller\Plugin\TileServerZoomify::class,

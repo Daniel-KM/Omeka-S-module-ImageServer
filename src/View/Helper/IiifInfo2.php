@@ -84,7 +84,7 @@ class IiifInfo2 extends AbstractHelper
             $imageUrl = $this->view->iiifImageUrl($media, 'imageserver/id', '2');
 
             $tiles = [];
-            $tilingData = $view->tileInfo($media);
+            $tilingData = $view->tileMediaInfo($media);
             if ($tilingData) {
                 $iiifTileInfo = $this->iiifTileInfo($tilingData);
                 if ($iiifTileInfo) {

@@ -15,7 +15,7 @@ class TileInfo extends AbstractHelper
     /**
      * @param \ImageServer\Mvc\Controller\Plugin\TileInfo $tileInfoPlugin
      */
-    public function __construct($tileInfoPlugin)
+    public function __construct(\ImageServer\Mvc\Controller\Plugin\TileInfo $tileInfoPlugin)
     {
         $this->tileInfoPlugin = $tileInfoPlugin;
     }
@@ -26,7 +26,7 @@ class TileInfo extends AbstractHelper
      * @param MediaRepresentation $media
      * @return array|null
      */
-    public function __invoke(MediaRepresentation $media)
+    public function __invoke(MediaRepresentation $media): ?array
     {
         return $this->tileInfoPlugin->__invoke($media);
     }
