@@ -100,16 +100,17 @@ class TileInfo extends AbstractPlugin
      * Retrieve info about the tiling of an image.
      *
      * @param MediaRepresentation $media
+     * @param string|null $format If not set, get the first format it finds.
      * @return array|null
      */
-    public function __invoke(MediaRepresentation $media): ?array
+    public function __invoke(MediaRepresentation $media, ?string $format = null): ?array
     {
         // Quick check for possible issue when used outside of the Image Server.
         $mediaType = $media->mediaType();
         if (substr($mediaType, 0, 6) !== 'image/') {
             return null;
         }
-        return $this->getTilingData($media);
+        return $this->getTilingData($media, $format);
     }
 
     /**
@@ -125,37 +126,50 @@ class TileInfo extends AbstractPlugin
      * basename that may be a partial path) and possible alternate adapters.
      *
      * @param MediaRepresentation $media
+     * @param string|null $format
      * @return array|null
      */
-    protected function getTilingData(MediaRepresentation $media): ?array
+    protected function getTilingData(MediaRepresentation $media, ?string $format = null): ?array
     {
         $basename = $media->storageId();
 
-        $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.dzi';
-        if ($this->fileExists($basepath)) {
-            $tilingData = $this->getTilingDataDeepzoomDzi($basepath);
-            $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_DEEPZOOM;
-            $tilingData['metadata_path'] = $basename . '.dzi';
-            return $tilingData;
+        if (empty($format) || $format === 'deepzoom') {
+            $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.dzi';
+            if ($this->fileExists($basepath)) {
+                $tilingData = $this->getTilingDataDeepzoomDzi($basepath);
+                $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_DEEPZOOM;
+                $tilingData['metadata_path'] = $basename . '.dzi';
+                return $tilingData;
+            }
+
+            $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.js';
+            if ($this->fileExists($basepath)) {
+                $tilingData = $this->getTilingDataDeepzoomJsonp($basepath);
+                $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_DEEPZOOM;
+                $tilingData['metadata_path'] = $basename . '.js';
+                return $tilingData;
+            }
+
+            if ($format === 'deepzoom') {
+                return null;
+            }
         }
 
-        $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.js';
-        if ($this->fileExists($basepath)) {
-            $tilingData = $this->getTilingDataDeepzoomJsonp($basepath);
-            $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_DEEPZOOM;
-            $tilingData['metadata_path'] = $basename . '.js';
-            return $tilingData;
-        }
-
-        $basepath = $this->tileBaseDir
-            . DIRECTORY_SEPARATOR . $basename . self::FOLDER_EXTENSION_ZOOMIFY
-            . DIRECTORY_SEPARATOR . 'ImageProperties.xml';
-        if ($this->fileExists($basepath)) {
-            $tilingData = $this->getTilingDataZoomify($basepath);
-            $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_ZOOMIFY;
-            $tilingData['metadata_path'] = $basename . self::FOLDER_EXTENSION_ZOOMIFY
+        if (empty($format) || $format === 'zoomify') {
+            $basepath = $this->tileBaseDir
+                . DIRECTORY_SEPARATOR . $basename . self::FOLDER_EXTENSION_ZOOMIFY
                 . DIRECTORY_SEPARATOR . 'ImageProperties.xml';
-            return $tilingData;
+            if ($this->fileExists($basepath)) {
+                $tilingData = $this->getTilingDataZoomify($basepath);
+                $tilingData['media_path'] = $basename . self::FOLDER_EXTENSION_ZOOMIFY;
+                $tilingData['metadata_path'] = $basename . self::FOLDER_EXTENSION_ZOOMIFY
+                    . DIRECTORY_SEPARATOR . 'ImageProperties.xml';
+                return $tilingData;
+            }
+
+            if ($format === 'zoomify') {
+                return null;
+            }
         }
 
         return null;
