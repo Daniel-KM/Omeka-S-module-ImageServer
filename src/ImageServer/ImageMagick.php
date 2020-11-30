@@ -29,9 +29,10 @@
 
 namespace ImageServer\ImageServer;
 
-use Laminas\Log\Logger;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
+use Omeka\Stdlib\Cli;
+use Omeka\Stdlib\Message;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
@@ -43,11 +44,9 @@ class ImageMagick extends AbstractImager
     /**
      * List of managed IIIF media types.
      *
-     * Imagick requires uppercase for check. They are lowercased in construct.
-     *
      * @var array
      */
-    protected $_supportedFormats = [
+    protected $supportedFormats = [
         'image/jpeg' => 'JPG',
         'image/png' => 'PNG',
         'image/tiff' => 'TIFF',
@@ -58,15 +57,8 @@ class ImageMagick extends AbstractImager
     ];
 
     /**
-     * @var TempFileFactory
+     * @var Cli
      */
-    protected $tempFileFactory;
-
-    /**
-     * @var StoreInterface
-     */
-    protected $store;
-
     protected $cli;
 
     /**
@@ -96,13 +88,16 @@ class ImageMagick extends AbstractImager
      * @param array $commandLineArgs
      * @throws \Exception
      */
-    public function __construct(TempFileFactory $tempFileFactory, $store, $commandLineArgs)
-    {
+    public function __construct(
+        TempFileFactory $tempFileFactory,
+        StoreInterface $store,
+        $commandLineArgs
+    ) {
         $this->tempFileFactory = $tempFileFactory;
         $this->store = $store;
         $this->cli = $commandLineArgs['cli'];
         $this->convertPath = $commandLineArgs['convertPath'];
-        $this->_supportedFormats = array_map('strtolower', array_intersect($this->_supportedFormats, \Imagick::queryFormats()));
+        $this->supportedFormats = array_map('strtolower', array_intersect($this->supportedFormats, \Imagick::queryFormats()));
     }
 
     /**
@@ -119,8 +114,8 @@ class ImageMagick extends AbstractImager
             return null;
         }
 
-        $this->_args = $args;
-        $args = &$this->_args;
+        $this->args = $args;
+        $args = &$this->args;
 
         if (!$this->checkMediaType($args['source']['media_type'])
             || !$this->checkMediaType($args['format']['feature'])
@@ -226,7 +221,7 @@ class ImageMagick extends AbstractImager
         }
 
         // Save resulted resource into the specified format.
-        $extension = $this->_supportedFormats[$args['format']['feature']];
+        $extension = $this->supportedFormats[$args['format']['feature']];
         $tempFile = $this->tempFileFactory->build();
         $destination = $tempFile->getTempPath() . '.' . $extension;
         $tempFile->delete();
@@ -236,7 +231,7 @@ class ImageMagick extends AbstractImager
             $this->convertPath,
             escapeshellarg($image . '[0]'),
             implode(' ', $params),
-            escapeshellarg($this->_supportedFormats[$args['format']['feature']] . ':' . $destination)
+            escapeshellarg($this->supportedFormats[$args['format']['feature']] . ':' . $destination)
         );
 
         $result = $this->cli->execute($command);
@@ -283,9 +278,8 @@ class ImageMagick extends AbstractImager
                     break;
             }
         } catch (\Exception $e) {
-            $logger = $this->getLogger();
-            $t = $this->getTranslator();
-            $logger->log(Logger::ERR, sprintf($t->translate("ImageMagick failed to open the file \"%s\". Details:\n%s"), $source, $e->getMessage()));
+            $message = new Message('ImageMagick failed to open the file \"%s\". Details:\n%s', $source, $e->getMessage()); // @translate
+            $this->getLogger()->err($message);
             return false;
         }
 

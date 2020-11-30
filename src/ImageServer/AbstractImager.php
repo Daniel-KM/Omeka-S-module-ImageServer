@@ -30,31 +30,53 @@
 
 namespace ImageServer\ImageServer;
 
-use Laminas\I18n\Translator\TranslatorAwareInterface;
-use Laminas\I18n\Translator\TranslatorAwareTrait;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
+use Omeka\File\Store\StoreInterface;
+use Omeka\File\TempFileFactory;
+use Omeka\Stdlib\Message;
 
 /**
  * Abstract  to manage strategies used to create an image.
  *
  * @package ImageServer
  */
-abstract class AbstractImager implements LoggerAwareInterface, TranslatorAwareInterface
+abstract class AbstractImager implements LoggerAwareInterface
 {
-    use LoggerAwareTrait, TranslatorAwareTrait;
+    use LoggerAwareTrait;
+
+    /**
+     * @var TempFileFactory
+     */
+    protected $tempFileFactory;
+
+    /**
+     * @var StoreInterface
+     */
+    protected $store;
 
     /**
      * List of managed IIIF media types and lowercase extensions of the server.
      *
      * @var array
      */
-    protected $_supportedFormats = [];
+    protected $supportedFormats = [];
 
     /**
      * @var array
      */
-    protected $_args = [];
+    protected $args = [];
+
+    /**
+     * Get the list of supported formats.
+     *
+     * @param string $mediaType
+     * @return bool
+     */
+    public function getSupportedFormats(): array
+    {
+        return $this->supportedFormats;
+    }
 
     /**
      * Check if a media type is supported.
@@ -64,7 +86,7 @@ abstract class AbstractImager implements LoggerAwareInterface, TranslatorAwareIn
      */
     public function checkMediaType($mediaType): bool
     {
-        return isset($this->_supportedFormats[$mediaType]);
+        return isset($this->supportedFormats[$mediaType]);
     }
 
     /**
@@ -84,7 +106,7 @@ abstract class AbstractImager implements LoggerAwareInterface, TranslatorAwareIn
      */
     protected function _prepareExtraction(): ?array
     {
-        $args = &$this->_args;
+        $args = &$this->args;
 
         // Region.
         switch ($args['region']['feature']) {

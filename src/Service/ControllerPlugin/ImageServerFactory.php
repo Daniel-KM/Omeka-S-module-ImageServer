@@ -15,7 +15,6 @@ class ImageServerFactory implements FactoryInterface
     {
         $tempFileFactory = $services->get('Omeka\File\TempFileFactory');
         $store = $services->get('Omeka\File\Store');
-        $translator = $services->get('MvcTranslator');
         $logger = $services->get('Omeka\Logger');
         $settings = $services->get('Omeka\Settings');
 
@@ -28,10 +27,7 @@ class ImageServerFactory implements FactoryInterface
         $commandLineArgs['convertPath'] = $this->getConvertPath($cli, $convertDir);
         $commandLineArgs['executeStrategy'] = $config['cli']['execute_strategy'];
 
-        $imageServer = new ImageServer($tempFileFactory, $store, $commandLineArgs, $settings);
-        $imageServer
-            ->setLogger($logger)
-            ->setTranslator($translator);
+        $imageServer = new ImageServer($tempFileFactory, $store, $commandLineArgs, $settings, $logger);
 
         return new ImageServerPlugin(
             $imageServer

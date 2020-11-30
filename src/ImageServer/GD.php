@@ -30,9 +30,9 @@
 
 namespace ImageServer\ImageServer;
 
-use Laminas\Log\Logger;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
+use Omeka\Stdlib\Message;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
@@ -46,22 +46,12 @@ class GD extends AbstractImager
      *
      * @var array
      */
-    protected $_supportedFormats = [
+    protected $supportedFormats = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'image/gif' => 'gif',
         'image/webp' => 'webp',
     ];
-
-    /**
-     * @var TempFileFactory
-     */
-    protected $tempFileFactory;
-
-    /**
-     * @var StoreInterface
-     */
-    protected $store;
 
     /**
      * Check for the php extension.
@@ -70,19 +60,20 @@ class GD extends AbstractImager
      * @param StoreInterface $store
      * @throws \Exception
      */
-    public function __construct(TempFileFactory $tempFileFactory, $store)
-    {
-        $t = $this->getTranslator();
+    public function __construct(
+        TempFileFactory $tempFileFactory,
+        StoreInterface $store
+    ) {
         if (!extension_loaded('gd')) {
-            throw new \Exception($t->translate('The transformation of images via GD requires the PHP extension "gd".'));
+            throw new \Exception('The transformation of images via GD requires the PHP extension "gd".');
         }
 
         $gdInfo = gd_info();
         if (empty($gdInfo['GIF Read Support']) || empty($gdInfo['GIF Create Support'])) {
-            unset($this->_supportedFormats['image/gif']);
+            unset($this->supportedFormats['image/gif']);
         }
         if (empty($gdInfo['WebP Support'])) {
-            unset($this->_supportedFormats['image/webp']);
+            unset($this->supportedFormats['image/webp']);
         }
 
         $this->tempFileFactory = $tempFileFactory;
@@ -103,8 +94,8 @@ class GD extends AbstractImager
             return null;
         }
 
-        $this->_args = $args;
-        $args = &$this->_args;
+        $this->args = $args;
+        $args = &$this->args;
 
         if (!$this->checkMediaType($args['source']['media_type'])
             || !$this->checkMediaType($args['format']['feature'])
@@ -277,7 +268,7 @@ class GD extends AbstractImager
 
         // Save resulted resource into the specified format.
         // TODO Use a true name to allow cache, or is it managed somewhere else?
-        $extension = $this->_supportedFormats[$args['format']['feature']];
+        $extension = $this->supportedFormats[$args['format']['feature']];
         $tempFile = $this->tempFileFactory->build();
         $destination = $tempFile->getTempPath() . '.' . $extension;
         $tempFile->delete();
@@ -340,9 +331,8 @@ class GD extends AbstractImager
                     break;
             }
         } catch (\Exception $e) {
-            $logger = $this->getLogger();
-            $t = $this->getTranslator();
-            $logger->log(Logger::ERR, sprintf($t->translate("GD failed to open the file \"%s\". Details:\n%s"), $source, $e->getMessage()));
+            $message = new Message('GD failed to open the file \"%s\". Details:\n%s', $source, $e->getMessage()); // @translate
+            $this->getLogger()->err($message);
             return false;
         }
 

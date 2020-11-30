@@ -44,16 +44,6 @@ class Auto extends AbstractImager
     protected $_imagickMediaTypes = [];
 
     /**
-     * @var TempFileFactory
-     */
-    protected $tempFileFactory;
-
-    /**
-     * @var StoreInterface
-     */
-    protected $store;
-
-    /**
      * @var array
      */
     protected $commandLineArgs;
@@ -67,7 +57,7 @@ class Auto extends AbstractImager
      */
     public function __construct(
         TempFileFactory $tempFileFactory,
-        $store,
+        StoreInterface $store,
         array $commandLineArgs
     ) {
         // For simplicity, the check is prepared here, without load of classes.
