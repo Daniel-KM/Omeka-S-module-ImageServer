@@ -102,32 +102,35 @@ class TileInfo extends AbstractPlugin
      * @param MediaRepresentation $media
      * @return array|null
      */
-    public function __invoke(MediaRepresentation $media)
+    public function __invoke(MediaRepresentation $media): ?array
     {
         // Quick check for possible issue when used outside of the Image Server.
-        if (strpos($media->mediaType(), 'image/') !== 0) {
+        $mediaType = $media->mediaType();
+        if (substr($mediaType, 0, 6) !== 'image/') {
             return null;
         }
-        return $this->getTilingData($media->storageId());
+        return $this->getTilingData($media);
     }
 
     /**
      * Check if an image is zoomed and return its main data.
      *
      * Path to the storage of tiles:
-     * - For Omeka Semantic (DeepZoom): files/tile/storagehash_files
-     *   with metadata "storagehash.js" or "storagehash.dzi" and no subdir.
-     * - For Omeka Classic (Zoomify): files/zoom_tiles/storagehash_zdata
-     *   and, inside it, metadata "ImageProperties.xml" and subdirs "TileGroup{x}".
+     * - For DeepZoom: files/tile/storagehash_files with metadata "storagehash.js"
+     * or "storagehash.dzi" and no subdir.
+     * - For Zoomify: files/zoom_tiles/storagehash_zdata and, inside it,
+     * metadata "ImageProperties.xml" and subdirs "TileGroup{x}".
      *
      * This implementation is compatible with ArchiveRepertory (use of a
      * basename that may be a partial path) and possible alternate adapters.
      *
-     * @param string $basename Filename without the extension (storage id).
+     * @param MediaRepresentation $media
      * @return array|null
      */
-    protected function getTilingData($basename)
+    protected function getTilingData(MediaRepresentation $media): ?array
     {
+        $basename = $media->storageId();
+
         $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.dzi';
         if ($this->fileExists($basepath)) {
             $tilingData = $this->getTilingDataDeepzoomDzi($basepath);
@@ -158,7 +161,7 @@ class TileInfo extends AbstractPlugin
         return null;
     }
 
-    protected function fileExists($path)
+    protected function fileExists($path): bool
     {
         return $this->hasAmazonS3
             ? $this->store->hasFile($path)
@@ -168,10 +171,10 @@ class TileInfo extends AbstractPlugin
     /**
      * Get rendering data from a dzi format.
      *
-     * @param string path
+     * @param string $path
      * @return array|null
      */
-    protected function getTilingDataDeepzoomDzi($path)
+    protected function getTilingDataDeepzoomDzi($path): ?array
     {
         if ($this->hasAmazonS3) {
             $path = $this->store->getUri($path);
@@ -202,10 +205,10 @@ class TileInfo extends AbstractPlugin
     /**
      * Get rendering data from a jsonp format.
      *
-     * @param string path
+     * @param string $path
      * @return array|null
      */
-    protected function getTilingDataDeepzoomJsonp($path)
+    protected function getTilingDataDeepzoomJsonp($path): ?array
     {
         if ($this->hasAmazonS3) {
             $path = $this->store->getUri($path);
@@ -236,12 +239,12 @@ class TileInfo extends AbstractPlugin
     }
 
     /**
-     * Get rendering data from a zoomify format
+     * Get rendering data from a zoomify format.
      *
-     * @param string path
+     * @param string $path
      * @return array|null
      */
-    protected function getTilingDataZoomify($path)
+    protected function getTilingDataZoomify($path): ?array
     {
         if ($this->hasAmazonS3) {
             $path = $this->store->getUri($path);
@@ -258,16 +261,14 @@ class TileInfo extends AbstractPlugin
         $tilingData['metadata_path'] = '';
         $tilingData['media_path'] = '';
         $tilingData['url_base'] = $this->tileBaseUrl;
-        $tilingData['path_base'] = $this->tileBaseDir;
+        $tilingData['path_base'] = $this->hasAmazonS3 ? $this->tileBaseUrl : $this->tileBaseDir;
         $tilingData['url_query'] = $this->tileBaseQuery;
         $tilingData['size'] = (int) $properties['TILESIZE'];
         $tilingData['overlap'] = 0;
         $tilingData['total'] = (int) $properties['NUMTILES'];
         $tilingData['source']['width'] = (int) $properties['WIDTH'];
         $tilingData['source']['height'] = (int) $properties['HEIGHT'];
-        $tilingData['format'] = isset($properties['FORMAT'])
-            ? $properties['FORMAT']
-            : 'jpg';
+        $tilingData['format'] = $properties['FORMAT'] ?? 'jpg';
         return $tilingData;
     }
 }
