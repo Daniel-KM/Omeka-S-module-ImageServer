@@ -17,6 +17,16 @@ class ConfigForm extends Form implements TranslatorAwareInterface
     {
         $this
             ->add([
+                'name' => 'imageserver_iif',
+                'type' => Fieldset::class,
+                'options' => [
+                    'label' => 'Iiif info', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_iiif',
+                ],
+            ])
+            ->add([
                 'name' => 'imageserver_info_default_version',
                 'type' => Element\Radio::class,
                 'options' => [
@@ -115,7 +125,16 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
 
-            // Limits for all versions.
+            ->add([
+                'name' => 'imageserver_image',
+                'type' => Fieldset::class,
+                'options' => [
+                    'label' => 'Image server', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_image',
+                ],
+            ])
             ->add([
                 'name' => 'imageserver_image_creator',
                 'type' => Element\Select::class,
@@ -130,6 +149,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
             ->add([
+                // Limits for all versions.
                 'name' => 'imageserver_image_max_size',
                 'type' => Element\Text::class,
                 'options' => [

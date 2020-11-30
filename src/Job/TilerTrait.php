@@ -42,7 +42,6 @@ trait TilerTrait
      */
     protected $updateRenderer;
 
-
     /**
      * @var int
      */

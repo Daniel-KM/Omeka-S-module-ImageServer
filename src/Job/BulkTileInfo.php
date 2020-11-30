@@ -2,21 +2,39 @@
 
 namespace ImageServer\Job;
 
-use Omeka\Api\Representation\MediaRepresentation;
+use Omeka\Entity\Media;
 use Omeka\Job\AbstractJob;
 use Omeka\Stdlib\Message;
+use Omeka\Api\Representation\MediaRepresentation;
 
-class BulkSizerAndTiler extends AbstractJob
+class BulkTileInfo extends AbstractJob
 {
-    use SizerTrait;
-    use TilerTrait;
-
     /**
      * Limit for the loop to avoid heavy sql requests.
      *
      * @var int
      */
     const SQL_LIMIT = 25;
+
+    /**
+     * @var \Omeka\Mvc\Controller\Plugin\Logger
+     */
+    protected $logger;
+
+    /**
+     * @var \Doctrine\ORM\EntityManager $entityManager
+     */
+    protected $entityManager;
+
+    /**
+     * @var \Doctrine\ORM\EntityRepository
+     */
+    protected $mediaRepository;
+
+    /**
+     * @var \ImageServer\Mvc\Controller\Plugin\TileInfo
+     */
+    protected $tileInfo;
 
     /**
      * @var int
@@ -33,21 +51,30 @@ class BulkSizerAndTiler extends AbstractJob
      */
     protected $totalToProcess;
 
+    /**
+     * @var int
+     */
+    protected $totalSucceed;
+
+    /**
+     * @var int
+     */
+    protected $totalFailed;
+
+    /**
+     * @var int
+     */
+    protected $totalSkipped;
+
     public function perform(): void
     {
         /** @var \Omeka\Api\Manager $api */
         $services = $this->getServiceLocator();
         $this->logger = $services->get('Omeka\Logger');
         $this->entityManager = $services->get('Omeka\EntityManager');
+        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
+        $this->tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
         $api = $services->get('Omeka\ApiManager');
-
-        $tasks = array_intersect($this->getArg('tasks', ['size', 'tile']), ['size', 'tile', 'tile_info']);
-        if (empty($tasks)) {
-            $this->logger->warn(new Message(
-                'The job ended: no tasks (tile or size) defined.' // @translate
-            ));
-            return;
-        }
 
         $query = $this->getArg('query', []);
 
@@ -60,19 +87,8 @@ class BulkSizerAndTiler extends AbstractJob
             return;
         }
 
-        if (in_array('size', $tasks)) {
-            $this->prepareSizer();
-        }
-
-        if (in_array('tile', $tasks)) {
-            $this->prepareTiler();
-        } elseif (in_array('tile_info', $tasks)) {
-            $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
-            $this->tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
-        }
-
         $this->logger->info(new Message(
-            'Starting bulk tiling or sizing for %d items.', // @translate
+            'Starting bulk tile info for %d items.', // @translate
             $this->totalToProcess
         ));
 
@@ -94,7 +110,7 @@ class BulkSizerAndTiler extends AbstractJob
             foreach ($items as $key => $item) {
                 if ($this->shouldStop()) {
                     $this->logger->warn(new Message(
-                        'The job "Bulk Tiler and Sizer" was stopped: %1$d/%2$d resources processed.', // @translate
+                        'The job "Bulk Tile Info" was stopped: %1$d/%2$d resources processed.', // @translate
                         $offset + $key, $this->totalToProcess
                     ));
                     break 2;
@@ -106,34 +122,8 @@ class BulkSizerAndTiler extends AbstractJob
                         unset($media);
                         continue;
                     }
-
                     ++$this->totalImages;
-
-                    $skipped = $this->totalSkipped;
-                    $failed = $this->totalFailed;
-                    $succeed = $this->totalSucceed;
-
-                    if (in_array('size', $tasks)) {
-                        $this->prepareSize($media);
-                    }
-
-                    if (in_array('tile', $tasks)) {
-                        $this->prepareTile($media);
-                    } elseif (in_array('tile_info', $tasks)) {
-                        $this->prepareTileInfo($media);
-                    }
-
-                    // Quick avoid double count of skip/fail/success.
-                    if ($this->totalSkipped !== $skipped) {
-                        $this->totalSkipped = ++$skipped;
-                    }
-                    if ($this->totalFailed !== $failed) {
-                        $this->totalFailed = ++$failed;
-                    }
-                    if ($this->totalSucceed !== $succeed) {
-                        $this->totalSucceed = ++$succeed;
-                    }
-
+                    $this->prepareTileInfo($media);
                     unset($media);
                 }
                 unset($item);
@@ -141,12 +131,14 @@ class BulkSizerAndTiler extends AbstractJob
                 ++$this->totalProcessed;
             }
 
+            // Flush one time each loop.
+            $this->entityManager->flush();
             $this->entityManager->clear();
             $offset += self::SQL_LIMIT;
         }
 
         $this->logger->notice(new Message(
-            'End of bulk tiling/sizing: %1$d/%2$d items processed, %3$d files processed, %4$d errors, %5$d skipped on a total of %6$d images.', // @translate
+            'End of bulk prepare tile info: %1$d/%2$d items processed, %3$d files processed, %4$d errors, %5$d skipped on a total of %6$d images.', // @translate
             $this->totalProcessed,
             $this->totalToProcess,
             $this->totalSucceed,
@@ -156,19 +148,8 @@ class BulkSizerAndTiler extends AbstractJob
         ));
     }
 
-    /**
-     * This task is only used during upgrade: tile info are automatically filled
-     * after tiling.
-     *
-     * @param MediaRepresentation $media
-     */
     protected function prepareTileInfo(MediaRepresentation $media): void
     {
-        $this->logger->info(new Message(
-            'Media #%d: Store tile info', // @translate
-            $media->id()
-        ));
-
         $mediaData = $media->mediaData();
         if (is_null($mediaData)) {
             $mediaData= ['tile' => []];
@@ -192,6 +173,6 @@ class BulkSizerAndTiler extends AbstractJob
         $mediaEntity = $this->mediaRepository->find($media->id());
         $mediaEntity->setData($mediaData);
         $this->entityManager->persist($mediaEntity);
-        $this->entityManager->flush();
+        // No flush here.
     }
 }

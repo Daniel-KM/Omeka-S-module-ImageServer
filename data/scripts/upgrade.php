@@ -44,9 +44,42 @@ if (version_compare($oldVersion, '3.6.3.3', '<')) {
 
     $messenger = new Messenger();
     $message = new Message(
-        'Now, all images are automatically converted into tiles and an option in settings and site settings allows to specify the default display.
+        'Now, all images can be automatically converted into tiles and an option in settings and site settings allows to specify the default display.
 It can be selected directly in the theme too (thumbnail "tile").
 The conversion of the renderer from "tile" to the standard "file" can be done with the job in the config form.' // @translate
     );
+    $messenger->addWarning($message);
+
+    $args = [
+        'tasks' => [
+            'size',
+            'tile_info',
+        ],
+        'query' => [],
+        'filter' =>'all',
+    ];
+    // During upgrade, the jobs are not available.
+    require_once dirname(__DIR__, 2) . '/src/Job/SizerTrait.php';
+    require_once dirname(__DIR__, 2) . '/src/Job/TilerTrait.php';
+    require_once dirname(__DIR__, 2) . '/src/Job/BulkSizerAndTiler.php';
+    $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+    $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $args);
+
+    $urlHelper = $services->get('ControllerPluginManager')->get('url');
+    $message = new Message(
+        'Storing tile info for images in background (%1$sjob #%2$d%3$s, %4$slogs%3$s). This process will take a while.', // @translate
+        sprintf('<a href="%s">',
+            htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+        ),
+        $job->getId(),
+        '</a>',
+        sprintf('<a href="%s">',
+            htmlspecialchars($this->isModuleActive('Log')
+                ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
+            )
+        )
+    );
+    $message->setEscapeHtml(false);
     $messenger->addWarning($message);
 }
