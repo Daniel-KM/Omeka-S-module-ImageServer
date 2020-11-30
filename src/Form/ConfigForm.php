@@ -25,6 +25,11 @@ class ConfigForm extends Form implements TranslatorAwareInterface
      */
     protected $supportJpeg2000;
 
+    /**
+     * @var bool
+     */
+    protected $supportTiledTiff;
+
     public function init(): void
     {
         $this
@@ -179,9 +184,11 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Tiling type', // @translate
-                    'info' => $this->translate('Deep Zoom Image is a free proprietary format from Microsoft largely supported.') // @translate
+                    'info' => $this->translate('If vips is available, the recommended processor strategy is "Tiled tiff". If jpeg2000 is available, use "Jpeg 2000". Else, use Deepzoom or Zoomify.') // @translate
+                        . ' ' . $this->translate('Deep Zoom Image is a free proprietary format from Microsoft largely supported.') // @translate
                         . ' ' . $this->translate('Zoomify is an old format that was largely supported by proprietary softwares and free viewers.') // @translate
                         . ' ' . $this->translate('All formats are served as native by default, but may be served as IIIF too when a viewer request it.'), // @translate
+                    'documentation' => 'https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer#image-server',
                     'value_options' => [
                         'deepzoom' => [
                             'value' => 'deepzoom',
@@ -197,6 +204,13 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                                 ? 'Jpeg 2000' // @translate
                                 : 'Jpeg 2000 (not supported)', // @translate
                             'disabled' => !$this->supportJpeg2000,
+                        ],
+                        'tiled_tiff' => [
+                            'value' => 'tiled_tiff',
+                            'label' => $this->supportTiledTiff
+                                ? 'Tiled tiff' // @translate
+                                : 'Tiled tiff (not supported)', // @translate
+                            'disabled' => !$this->supportTiledTiff,
                         ],
                     ]
                 ],
@@ -390,6 +404,7 @@ To save the height and the width of all images and derivatives allows to speed u
     public function setImageServer(ImageServer $imageServer): self
     {
         $this->supportJpeg2000 = $imageServer->getImager()->checkMediaType('image/jp2');
+        $this->supportTiledTiff = $imageServer->getImager()->checkMediaType('image/tiff');
         return $this;
     }
 }

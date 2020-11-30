@@ -208,23 +208,38 @@ class Imagick extends AbstractImager
             return null;
         }
 
-        if (!empty($args['destination']['options']) && $args['destination']['options'] === 'image/jp2') {
-            // @link https://imagemagick.org/script/jp2.php
-            // @link https://cantaloupe-project.github.io/manual/4.0/images.html
-            // @link https://iipimage.sourceforge.io/documentation/images/#JPEG2000
-            // -r 2.5 -n 7 -c "[256,256]" -b "64,64" -p RPCL -SOP -t 256,256 -TP R
-            $imagick->setOption('jp2:r', '2.5');
-            $imagick->setOption('jp2:n', '7');
-            $imagick->setOption('jp2:c', '[256,256]');
-            $imagick->setOption('jp2:b', '64,64');
-            $imagick->setOption('jp2:p', 'RPCL');
-            $imagick->setOption('jp2:SOP', '');
-            $imagick->setOption('jp2:t', '256,256');
-            $imagick->setOption('jp2:TP', 'R');
+        $imageFormat = $this->supportedFormats[$args['format']['feature']];
+        $prefixedFormat = $this->supportedFormats[$args['format']['feature']];
+
+        if (!empty($args['destination']['options'])) {
+            if ($args['destination']['options'] === 'image/jp2') {
+                // @link https://imagemagick.org/script/jp2.php
+                // @link https://cantaloupe-project.github.io/manual/4.0/images.html
+                // @link https://iipimage.sourceforge.io/documentation/images/#JPEG2000
+                // -r 2.5 -n 7 -c "[256,256]" -b "64,64" -p RPCL -SOP -t 256,256 -TP R
+                $imagick->setOption('jp2:r', '2.5');
+                $imagick->setOption('jp2:n', '7');
+                $imagick->setOption('jp2:c', '[256,256]');
+                $imagick->setOption('jp2:b', '64,64');
+                $imagick->setOption('jp2:p', 'RPCL');
+                $imagick->setOption('jp2:SOP', '');
+                $imagick->setOption('jp2:t', '256,256');
+                $imagick->setOption('jp2:TP', 'R');
+            } elseif ($args['destination']['options'] === 'image/tiff') {
+                // @link https://cantaloupe-project.github.io/manual/4.0/images.html
+                // @link https://iipimage.sourceforge.io/documentation/images/#TIFF
+                // The depth 8 bits is added to get compatible preview.
+                // convert s -define tiff:tile-geometry=256x256 -compress jpeg 'ptif:o.tif'
+                $imagick->setFormat('ptif');
+                $imagick->setOption('tiff:tile-geometry', '256x256');
+                $imagick->setImageDepth(8);
+                $imageFormat = 'jpeg';
+                $prefixedFormat = 'ptif';
+            }
         }
 
-        $imagick->setImageFormat($this->supportedFormats[$args['format']['feature']]);
-        $result = $imagick->writeImage($this->supportedFormats[$args['format']['feature']] . ':' . $destination);
+        $imagick->setImageFormat($imageFormat);
+        $result = $imagick->writeImage($prefixedFormat . ':' . $destination);
 
         $imagick->clear();
 

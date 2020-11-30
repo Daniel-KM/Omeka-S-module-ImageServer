@@ -287,11 +287,18 @@ class Vips extends AbstractImager
             return null;
         }
 
-        /*
-        if (!empty($args['destination']['options']) && $args['destination']['options'] === 'image/jp2') {
-            // Vips does not manage jp2.
+        $destParams = '';
+        if (!empty($args['destination']['options'])) {
+            if ($args['destination']['options'] === 'image/jp2') {
+                // Vips does not manage jp2.
+            } elseif ($args['destination']['options'] === 'image/tiff') {
+                // @link https://libvips.github.io/libvips/API/current/VipsForeignSave.html#vips-tiffsave
+                // @link https://cantaloupe-project.github.io/manual/4.0/images.html
+                // @link https://iipimage.sourceforge.io/documentation/images/#TIFF
+                // Option "depth=onepixel" is not supported on old vips.
+                $destParams = '[compression=jpeg,Q=88,tile,tile-width=256,tile-height=256,pyramid,background=0 0 0]';
+            }
         }
-        */
 
         $intermediates = [];
 
@@ -305,7 +312,7 @@ class Vips extends AbstractImager
         } elseif (count($chain) === 1) {
             $replace = [
                 '_input_' => escapeshellarg($image . '[0]'),
-                '_output_' => escapeshellarg($destination),
+                '_output_' => escapeshellarg($destination . $destParams),
             ];
             $command = str_replace(array_keys($replace), array_values($replace), reset($chain));
         } else {
@@ -327,7 +334,7 @@ class Vips extends AbstractImager
                 } else {
                     $current = "$destination.$index.vips";
                     $replace['_input_'] = escapeshellarg($current);
-                    $replace['_output_'] = escapeshellarg($destination);
+                    $replace['_output_'] = escapeshellarg($destination . $destParams);
                     $removePrevPart = ' && rm ' . escapeshellarg($current);
                 }
                 $part = str_replace(array_keys($replace), array_values($replace), $part)

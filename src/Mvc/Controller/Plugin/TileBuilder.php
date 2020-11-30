@@ -39,6 +39,13 @@ class TileBuilder extends AbstractPlugin
     const FOLDER_EXTENSION_JPEG2000_FILE = '.jp2';
 
     /**
+     * Extension added to a file to store tiff.
+     *
+     * @var string
+     */
+    const FOLDER_EXTENSION_TIFF_FILE = '.tif';
+
+    /**
      * @var ConvertToImage $convertToImage
      */
     protected $convertToImage;
@@ -107,6 +114,17 @@ class TileBuilder extends AbstractPlugin
                     return $result;
                 }
                 $params['media_type'] = 'image/jp2';
+                $result['result'] = $this->convertToImage->__invoke($source, $result['tile_file'], $params);
+                return $result;
+            case 'tiled_tiff':
+                $result['tile_file'] = $destination . DIRECTORY_SEPARATOR . basename($params['storageId']) . self::FOLDER_EXTENSION_TIFF_FILE;
+                $result['tile_dir'] = null;
+                if (!$params['destinationRemove'] && file_exists($result['tile_file'])) {
+                    $result['result'] = true;
+                    $result['skipped'] = true;
+                    return $result;
+                }
+                $params['media_type'] = 'image/tiff';
                 $result['result'] = $this->convertToImage->__invoke($source, $result['tile_file'], $params);
                 return $result;
             default:

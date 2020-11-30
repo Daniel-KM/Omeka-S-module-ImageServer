@@ -129,6 +129,7 @@ class TileInfo extends AbstractPlugin
      * or "storagehash.dzi" and no subdir.
      * - For Zoomify: files/zoom_tiles/storagehash_zdata and, inside it,
      * metadata "ImageProperties.xml" and subdirs "TileGroup{x}".
+     * - For Jpeg2000 or tiled tiff, only the file.
      *
      * This implementation is compatible with ArchiveRepertory (use of a
      * basename that may be a partial path) and possible alternate adapters.
@@ -185,6 +186,16 @@ class TileInfo extends AbstractPlugin
             if ($this->fileExists($basepath)) {
                 $tilingData = $this->getTilingDataMedia($basepath, 'jpeg2000', $media);
                 $tilingData['media_path'] = $basename . '.jp2';
+                $tilingData['metadata_path'] = null;
+                return $tilingData;
+            }
+        }
+
+        if (empty($format) || $format === 'tiled_tiff') {
+            $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.tif';
+            if ($this->fileExists($basepath)) {
+                $tilingData = $this->getTilingDataMedia($basepath, 'tiled_tiff', $media);
+                $tilingData['media_path'] = $basename . '.tif';
                 $tilingData['metadata_path'] = null;
                 return $tilingData;
             }
@@ -321,6 +332,7 @@ class TileInfo extends AbstractPlugin
 
         $tileTypes = [
             'jpeg2000' => 'jp2',
+            'tiled_tiff' => 'tif',
         ];
 
         $tilingData = [];

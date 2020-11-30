@@ -51,6 +51,7 @@ class TileRemover extends AbstractPlugin
                 'deepzoom',
                 'zoomify',
                 'jpeg2000',
+                'tiled_tiff',
             ];
         } elseif (!is_array($formats)) {
             $formats = [$formats];
@@ -76,6 +77,10 @@ class TileRemover extends AbstractPlugin
             }
             if (in_array('jpeg2000', $formats)) {
                 $filepath = $this->tileDir . '/' . $storageId . '.jp2';
+                $this->amazonS3Store->delete($filepath);
+            }
+            if (in_array('tiled_tiff', $formats)) {
+                $filepath = $this->tileDir . '/' . $storageId . '.tif';
                 $this->amazonS3Store->delete($filepath);
             }
             return;
@@ -105,6 +110,12 @@ class TileRemover extends AbstractPlugin
         }
         if (in_array('jpeg2000', $formats)) {
             $filepath = $tileDir . '/' . $storageId . '.jp2';
+            if (file_exists($filepath)) {
+                unlink($filepath);
+            }
+        }
+        if (in_array('tiled_tiff', $formats)) {
+            $filepath = $tileDir . '/' . $storageId . '.tif';
             if (file_exists($filepath)) {
                 unlink($filepath);
             }

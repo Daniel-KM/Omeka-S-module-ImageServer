@@ -59,8 +59,8 @@ class ConvertToImage extends AbstractPlugin
             return false;
         }
 
-        // The convert is done even for a jpeg2000 source for simplicity and to
-        // manage the case that the source is not optimized for tiling.
+        // The convert is done even for a same format source for simplicity and
+        // to manage the case that the source is not optimized for tiling.
         $args = [
             'source' => [
                 'type' => 'original',
@@ -94,7 +94,7 @@ class ConvertToImage extends AbstractPlugin
             ],
             'destination' => [
                 'filepath' => $destination,
-                'options' => 'image/jp2',
+                'options' => $mediaTypeDestination,
             ],
         ];
 
