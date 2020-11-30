@@ -49,6 +49,11 @@ class Auto extends AbstractImager
     protected $commandLineArgs;
 
     /**
+     * @var array
+     */
+    protected $imagers = [];
+
+    /**
      * Select the thumbnailer according to options.
      *
      * Note: Check for the imagick extension at creation.
@@ -100,13 +105,33 @@ class Auto extends AbstractImager
         $this->commandLineArgs = $commandLineArgs;
 
         $imager = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        $this->supportedFormats = $imager->getSupportedFormats();
-        $imager = new GD($this->tempFileFactory, $this->store);
-        $this->supportedFormats = array_merge($this->supportedFormats, $imager->getSupportedFormats());
-        $imager = new Imagick($this->tempFileFactory, $this->store);
-        $this->supportedFormats = array_merge($this->supportedFormats, $imager->getSupportedFormats());
+        $supporteds = $imager->getSupportedFormats();
+        if (count($supporteds)) {
+            $this->imagers[] = 'Vips';
+            $this->supportedFormats = $supporteds;
+        }
+        if (extension_loaded('gd')) {
+            $imager = new GD($this->tempFileFactory, $this->store);
+            $supporteds = $imager->getSupportedFormats();
+            if (count($supporteds)) {
+                $this->imagers[] = 'GD';
+                $this->supportedFormats = array_merge($this->supportedFormats, $supporteds);
+            }
+        }
+        if (extension_loaded('imagick')) {
+            $imager = new Imagick($this->tempFileFactory, $this->store);
+            $supporteds = $imager->getSupportedFormats();
+            if (count($supporteds)) {
+                $this->imagers[] = 'Imagick';
+                $this->supportedFormats = array_merge($this->supportedFormats, $supporteds);
+            }
+        }
         $imager = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        $this->supportedFormats = array_merge($this->supportedFormats, $imager->getSupportedFormats());
+        $supporteds = $imager->getSupportedFormats();
+        if (count($supporteds)) {
+            $this->imagers[] = 'ImageMagick';
+            $this->supportedFormats = array_merge($this->supportedFormats, $supporteds);
+        }
     }
 
     /**
@@ -133,16 +158,20 @@ class Auto extends AbstractImager
 
     public function getImager(array $args)
     {
-        $imager = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        if ($imager->checkMediaType($args['source']['media_type'])
-            && $imager->checkMediaType($args['format']['feature'])
-        ) {
-            return $imager
-                ->setLogger($this->getLogger());
+        // Vips is the quickest, so check it first.
+        if (in_array('Vips', $this->imagers)) {
+            $imager = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
+            if ($imager->checkMediaType($args['source']['media_type'])
+                && $imager->checkMediaType($args['format']['feature'])
+            ) {
+                return $imager
+                    ->setLogger($this->getLogger());
+            }
         }
 
         // GD seems to be 15% speeder, so it is used first if available.
-        if (!empty($this->_gdMediaTypes[$args['source']['media_type']])
+        if (in_array('GD', $this->imagers)
+            &&!empty($this->_gdMediaTypes[$args['source']['media_type']])
             && !empty($this->_gdMediaTypes[$args['format']['feature']])
             // The arbitrary rotation is not managed currently.
             && $args['rotation']['feature'] != 'rotationArbitrary'
@@ -153,7 +182,8 @@ class Auto extends AbstractImager
         }
 
         // Else use the extension Imagick, that manages more formats.
-        if (!empty($this->_imagickMediaTypes[$args['source']['media_type']])
+        if (in_array('Imagick', $this->imagers)
+            && !empty($this->_imagickMediaTypes[$args['source']['media_type']])
             && !empty($this->_imagickMediaTypes[$args['format']['feature']])
         ) {
             $imager = new Imagick($this->tempFileFactory, $this->store);
@@ -162,12 +192,14 @@ class Auto extends AbstractImager
         }
 
         // Else use the command line ImageMagick.
-        $imager = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        if ($imager->checkMediaType($args['source']['media_type'])
-            && $imager->checkMediaType($args['format']['feature'])
-        ) {
-            return $imager
-                ->setLogger($this->getLogger());
+        if (in_array('ImageMagick', $this->imagers)) {
+            $imager = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
+            if ($imager->checkMediaType($args['source']['media_type'])
+                && $imager->checkMediaType($args['format']['feature'])
+            ) {
+                return $imager
+                    ->setLogger($this->getLogger());
+            }
         }
 
         return null;
