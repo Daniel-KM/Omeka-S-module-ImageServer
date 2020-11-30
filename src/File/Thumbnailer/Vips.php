@@ -47,7 +47,7 @@ class Vips extends AbstractThumbnailer
     public function create($strategy, $constraint, array $options = [])
     {
         $version = (string) $this->cli->execute($this->vipsPath . ' --version');
-        if (version_compare($version, 'vips-8.6' , '<')) {
+        if (version_compare($version, 'vips-8.6', '<')) {
             return $this->createWithOldVips($strategy, $constraint, $options);
         }
 

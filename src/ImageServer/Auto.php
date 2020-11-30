@@ -171,7 +171,7 @@ class Auto extends AbstractImager
 
         // GD seems to be 15% speeder, so it is used first if available.
         if (in_array('GD', $this->imagers)
-            &&!empty($this->_gdMediaTypes[$args['source']['media_type']])
+            && !empty($this->_gdMediaTypes[$args['source']['media_type']])
             && !empty($this->_gdMediaTypes[$args['format']['feature']])
             // The arbitrary rotation is not managed currently.
             && $args['rotation']['feature'] != 'rotationArbitrary'

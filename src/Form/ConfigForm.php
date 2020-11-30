@@ -71,7 +71,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
 
-            /**
+            /*
             ->add([
                 'name' => 'imageserver_identifier_prefix',
                 'type' => Element\Text::class,
@@ -185,7 +185,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     'info' => $this->translate('Set the maximum size in bytes for the dynamic processing of images.') // @translate
                         . ' ' . $this->translate('Beyond this limit, the plugin will require a tiled image.') // @translate
                         . ' ' . $this->translate('Let empty to allow processing of any image.') // @translate
-                        . ' ' . $this->translate('With vips, this option is bypassed.') // @translate
+                        . ' ' . $this->translate('With vips, this option is bypassed.'), // @translate
                 ],
                 'attributes' => [
                     'id' => 'imageserver-image-max-size',
@@ -224,7 +224,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                                 : 'Tiled tiff (not supported)', // @translate
                             'disabled' => !$this->supportTiledTiff,
                         ],
-                    ]
+                    ],
                 ],
                 'attributes' => [
                     'id' => 'imageserver-image-tile-type',

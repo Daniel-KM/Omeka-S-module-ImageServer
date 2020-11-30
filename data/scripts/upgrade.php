@@ -65,7 +65,7 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
             'tile_info',
         ],
         'query' => [],
-        'filter' =>'all',
+        'filter' => 'all',
     ];
     // During upgrade, the jobs are not available.
     require_once dirname(__DIR__, 2) . '/src/Job/SizerTrait.php';

@@ -152,7 +152,7 @@ class BulkTileInfo extends AbstractJob
     {
         $mediaData = $media->mediaData();
         if (is_null($mediaData)) {
-            $mediaData= ['tile' => []];
+            $mediaData = ['tile' => []];
         } else {
             $mediaData['tile'] = [];
         }

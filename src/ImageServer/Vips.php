@@ -112,7 +112,7 @@ class Vips extends AbstractImager
             $extensions = [];
             foreach ($matches as $match) {
                 $ext = array_map(function ($v) {
-                   return trim($v, ',.');
+                    return trim($v, ',.');
                 }, explode(' ', strtolower($match['extensions'])));
                 $extensions = array_merge($extensions, $ext);
             }
@@ -172,7 +172,7 @@ class Vips extends AbstractImager
 
         if (is_null($isOldVersion)) {
             $version = (string) $this->cli->execute($this->vipsPath . ' --version');
-            $isOldVersion = version_compare($version, 'vips-8.10' , '<');
+            $isOldVersion = version_compare($version, 'vips-8.10', '<');
         }
 
         list(
@@ -262,7 +262,7 @@ class Vips extends AbstractImager
                 break;
 
             case 'rotationArbitrary':
-                if (version_compare($version, 'vips-8.7' , '<')) {
+                if (version_compare($version, 'vips-8.7', '<')) {
                     $chain[] = sprintf(
                         '%s similarity _input_ _output_ --angle %s',
                         $this->vipsPath,
@@ -332,7 +332,7 @@ class Vips extends AbstractImager
         // unmanaged profile.
         // @link https://phabricator.wikimedia.org/T219569
         elseif ($isOldVersion && $this->args['format']['feature'] === 'image/png') {
-            $destParams = '[profile=' . dirname(__DIR__, 2) .'/asset/icc/sRGBz.icc' . ']';
+            $destParams = '[profile=' . dirname(__DIR__, 2) . '/asset/icc/sRGBz.icc' . ']';
         }
 
         $intermediates = [];
@@ -355,14 +355,14 @@ class Vips extends AbstractImager
             foreach ($chain as $index => &$part) {
                 if ($index === 0) {
                     $replace['_input_'] = escapeshellarg($image . '[0]');
-                    $intermediate = $destination . '.' . ($index + 1). '.vips';
+                    $intermediate = $destination . '.' . ($index + 1) . '.vips';
                     $intermediates[] = $intermediate;
                     $replace['_output_'] = escapeshellarg($intermediate);
                     $removePrevPart = '';
                 } elseif ($index !== $last) {
                     $current = "$destination.$index.vips";
                     $replace['_input_'] = escapeshellarg($current);
-                    $intermediate = $destination . '.' . ($index + 1). '.vips';
+                    $intermediate = $destination . '.' . ($index + 1) . '.vips';
                     $intermediates[] = $intermediate;
                     $replace['_output_'] = escapeshellarg($intermediate);
                     $removePrevPart = ' && rm ' . escapeshellarg($current);
