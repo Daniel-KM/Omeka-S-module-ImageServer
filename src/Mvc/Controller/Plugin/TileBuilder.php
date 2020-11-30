@@ -75,6 +75,7 @@ class TileBuilder extends AbstractPlugin
                 $factory = new ZoomifyFactory;
                 $destination .= DIRECTORY_SEPARATOR . basename($params['storageId']) . self::FOLDER_EXTENSION_ZOOMIFY;
                 $result['tile_dir'] = $destination;
+                $result['tile_file'] = $destination . DIRECTORY_SEPARATOR . 'ImageProperties.xml';
                 break;
             default:
                 throw new InvalidArgumentException((string) new Message(
@@ -83,8 +84,9 @@ class TileBuilder extends AbstractPlugin
                 ));
         }
 
+        // Remove only the specified type, not other ones.
         if (!$params['destinationRemove']) {
-            if (is_dir($result['tile_dir'])) {
+            if (!empty($result['tile_file']) && file_exists($result['tile_file'])) {
                 $result['result'] = true;
                 $result['skipped'] = true;
                 return $result;

@@ -494,54 +494,10 @@ SQL;
     public function deleteMediaTiles(Event $event): void
     {
         $services = $this->getServiceLocator();
-        $settings = $services->get('Omeka\Settings');
-        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $tileDir = $settings->get('imageserver_image_tile_dir');
-        if (empty($tileDir)) {
-            $logger = $services->get('Omeka\logger');
-            $logger->err(new Message('Tile dir is not defined, so media tiles cannot be removed.')); // @translate
-            return;
-        }
-
-        // Remove all files and folders, whatever the format or the source.
-        // The default storage interface doesn't manage directories directly.
+        $tileRemover = $services->get('ControllerPluginManager')->get('tileRemover');
         $media = $event->getTarget();
-        $storageId = $media->getStorageId();
-
-        $module = $services->get('Omeka\ModuleManager')->getModule('AmazonS3');
-        $hasAmazonS3 = $module
-            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
-        if ($hasAmazonS3) {
-            $store = $services->get(\AmazonS3\File\Store\AwsS3::class);
-            $filepath = $tileDir . '/' . $storageId . '.dzi';
-            $store->delete($filepath);
-            $filepath = $tileDir . '/' . $storageId . '.js';
-            $store->delete($filepath);
-            $filepath = $tileDir . '/' . $storageId . '_files';
-            $store->deleteDir($filepath);
-            $filepath = $tileDir . '/' . $storageId . '_zdata';
-            $store->deleteDir($filepath);
-            return;
-        }
-
-        $tileDir = $basePath . '/' . $tileDir;
-
-        $filepath = $tileDir . '/' . $storageId . '.dzi';
-        if (file_exists($filepath)) {
-            unlink($filepath);
-        }
-        $filepath = $tileDir . '/' . $storageId . '.js';
-        if (file_exists($filepath)) {
-            unlink($filepath);
-        }
-        $filepath = $tileDir . '/' . $storageId . '_files';
-        if (file_exists($filepath) && is_dir($filepath)) {
-            $this->rrmdir($filepath);
-        }
-        $filepath = $tileDir . '/' . $storageId . '_zdata';
-        if (file_exists($filepath) && is_dir($filepath)) {
-            $this->rrmdir($filepath);
-        }
+        $mediaRepr = $services->get('Omeka\ApiAdapterManager')->get('media')->getRepresentation($media);
+        $tileRemover($mediaRepr);
     }
 
     /**

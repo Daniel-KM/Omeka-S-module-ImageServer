@@ -102,6 +102,7 @@ return [
             'sizer' => Service\ControllerPlugin\SizerFactory::class,
             'tileInfo' => Service\ControllerPlugin\TileInfoFactory::class,
             'tiler' => Service\ControllerPlugin\TilerFactory::class,
+            'tileRemover' => Service\ControllerPlugin\TileRemoverFactory::class,
         ],
     ],
     'media_ingesters' => [
