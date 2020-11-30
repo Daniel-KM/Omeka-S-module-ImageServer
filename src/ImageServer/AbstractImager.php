@@ -256,6 +256,65 @@ abstract class AbstractImager implements LoggerAwareInterface
         ];
     }
 
+    /**
+     * Load an image from anywhere.
+     *
+     * @param string $source Path of the managed image file
+     * @return false|string
+     */
+    protected function _loadImageResource($source)
+    {
+        if (empty($source)) {
+            return false;
+        }
+
+        try {
+            // A check is added if the file is local: the source can be a local file
+            // or an external one (Amazon S3…).
+            switch (get_class($this->store)) {
+                case \Omeka\File\Store\Local::class:
+                    if (!is_readable($source)) {
+                        return false;
+                    }
+                    $image = $source;
+                    break;
+
+                    // When the storage is external, the file is fetched before.
+                default:
+                    $tempFile = $this->tempFileFactory->build();
+                    $tempPath = $tempFile->getTempPath();
+                    $tempFile->delete();
+                    $result = copy($source, $tempPath);
+                    if (!$result) {
+                        return false;
+                    }
+                    $this->fetched[$tempPath] = true;
+                    $image = $tempPath;
+                    break;
+            }
+        } catch (\Exception $e) {
+            $message = new Message('Image Server failed to open the file "%s". Details:
+%s', $source, $e->getMessage()); // @translate
+            $this->getLogger()->err($message);
+            return false;
+        }
+
+        return $image;
+    }
+
+    /**
+     * Destroy an image if fetched.
+     *
+     * @param string $image
+     */
+    protected function _destroyIfFetched($image): void
+    {
+        if (isset($this->fetched[$image])) {
+            unlink($image);
+            unset($this->fetched[$image]);
+        }
+    }
+
     protected function prepareDestinationPath(): ?string
     {
         if (empty($this->args['destination']['filepath'])) {
@@ -269,7 +328,7 @@ abstract class AbstractImager implements LoggerAwareInterface
         $destination = $this->args['destination']['filepath'];
         if (file_exists($destination)) {
             if (!is_writeable($destination)) {
-                $message = new Message('Unable to save the file \"%s\".', $destination); // @translate
+                $message = new Message('Unable to save the file "%s".', $destination); // @translate
                 $this->getLogger()->err($message);
                 return null;
             }
@@ -277,7 +336,18 @@ abstract class AbstractImager implements LoggerAwareInterface
             return $destination;
         }
 
-        return is_writeable(dirname($destination))
+        $dir = dirname($destination);
+        if (file_exists($dir)) {
+            if (!is_writeable($dir)) {
+                $message = new Message('Unable to save the file "%s": directory is not writeable.', $destination); // @translate
+                $this->getLogger()->err($message);
+                return null;
+            }
+            return $destination;
+        }
+
+        $result = @mkdir($dir, 0775, true);
+        return $result
             ? $destination
             : null;
     }

@@ -3,6 +3,7 @@
 namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\ImageServer\ImageServer;
+use ImageServer\ImageServer\Vips;
 use ImageServer\Mvc\Controller\Plugin\ImageServer as ImageServerPlugin;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
@@ -21,10 +22,12 @@ class ImageServerFactory implements FactoryInterface
         $cli = $services->get('Omeka\Cli');
         $config = $services->get('Config');
         $convertDir = $config['thumbnails']['thumbnailer_options']['imagemagick_dir'];
+        $vipsDir = $settings->get('imageserver_vips_dir', '');
 
         $commandLineArgs = [];
         $commandLineArgs['cli'] = $cli;
-        $commandLineArgs['convertPath'] = $this->getConvertPath($cli, $convertDir);
+        $commandLineArgs['convertPath'] = $this->getPath($cli, $convertDir, ImageMagick::CONVERT_COMMAND);
+        $commandLineArgs['vipsPath'] = $this->getPath($cli, $vipsDir, Vips::VIPS_COMMAND);
         $commandLineArgs['executeStrategy'] = $config['cli']['execute_strategy'];
 
         $imageServer = new ImageServer($tempFileFactory, $store, $commandLineArgs, $settings, $logger);
@@ -35,17 +38,17 @@ class ImageServerFactory implements FactoryInterface
     }
 
     /**
-     * Get the path to the ImageMagick "convert" command.
+     * Check and get the path of a command.
      *
      * @param Cli $cli
-     * @param string $convertDir
+     * @param string $dir
+     * @param string $command
      * @return string
      */
-    protected function getConvertPath(Cli $cli, $convertDir)
+    protected function getPath(Cli $cli, ?string $dir, string $command): string
     {
-        $convertPath = $convertDir
-            ? $cli->validateCommand($convertDir, ImageMagick::CONVERT_COMMAND)
-            : $cli->getCommandPath(ImageMagick::CONVERT_COMMAND);
-        return (string) $convertPath;
+        return $dir
+            ? (string) $cli->validateCommand($dir, $command)
+            : (string) $cli->getCommandPath($command);
     }
 }

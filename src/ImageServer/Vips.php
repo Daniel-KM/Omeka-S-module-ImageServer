@@ -38,17 +38,22 @@ use Omeka\Stdlib\Cli;
  *
  * @package ImageServer
  */
-class ImageMagick extends AbstractImager
+class Vips extends AbstractImager
 {
+    const VIPS_COMMAND = 'vips';
+
     /**
      * List of managed IIIF media types.
+     *
+     * Vips can read jpeg2000 (via ImageMagick), but not write, so it should
+     * used with imagemagick. Else use tiff.
      *
      * @var array
      */
     protected $supportedFormats = [
-        'image/jpeg' => 'jpeg',
+        'image/jpeg' => 'jpg',
         'image/png' => 'png',
-        'image/tiff' => 'tiff',
+        'image/tiff' => 'tif',
         'image/gif' => 'gif',
         'application/pdf' => 'pdf',
         'image/jp2' => 'jp2',
@@ -61,11 +66,11 @@ class ImageMagick extends AbstractImager
     protected $cli;
 
     /**
-     * Path to the ImageMagick "convert" command.
+     * Path to "vips" command.
      *
      * @var string
      */
-    protected $convertPath;
+    protected $vipsPath;
 
     /**
      * List of the fetched images in order to remove them after process.
@@ -90,33 +95,32 @@ class ImageMagick extends AbstractImager
         $this->tempFileFactory = $tempFileFactory;
         $this->store = $store;
         $this->cli = $commandLineArgs['cli'];
-        $this->convertPath = $commandLineArgs['convertPath'];
-        if (empty($this->convertPath)) {
+        $this->vipsPath = $commandLineArgs['vipsPath'];
+        if (empty($this->vipsPath)) {
             $this->supportedFormats = [];
             return;
         }
 
         // The version list the common formats simpler than "-list format", but
         // it is not complete.
-        $command = sprintf($this->convertPath . ' -list format 2>/dev/null ; echo ""', $this->convertPath);
+        // Available only in version 8.8.
+        // $command = sprintf($this->vipsPath . ' -l foreign | grep save', $this->vipsPath);
+        $command = sprintf($this->vipsPath . ' -l | grep -i save', $this->vipsPath);
         $result = $this->cli->execute($command);
         $matches = [];
-        // For simplicity, manage only read and write formats.
-        if ($result && preg_match_all('~^\s*(?<format>[^ *]+)\*?\s+(?<module>[^ ]+)\s+(?<mode>rw).*$~m', $result, $matches, PREG_SET_ORDER, 0)) {
-            $formats = [];
+        if ($result && preg_match_all('~^.*\(\.(?<extensions>.[.a-z, ]+)\).*$~m', $result, $matches, PREG_SET_ORDER, 0)) {
+            $extensions = [];
             foreach ($matches as $match) {
-                $key = array_search(strtolower($match['module']), $this->supportedFormats);
-                if ($key) {
-                    $formats[$key] = $this->supportedFormats[$key];
-                }
+                $ext = array_map(function ($v) {
+                   return trim($v, ',.');
+                }, explode(' ', strtolower($match['extensions'])));
+                $extensions = array_merge($extensions, $ext);
             }
-            $this->supportedFormats = $formats;
-            // The IIIF standard requires "jpg" and "tif", not "jpeg" or "tiff".
-            if (isset($this->supportedFormats['image/jpeg'])) {
-                $this->supportedFormats['image/jpeg'] = 'jpg';
-            }
-            if (isset($this->supportedFormats['image/tiff'])) {
-                $this->supportedFormats['image/tiff'] = 'tif';
+            $this->supportedFormats = array_intersect($this->supportedFormats, $extensions);
+            // Include formats managed by ImageMagick if present.
+            if (strpos($result, 'ImageMagick')) {
+                $im = new ImageMagick($this->tempFileFactory, $this->store, $commandLineArgs);
+                $this->supportedFormats += $im->getSupportedFormats();
             }
         } else {
             $this->supportedFormats = [];
@@ -171,30 +175,54 @@ class ImageMagick extends AbstractImager
             $destinationWidth,
             $destinationHeight) = $extraction;
 
-        $params = [];
-        // The background is normally useless, but it's costless.
-        $params[] = '-background black';
-        $params[] = '+repage';
-        $params[] = '-flatten';
-        $params[] = '-page ' . escapeshellarg(sprintf('%sx%s+0+0', $sourceWidth, $sourceHeight));
-        $params[] = '-crop ' . escapeshellarg(sprintf('%dx%d+%d+%d', $sourceWidth, $sourceHeight, $sourceX, $sourceY));
-        $params[] = '-thumbnail ' . escapeshellarg(sprintf('%sx%s', $destinationWidth, $destinationHeight));
-        $params[] = '-page ' . escapeshellarg(sprintf('%sx%s+0+0', $destinationWidth, $destinationHeight));
+        // The command line vips is not pipable, so an intermediate file is
+        // required when there are more than one operation.
+        // @link https://libvips.github.io/libvips/API/current/using-cli.html
+        // @todo Use php-vips (as a separate imager, because it requires more install).
+        // @todo Use vips thumbnail (or vipsthumbnail) when there is only region.
+
+        $chain = [];
+        if ($sourceWidth !== $args['source']['width']
+            || $sourceHeight !== $args['source']['height']
+        ) {
+            $chain[] = sprintf(
+                '%s extract_area _input_ _output_ %d %d %d %d',
+                $this->vipsPath,
+                $sourceX,
+                $sourceY,
+                $sourceWidth,
+                $sourceHeight
+            );
+        }
+
+        if ($sourceWidth !== $destinationWidth
+            || $sourceHeight !== $destinationHeight
+        ) {
+            // Force because destination width and height are already checked.
+            $chain[] = sprintf(
+                '%s thumbnail _input_ _output_ %d --height %d --size force --no-rotate --intent absolute',
+                $this->vipsPath,
+                $destinationWidth,
+                $destinationHeight
+            );
+        }
+
+        // $chain[] = $this->vipsPath . ' flatten _input_ _output_ --background "0 0 0"';
 
         // Mirror.
         switch ($args['mirror']['feature']) {
             case 'mirror':
             case 'horizontal':
-                $params[] = '-flop';
+                $chain[] = $this->vipsPath . ' flip _input_ _output_ horizontal';
                 break;
 
             case 'vertical':
-                $params[] = '-flip';
+                $chain[] = $this->vipsPath . ' flip _input_ _output_ vertical';
                 break;
 
             case 'both':
-                $params[] = '-flop';
-                $params[] = '-flip';
+                $chain[] = $this->vipsPath . ' flip _input_ _output_ horizontal';
+                $chain[] = $this->vipsPath . ' flip _input_ _output_ vertical';
                 break;
 
             case 'default':
@@ -207,13 +235,21 @@ class ImageMagick extends AbstractImager
         }
 
         // Rotation.
+        // Can be done in the options of the output too.
         switch ($args['rotation']['feature']) {
             case 'noRotation':
                 break;
 
             case 'rotationBy90s':
+                $chain[] = sprintf('%s rot _input_ _output_ d%d', $this->vipsPath, $args['rotation']['degrees']);
+                break;
+
             case 'rotationArbitrary':
-                $params[] = '-rotate ' . escapeshellarg($args['rotation']['degrees']);
+                $chain[] = sprintf(
+                    '%s rotate _input_ _output_ %s --background "0 0 0"',
+                    $this->vipsPath,
+                    $args['rotation']['degrees']
+                );
                 break;
 
             default:
@@ -231,11 +267,12 @@ class ImageMagick extends AbstractImager
                 break;
 
             case 'gray':
-                $params[] = '-colorspace Gray';
+                $chain[] = $this->vipsPath . ' colourspace _input_ _output_ grey16';
                 break;
 
             case 'bitonal':
-                $params[] = '-monochrome';
+                // FIXME vips does not support bitonal/monochrome: b-w is grey on 8 bits. Use convert at last.
+                $chain[] = $this->vipsPath . ' colourspace _input_ _output_ b-w';
                 break;
 
             default:
@@ -250,15 +287,55 @@ class ImageMagick extends AbstractImager
             return null;
         }
 
-        $command = sprintf(
-            '%s %s %s %s',
-            $this->convertPath,
-            escapeshellarg($image . '[0]'),
-            implode(' ', $params),
-            escapeshellarg($this->supportedFormats[$args['format']['feature']] . ':' . $destination)
-        );
+        $intermediates = [];
+
+        if (!count($chain)) {
+            $command = sprintf(
+                '%s copy %s %s',
+                $this->vipsPath,
+                escapeshellarg($image . '[0]'),
+                escapeshellarg($destination . $destParams)
+            );
+        } elseif (count($chain) === 1) {
+            $replace = [
+                '_input_' => escapeshellarg($image . '[0]'),
+                '_output_' => escapeshellarg($destination),
+            ];
+            $command = str_replace(array_keys($replace), array_values($replace), reset($chain));
+        } else {
+            $last = count($chain) - 1;
+            foreach ($chain as $index => &$part) {
+                if ($index === 0) {
+                    $replace['_input_'] = escapeshellarg($image . '[0]');
+                    $intermediate = $destination . '.' . ($index + 1). '.vips';
+                    $intermediates[] = $intermediate;
+                    $replace['_output_'] = escapeshellarg($intermediate);
+                    $removePrevPart = '';
+                } elseif ($index !== $last) {
+                    $current = "$destination.$index.vips";
+                    $replace['_input_'] = escapeshellarg($current);
+                    $intermediate = $destination . '.' . ($index + 1). '.vips';
+                    $intermediates[] = $intermediate;
+                    $replace['_output_'] = escapeshellarg($intermediate);
+                    $removePrevPart = ' && rm ' . escapeshellarg($current);
+                } else {
+                    $current = "$destination.$index.vips";
+                    $replace['_input_'] = escapeshellarg($current);
+                    $replace['_output_'] = escapeshellarg($destination);
+                    $removePrevPart = ' && rm ' . escapeshellarg($current);
+                }
+                $part = str_replace(array_keys($replace), array_values($replace), $part)
+                    . $removePrevPart;
+            }
+            $command = implode(' && ', $chain);
+        }
 
         $result = $this->cli->execute($command);
+
+        // All intermediates are removed in case of an error.
+        foreach ($intermediates as $intermediate) {
+            @unlink($intermediate);
+        }
 
         $this->_destroyIfFetched($image);
 

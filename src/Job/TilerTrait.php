@@ -43,6 +43,11 @@ trait TilerTrait
     protected $updateRenderer;
 
     /**
+     * @var string
+     */
+    protected $tileType;
+
+    /**
      * @var int
      */
     protected $totalSucceed;
@@ -68,6 +73,7 @@ trait TilerTrait
 
         $this->removeDestination = $this->getArg('remove_destination', 'skip') ?: 'skip';
         $this->updateRenderer = $this->getArg('update_renderer', false) ?: false;
+        $this->tileType = $services->get('Omeka\Settings')->get('imageserver_image_tile_type', '');
     }
 
     protected function prepareTile(MediaRepresentation $media): void
@@ -79,8 +85,9 @@ trait TilerTrait
         }
 
         $this->logger->info(new Message(
-            'Media #%d: Start tiling', // @translate
-            $media->id()
+            'Media #%d: Start tiling (%s)', // @translate
+            $media->id(),
+            $this->tileType
         ));
 
         $result = $this->tiler->__invoke($media, $this->removeDestination);

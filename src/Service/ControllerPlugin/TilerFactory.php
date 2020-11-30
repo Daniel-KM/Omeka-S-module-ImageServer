@@ -2,6 +2,7 @@
 
 namespace ImageServer\Service\ControllerPlugin;
 
+use ImageServer\ImageServer\Vips;
 use ImageServer\Mvc\Controller\Plugin\Tiler;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
@@ -18,20 +19,19 @@ class TilerFactory implements FactoryInterface
             throw new \RuntimeException('The tile dir is not defined.'); // @translate
         }
 
-        $config = $services->get('Config');
         $cli = $services->get('Omeka\Cli');
+        $config = $services->get('Config');
+        $convertDir = $config['thumbnails']['thumbnailer_options']['imagemagick_dir'];
+        $vipsDir = $settings->get('imageserver_vips_dir', '');
+        $processor = $settings->get('imageserver_imager');
 
         $params = [];
         $params['tile_dir'] = $tileDir;
         $params['tile_type'] = $settings->get('imageserver_image_tile_type');
-
-        $processor = $settings->get('imageserver_imager');
         $params['processor'] = $processor === 'Auto' ? '' : $processor;
-
-        $convertDir = $config['thumbnails']['thumbnailer_options']['imagemagick_dir'];
-        $params['convertPath'] = $this->getConvertPath($cli, $convertDir);
+        $params['convertPath'] = $this->getPath($cli, $convertDir, ImageMagick::CONVERT_COMMAND);
+        $params['vipsPath'] = $this->getPath($cli, $vipsDir, Vips::VIPS_COMMAND);
         $params['executeStrategy'] = $config['cli']['execute_strategy'];
-
         $params['basePath'] = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
 
         $moduleManager = $services->get('Omeka\ModuleManager');
@@ -46,6 +46,7 @@ class TilerFactory implements FactoryInterface
         // because OpenSeadragon asks for a multiple of the cell size.
         // So the overlap prevents simple redirect and so it is not recommended.
         // This param overrides the default of DeepZoom.
+        // TODO Nevertheless, it is recommended with with tile size of 254.
         $params['tileOverlap'] = 0;
 
         return new Tiler(
@@ -56,17 +57,17 @@ class TilerFactory implements FactoryInterface
     }
 
     /**
-     * Get the path to the ImageMagick "convert" command.
+     * Check and get the path of a command.
      *
      * @param Cli $cli
-     * @param string $convertDir
+     * @param string $dir
+     * @param string $command
      * @return string
      */
-    protected function getConvertPath(Cli $cli, $convertDir)
+    protected function getPath(Cli $cli, ?string $dir, string $command): string
     {
-        $convertPath = $convertDir
-            ? $cli->validateCommand($convertDir, ImageMagick::CONVERT_COMMAND)
-            : $cli->getCommandPath(ImageMagick::CONVERT_COMMAND);
-        return (string) $convertPath;
+        return $dir
+            ? (string) $cli->validateCommand($dir, $command)
+            : (string) $cli->getCommandPath($command);
     }
 }

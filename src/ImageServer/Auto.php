@@ -99,8 +99,10 @@ class Auto extends AbstractImager
         $this->store = $store;
         $this->commandLineArgs = $commandLineArgs;
 
-        $processor = new GD($this->tempFileFactory, $this->store);
+        $processor = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
         $this->supportedFormats = $processor->getSupportedFormats();
+        $processor = new GD($this->tempFileFactory, $this->store);
+        $this->supportedFormats = array_merge($this->supportedFormats, $processor->getSupportedFormats());
         $processor = new Imagick($this->tempFileFactory, $this->store);
         $this->supportedFormats = array_merge($this->supportedFormats, $processor->getSupportedFormats());
         $processor = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
@@ -117,6 +119,13 @@ class Auto extends AbstractImager
      */
     public function transform(array $args = null): ?string
     {
+        $processor = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
+        if ($processor->checkMediaType($args['source']['media_type'])
+            && $processor->checkMediaType($args['format']['feature'])
+        ) {
+            return $processor->transform($args);
+        }
+
         // GD seems to be 15% speeder, so it is used first if available.
         if (!empty($this->_gdMediaTypes[$args['source']['media_type']])
             && !empty($this->_gdMediaTypes[$args['format']['feature']])

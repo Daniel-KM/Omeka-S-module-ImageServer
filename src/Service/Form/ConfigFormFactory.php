@@ -3,8 +3,11 @@
 namespace ImageServer\Service\Form;
 
 use ImageServer\Form\ConfigForm;
+use ImageServer\ImageServer\Vips;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Omeka\File\Thumbnailer\ImageMagick;
+use Omeka\Stdlib\Cli;
 
 class ConfigFormFactory implements FactoryInterface
 {
@@ -15,7 +18,11 @@ class ConfigFormFactory implements FactoryInterface
         $imagers = [
             'Auto' => [
                 'value' => 'Auto',
-                'label' => 'Automatic (GD when possible, else Imagick, else ImageMagick)', // @translate
+                'label' => 'Automatic (Vips when possible, else GD, else Imagick, else ImageMagick)', // @translate
+            ],
+            'Vips' => [
+                'value' => 'Vips',
+                'label' => 'Vips (command line)', // @translate
             ],
             'GD' => [
                 'value' => 'GD',
@@ -30,8 +37,13 @@ class ConfigFormFactory implements FactoryInterface
                 'label' => 'ImageMagick (command line)', // @translate
             ],
         ];
+        $dir = $services->get('Omeka\Settings')->get('imageserver_vips_dir');
+        $validate = $this->getPath($cli, $dir, Vips::VIPS_COMMAND);
+        if (!$validate) {
+            $imagers['Vips']['disabled'] = true;
+        }
         $dir = $services->get('Config')['thumbnails']['thumbnailer_options']['imagemagick_dir'];
-        $validate = ($dir ? $cli->validateCommand($dir . 'convert') : $cli->getCommandPath('convert')) !== false;
+        $validate = $this->getPath($cli, $dir, ImageMagick::CONVERT_COMMAND);
         if (!$validate) {
             $imagers['ImageMagick']['disabled'] = true;
         }
@@ -46,5 +58,20 @@ class ConfigFormFactory implements FactoryInterface
         return $form
             ->setTranslator($services->get('MvcTranslator'))
             ->setImagers($imagers);
+    }
+
+    /**
+     * Check and get the path of a command.
+     *
+     * @param Cli $cli
+     * @param string $dir
+     * @param string $command
+     * @return string
+     */
+    protected function getPath(Cli $cli, ?string $dir, string $command): string
+    {
+        return $dir
+            ? (string) $cli->validateCommand($dir, $command)
+            : (string) $cli->getCommandPath($command);
     }
 }

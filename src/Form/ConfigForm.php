@@ -146,7 +146,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'type' => Element\Select::class,
                 'options' => [
                     'label' => 'Image processor', // @translate
-                    'info' => $this->translate('Generally, GD is a little faster than ImageMagick, but ImageMagick manages more formats.') // @translate
+                    'info' => $this->translate('Vips is the quickest in all cases, then GD is a little faster than ImageMagick, but ImageMagick manages more formats.') // @translate
                         . ' ' . $this->translate('Nevertheless, the performance depends on your installation and your server.'), // @translate
                     'value_options' => $this->getImagers(),
                 ],
