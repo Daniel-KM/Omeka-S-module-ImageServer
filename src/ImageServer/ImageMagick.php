@@ -250,6 +250,14 @@ class ImageMagick extends AbstractImager
             return null;
         }
 
+        if (!empty($args['destination']['options']) && $args['destination']['options'] === 'image/jp2') {
+            // @link https://imagemagick.org/script/jp2.php
+            // @link https://cantaloupe-project.github.io/manual/4.0/images.html
+            // @link https://iipimage.sourceforge.io/documentation/images/#JPEG2000
+            // -r 2.5 -n 7 -c "[256,256]" -b "64,64" -p RPCL -SOP -t 256,256 -TP R
+            $params[] = '-define jp2:r=2.5 -define jp2:n=7 -define jp2:c="[256,256]" -define jp2:b="64,64" -define jp2:p=RPCL -define jp2:SOP -define jp2:t="256,256" -define jp2:TP=R';
+        }
+
         $command = sprintf(
             '%s %s %s %s',
             $this->convertPath,

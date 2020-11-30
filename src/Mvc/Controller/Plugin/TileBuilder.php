@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use DanielKm\Deepzoom\DeepzoomFactory;
@@ -29,6 +30,26 @@ class TileBuilder extends AbstractPlugin
      * @var string
      */
     const FOLDER_EXTENSION_ZOOMIFY = '_zdata';
+
+    /**
+     * Extension added to a file to store jpeg2000.
+     *
+     * @var string
+     */
+    const FOLDER_EXTENSION_JPEG2000_FILE = '.jp2';
+
+    /**
+     * @var ConvertToImage $convertToImage
+     */
+    protected $convertToImage;
+
+    /**
+     * @param ConvertToImage $convertToImage
+     */
+    public function __construct(ConvertToImage $convertToImage)
+    {
+        $this->convertToImage = $convertToImage;
+    }
 
     /**
      * Convert the source into tiles of the specified format and store them.
@@ -77,6 +98,17 @@ class TileBuilder extends AbstractPlugin
                 $result['tile_dir'] = $destination;
                 $result['tile_file'] = $destination . DIRECTORY_SEPARATOR . 'ImageProperties.xml';
                 break;
+            case 'jpeg2000':
+                $result['tile_file'] = $destination . DIRECTORY_SEPARATOR . basename($params['storageId']) . self::FOLDER_EXTENSION_JPEG2000_FILE;
+                $result['tile_dir'] = null;
+                if (!$params['destinationRemove'] && file_exists($result['tile_file'])) {
+                    $result['result'] = true;
+                    $result['skipped'] = true;
+                    return $result;
+                }
+                $params['media_type'] = 'image/jp2';
+                $result['result'] = $this->convertToImage->__invoke($source, $result['tile_file'], $params);
+                return $result;
             default:
                 throw new InvalidArgumentException((string) new Message(
                     'The type of tiling "%s" is not supported by the tile builder.', // @translate

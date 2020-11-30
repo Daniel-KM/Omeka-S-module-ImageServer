@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\Mvc\Controller\Plugin\TileInfo;
@@ -50,7 +51,8 @@ class TileInfoFactory implements FactoryInterface
             $tileBaseUrl,
             $tileBaseQuery,
             $hasAmazonS3,
-            $store
+            $store,
+            $services->get('ControllerPluginManager')->get('imageSize')
         );
     }
 }

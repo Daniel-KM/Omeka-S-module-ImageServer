@@ -287,6 +287,12 @@ class Vips extends AbstractImager
             return null;
         }
 
+        /*
+        if (!empty($args['destination']['options']) && $args['destination']['options'] === 'image/jp2') {
+            // Vips does not manage jp2.
+        }
+        */
+
         $intermediates = [];
 
         if (!count($chain)) {

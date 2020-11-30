@@ -109,7 +109,7 @@ class Tiler extends AbstractPlugin
         }
         $this->params['destinationRemove'] = in_array($removeDestination, ['specific', 'all']);
 
-        $tileBuilder = new TileBuilder();
+        $tileBuilder = $this->controllerPlugins->get('tileBuilder');
         try {
             $result = $tileBuilder($sourcePath, $tileDir, $this->params);
         } catch (\Exception $e) {

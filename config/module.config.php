@@ -102,18 +102,19 @@ return [
     'controller_plugins' => [
         'invokables' => [
             'iiifImageJsonLd' => Mvc\Controller\Plugin\IiifImageJsonLd::class,
-            'tileBuilder' => Mvc\Controller\Plugin\TileBuilder::class,
             'tileMediaInfo' => Mvc\Controller\Plugin\TileMediaInfo::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
             'tileServerDeepZoom' => Mvc\Controller\Plugin\TileServerDeepZoom::class,
             'tileServerZoomify' => Mvc\Controller\Plugin\TileServerZoomify::class,
         ],
         'factories' => [
+            'convertToImage' => Service\ControllerPlugin\ConvertToImageFactory::class,
             'imageServer' => Service\ControllerPlugin\ImageServerFactory::class,
             'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,
             'sizer' => Service\ControllerPlugin\SizerFactory::class,
             'tileInfo' => Service\ControllerPlugin\TileInfoFactory::class,
             'tiler' => Service\ControllerPlugin\TilerFactory::class,
+            'tileBuilder' => Service\ControllerPlugin\TileBuilderFactory::class,
             'tileRemover' => Service\ControllerPlugin\TileRemoverFactory::class,
         ],
     ],

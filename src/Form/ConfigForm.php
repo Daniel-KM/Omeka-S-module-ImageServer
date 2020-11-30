@@ -3,6 +3,7 @@
 namespace ImageServer\Form;
 
 use ImageServer\Form\Element\Note;
+use ImageServer\ImageServer\ImageServer;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
@@ -18,6 +19,11 @@ class ConfigForm extends Form implements TranslatorAwareInterface
      * @var array
      */
     protected $imagers = [];
+
+    /**
+     * @var bool
+     */
+    protected $supportJpeg2000;
 
     public function init(): void
     {
@@ -170,16 +176,29 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ])
             ->add([
                 'name' => 'imageserver_image_tile_type',
-                'type' => Element\Select::class,
+                'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Tiling type', // @translate
                     'info' => $this->translate('Deep Zoom Image is a free proprietary format from Microsoft largely supported.') // @translate
                         . ' ' . $this->translate('Zoomify is an old format that was largely supported by proprietary softwares and free viewers.') // @translate
                         . ' ' . $this->translate('All formats are served as native by default, but may be served as IIIF too when a viewer request it.'), // @translate
                     'value_options' => [
-                        'deepzoom' => 'Deep Zoom Image', // @translate
-                        'zoomify' => 'Zoomify', // @translate
-                    ],
+                        'deepzoom' => [
+                            'value' => 'deepzoom',
+                            'label' => 'Deep Zoom Image', // @translate
+                        ],
+                        'zoomify' => [
+                            'value' => 'zoomify',
+                            'label' => 'Zoomify', // @translate
+                        ],
+                        'jpeg2000' => [
+                            'value' => 'jpeg2000',
+                            'label' => $this->supportJpeg2000
+                                ? 'Jpeg 2000' // @translate
+                                : 'Jpeg 2000 (not supported)', // @translate
+                            'disabled' => !$this->supportJpeg2000,
+                        ],
+                    ]
                 ],
                 'attributes' => [
                     'id' => 'imageserver-image-tile-type',
@@ -341,7 +360,7 @@ To save the height and the width of all images and derivatives allows to speed u
         ;
     }
 
-    protected function translate($args)
+    protected function translate($args): string
     {
         $translator = $this->getTranslator();
         return $translator->translate($args);
@@ -363,5 +382,14 @@ To save the height and the width of all images and derivatives allows to speed u
     public function getImagers(): array
     {
         return $this->imagers;
+    }
+
+    /**
+     * @return self
+     */
+    public function setImageServer(ImageServer $imageServer): self
+    {
+        $this->supportJpeg2000 = $imageServer->getImager()->checkMediaType('image/jp2');
+        return $this;
     }
 }

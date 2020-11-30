@@ -31,6 +31,7 @@ namespace ImageServer\Mvc\Controller\Plugin;
 
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Representation\MediaRepresentation;
+use Laminas\Validator\File\ImageSize;
 
 class TileInfo extends AbstractPlugin
 {
@@ -80,20 +81,27 @@ class TileInfo extends AbstractPlugin
     protected $store;
 
     /**
+     * @var ImageSize
+     */
+    protected $imageSize;
+
+    /**
      * @param string $tileBaseDir Full path prepended to a storage id. Is equal
      *   to tileBaseUrl for remote storage.
      * @param string $tileBaseUrl
      * @param string $tileBaseQuery
      * @param bool $hasAmazonS3
      * @param \AmazonS3\File\Store\AwsS3 $store
+     * @param ImageSize $imageSize
      */
-    public function __construct($tileBaseDir, $tileBaseUrl, $tileBaseQuery, $hasAmazonS3, $store)
+    public function __construct($tileBaseDir, $tileBaseUrl, $tileBaseQuery, $hasAmazonS3, $store, $imageSize)
     {
         $this->tileBaseDir = $tileBaseDir;
         $this->tileBaseUrl = $tileBaseUrl;
         $this->tileBaseQuery = $tileBaseQuery;
         $this->hasAmazonS3 = $hasAmazonS3;
         $this->store = $store;
+        $this->imageSize = $imageSize;
     }
 
     /**
@@ -169,6 +177,16 @@ class TileInfo extends AbstractPlugin
 
             if ($format === 'zoomify') {
                 return null;
+            }
+        }
+
+        if (empty($format) || $format === 'jpeg2000') {
+            $basepath = $this->tileBaseDir . DIRECTORY_SEPARATOR . $basename . '.jp2';
+            if ($this->fileExists($basepath)) {
+                $tilingData = $this->getTilingDataMedia($basepath, 'jpeg2000', $media);
+                $tilingData['media_path'] = $basename . '.jp2';
+                $tilingData['metadata_path'] = null;
+                return $tilingData;
             }
         }
 
@@ -283,6 +301,41 @@ class TileInfo extends AbstractPlugin
         $tilingData['source']['width'] = (int) $properties['WIDTH'];
         $tilingData['source']['height'] = (int) $properties['HEIGHT'];
         $tilingData['format'] = $properties['FORMAT'] ?? 'jpg';
+        return $tilingData;
+    }
+
+    /**
+     * Get rendering data from a media.
+     *
+     * @param string $path
+     * @param string $tileType
+     * @param MediaRepresentation $media
+     * @return array|null
+     */
+    protected function getTilingDataMedia($path, $tileType, MediaRepresentation $media): ?array
+    {
+        $imageSize = $this->imageSize->__invoke($media);
+        if (!$imageSize['width'] || !$imageSize['height']) {
+            return null;
+        }
+
+        $tileTypes = [
+            'jpeg2000' => 'jp2',
+        ];
+
+        $tilingData = [];
+        $tilingData['tile_type'] = $tileType;
+        $tilingData['metadata_path'] = '';
+        $tilingData['media_path'] = '';
+        $tilingData['url_base'] = $this->tileBaseUrl;
+        $tilingData['path_base'] = $this->tileBaseDir;
+        $tilingData['url_query'] = $this->tileBaseQuery;
+        $tilingData['size'] = 256;
+        $tilingData['overlap'] = 0;
+        $tilingData['total'] = null;
+        $tilingData['source']['width'] = (int) $imageSize['width'];
+        $tilingData['source']['height'] = (int) $imageSize['height'];
+        $tilingData['format'] = $tileTypes[$tileType];
         return $tilingData;
     }
 }
