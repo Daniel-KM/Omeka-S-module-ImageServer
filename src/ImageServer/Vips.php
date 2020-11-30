@@ -137,6 +137,8 @@ class Vips extends AbstractImager
      */
     public function transform(array $args): ?string
     {
+        static $isOldVersion;
+
         if (!count($args)) {
             return null;
         }
@@ -165,6 +167,11 @@ class Vips extends AbstractImager
         if (!$extraction) {
             $this->_destroyIfFetched($image);
             return null;
+        }
+
+        if (is_null($isOldVersion)) {
+            $version = (string) $this->cli->execute($this->vipsPath . ' --version');
+            $isOldVersion = version_compare($version, 'vips-8.6' , '<');
         }
 
         list(
@@ -198,13 +205,22 @@ class Vips extends AbstractImager
         if ($sourceWidth !== $destinationWidth
             || $sourceHeight !== $destinationHeight
         ) {
-            // Force because destination width and height are already checked.
-            $chain[] = sprintf(
-                '%s thumbnail _input_ _output_ %d --height %d --size force --no-rotate --intent absolute',
-                $this->vipsPath,
-                $destinationWidth,
-                $destinationHeight
-            );
+            if ($isOldVersion) {
+                $chain[] = sprintf(
+                    '%sthumbnail --size=%dx%d --format=_output_ _input_',
+                    $this->vipsPath,
+                    $destinationWidth,
+                    $destinationHeight
+                );
+            } else {
+                // Force because destination width and height are already checked.
+                $chain[] = sprintf(
+                    '%s thumbnail _input_ _output_ %d --height %d --size force --no-rotate --intent absolute',
+                    $this->vipsPath,
+                    $destinationWidth,
+                    $destinationHeight
+                );
+            }
         }
 
         // $chain[] = $this->vipsPath . ' flatten _input_ _output_ --background "0 0 0"';
