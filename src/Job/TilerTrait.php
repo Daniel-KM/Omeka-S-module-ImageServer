@@ -33,7 +33,7 @@ trait TilerTrait
     protected $setRendererTile;
 
     /**
-     * @var bool
+     * @var string
      */
     protected $removeDestination;
 
@@ -67,7 +67,7 @@ trait TilerTrait
         $this->entityManager = $services->get('Omeka\EntityManager');
         $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
 
-        $this->removeDestination = (bool) $this->getArg('remove_destination', false);
+        $this->removeDestination = $this->getArg('remove_destination', 'skip') ?: 'skip';
         $this->updateRenderer = $this->getArg('update_renderer', false) ?: false;
     }
 

@@ -216,13 +216,14 @@ To save the height and the width of all images and derivatives allows to speed u
                 'options' => [
                     'label' => 'Limit process to prepare tiles', // @translate
                     'value_options' => [
-                        '0' => 'Skip media with existing tiles', // @translate
-                        '1' => 'Remove existing tiles', // @translate
+                        'skip' => 'Keep existing', // @translate
+                        'specific' => 'Remove existing tiles for the specified format', // @translate
+                        'all' => 'Remove all existing tiles', // @translate
                     ],
                 ],
                 'attributes' => [
                     'id' => 'remove_destination',
-                    'value' => '0',
+                    'value' => 'skip',
                 ],
             ])
             ->add([

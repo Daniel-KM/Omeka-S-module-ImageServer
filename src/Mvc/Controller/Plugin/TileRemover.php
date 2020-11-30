@@ -3,7 +3,7 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
-use Omeka\Api\Representation\MediaRepresentation;
+use Omeka\Entity\Media;
 
 class TileRemover extends AbstractPlugin
 {
@@ -37,10 +37,10 @@ class TileRemover extends AbstractPlugin
     /**
      * Remove all tiles for a media, for all formats by default.
      *
-     * @param \Omeka\Api\Representation\MediaRepresentation $media
+     * @param \Omeka\Entity\Media $media
      * @param array|string $formats
      */
-    public function __invoke(MediaRepresentation $media, array $formats = [])
+    public function __invoke(Media $media, array $formats = [])
     {
         if (empty($this->tileDir)) {
             return;

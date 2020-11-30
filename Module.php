@@ -282,7 +282,7 @@ SQL;
         unset($query['submit']);
         $params['query'] = $query;
 
-        $params['remove_destination'] = (bool) $params['remove_destination'];
+        $params['remove_destination'] = $params['remove_destination'];
         $params['update_renderer'] = empty($params['update_renderer']) ? false : $params['update_renderer'];
         $params['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
         $params = array_intersect_key($params, ['query' => null, 'tasks' => null, 'remove_destination' => null, 'filter' => null, 'update_renderer' => null]);
@@ -417,7 +417,7 @@ SQL;
             'tasks' => ['size', 'tile'],
             'query' => ['id' => $item->getId()],
             'filter' => 'unsized',
-            'remove_destination' => false,
+            'remove_destination' => 'skip',
             'update_renderer' => false,
         ];
 
@@ -470,7 +470,7 @@ SQL;
             'tasks' => $tasks,
             'query' => ['id' => $media->getId()],
             'filter' => 'all',
-            'remove_destination' => true,
+            'remove_destination' => 'all',
             'update_renderer' => false,
         ];
 
@@ -496,8 +496,7 @@ SQL;
         $services = $this->getServiceLocator();
         $tileRemover = $services->get('ControllerPluginManager')->get('tileRemover');
         $media = $event->getTarget();
-        $mediaRepr = $services->get('Omeka\ApiAdapterManager')->get('media')->getRepresentation($media);
-        $tileRemover($mediaRepr);
+        $tileRemover($media);
     }
 
     /**

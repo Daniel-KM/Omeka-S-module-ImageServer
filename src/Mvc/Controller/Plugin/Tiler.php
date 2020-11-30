@@ -33,7 +33,7 @@ class Tiler extends AbstractPlugin
      * Tile a media.
      *
      * @var MediaRepresentation $media
-     * @var bool $removeDestination
+     * @var string|bool $removeDestination
      * @return array|null Null on error, else data about tiling, with a boolean
      * for key "result".
      */
@@ -87,7 +87,13 @@ class Tiler extends AbstractPlugin
         $tileDir = $this->params['basePath'] . DIRECTORY_SEPARATOR . $this->params['tile_dir'];
         $tileDir = dirname($tileDir . DIRECTORY_SEPARATOR . $storageId);
 
-        $this->params['destinationRemove'] = $removeDestination;
+        if (!is_string($removeDestination)) {
+            $removeDestination = $removeDestination ? 'specific' : 'skip';
+        }
+        if ($removeDestination === 'all') {
+            $this->getController()->tileRemover($media);
+        }
+        $this->params['destinationRemove'] = in_array($removeDestination, ['specific', 'all']);
 
         $tileBuilder = new TileBuilder();
         try {
