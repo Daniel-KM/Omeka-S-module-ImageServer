@@ -39,7 +39,7 @@ use Omeka\File\TempFileFactory;
  *
  * @package ImageServer
  */
-class GD extends AbstractImageServer
+class GD extends AbstractImager
 {
     /**
      * List of managed IIIF media types.

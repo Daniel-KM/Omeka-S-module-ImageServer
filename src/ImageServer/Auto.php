@@ -38,7 +38,7 @@ use Omeka\File\TempFileFactory;
  *
  * @package ImageServer
  */
-class Auto extends AbstractImageServer
+class Auto extends AbstractImager
 {
     protected $_gdMediaTypes = [];
     protected $_imagickMediaTypes = [];

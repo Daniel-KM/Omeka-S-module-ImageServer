@@ -40,7 +40,7 @@ use Laminas\Log\LoggerAwareTrait;
  *
  * @package ImageServer
  */
-abstract class AbstractImageServer implements LoggerAwareInterface, TranslatorAwareInterface
+abstract class AbstractImager implements LoggerAwareInterface, TranslatorAwareInterface
 {
     use LoggerAwareTrait, TranslatorAwareTrait;
 

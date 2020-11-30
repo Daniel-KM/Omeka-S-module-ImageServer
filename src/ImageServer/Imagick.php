@@ -39,7 +39,7 @@ use Omeka\File\TempFileFactory;
  *
  * @package ImageServer
  */
-class Imagick extends AbstractImageServer
+class Imagick extends AbstractImager
 {
     /**
      * List of managed IIIF media types.

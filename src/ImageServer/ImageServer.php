@@ -30,13 +30,13 @@
 
 namespace ImageServer\ImageServer;
 
-use Laminas\I18n\Translator\TranslatorAwareInterface;
-use Laminas\I18n\Translator\TranslatorAwareTrait;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
+use Laminas\Log\LoggerInterface;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
 use Omeka\Settings\Settings;
+use Omeka\Stdlib\Message;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
@@ -45,12 +45,19 @@ use Omeka\Settings\Settings;
  *
  * @package ImageServer
  */
-class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
+class ImageServer implements LoggerAwareInterface
 {
-    use LoggerAwareTrait, TranslatorAwareTrait;
+    use LoggerAwareTrait;
 
-    protected $_creator;
-    protected $_args = [];
+    /**
+     * @var AbstractImager
+     */
+    protected $imager;
+
+    /**
+     * @var array
+     */
+    protected $args = [];
 
     /**
      * @var TempFileFactory
@@ -71,30 +78,50 @@ class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
         TempFileFactory $tempFileFactory,
         $store,
         array $commandLineArgs,
-        Settings $settings
+        Settings $settings,
+        LoggerInterface $logger
     ) {
         $this->tempFileFactory = $tempFileFactory;
         $this->store = $store;
         $this->commandLineArgs = $commandLineArgs;
-        $creatorClass = $settings->get('imageserver_image_creator', 'Auto');
-        $this->setCreator('\\ImageServer\\ImageServer\\' . $creatorClass);
+        $this->setLogger($logger);
+        $imagerClass = $settings->get('imageserver_image_creator', 'Auto');
+        $this->setImager('\\ImageServer\\ImageServer\\' . $imagerClass);
     }
 
-    public function setCreator($creatorClass)
+    public function setImager($imagerClass): self
     {
+        $imagerClasses = [
+            '\\ImageServer\\ImageServer\\Auto',
+            '\\ImageServer\\ImageServer\\GD',
+            '\\ImageServer\\ImageServer\\Imagick',
+            '\\ImageServer\\ImageServer\\ImageMagick',
+        ];
+        if (!in_array($imagerClass, $imagerClasses)) {
+            throw new \RuntimeException((string) new Message(
+                'The imager "%s" is not supported.', // @translate
+                $imagerClass
+            ));
+        }
         $needCli = [
             '\\ImageServer\\ImageServer\\Auto',
             '\\ImageServer\\ImageServer\\ImageMagick',
         ];
-        $this->_creator = in_array($creatorClass, $needCli)
-            ? new $creatorClass($this->tempFileFactory, $this->store, $this->commandLineArgs)
-            : new $creatorClass($this->tempFileFactory, $this->store);
+        $this->imager = in_array($imagerClass, $needCli)
+            ? new $imagerClass($this->tempFileFactory, $this->store, $this->commandLineArgs)
+            : new $imagerClass($this->tempFileFactory, $this->store);
+        $this->imager->setLogger($this->getLogger());
         return $this;
     }
 
-    public function setArgs(array $args)
+    public function getImager(): ?AbstractImager
     {
-        $this->_args = $args;
+        return $this->imager;
+    }
+
+    public function setArgs(array $args): self
+    {
+        $this->args = $args;
         return $this;
     }
 
@@ -111,10 +138,7 @@ class ImageServer implements LoggerAwareInterface, TranslatorAwareInterface
         if (!is_null($args)) {
             $this->setArgs($args);
         }
-
-        return $this->_creator
-            ->setLogger($this->getLogger())
-            ->setTranslator($this->getTranslator())
-            ->transform($this->_args);
+        return $this->imager
+            ->transform($this->args);
     }
 }
