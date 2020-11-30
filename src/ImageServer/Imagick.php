@@ -76,6 +76,11 @@ class Imagick extends AbstractImager
         $this->tempFileFactory = $tempFileFactory;
         $this->store = $store;
         $this->supportedFormats = array_map('strtolower', array_intersect($this->supportedFormats, \Imagick::queryFormats()));
+
+        // The IIIF standard requires "tif", not "tiff".
+        if (isset($this->supportedFormats['image/tiff'])) {
+            $this->supportedFormats['image/tiff'] = 'tif';
+        }
     }
 
     /**
