@@ -80,7 +80,7 @@ trait TilerTrait
         }
 
         $this->logger->info(new Message(
-            'Media #%d: Starting tiling', // @translate
+            'Media #%d: Start tiling', // @translate
             $media->id()
         ));
 

@@ -112,7 +112,7 @@ trait SizerTrait
         }
         if (count($failedTypes)) {
             $this->logger->err(new Message(
-                'Media #%1$d: Error getting dimensions of for types "%2$s".', // @translate
+                'Media #%1$d: Error getting dimensions for types "%2$s".', // @translate
                 $mediaEntity->getId(),
                 implode('", "', $failedTypes)
             ));
