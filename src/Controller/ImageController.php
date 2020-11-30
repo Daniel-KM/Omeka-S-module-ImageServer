@@ -217,35 +217,16 @@ class ImageController extends AbstractActionController
 
                     // Check if a light transformation is needed (all except
                     // extraction of the region).
-                    if (($pretiled['overlap'] && !$pretiled['isSingleCell'])
+                    if (($pretiled['source']['overlap'] && !$pretiled['cell']['isSingleCell'])
                         || $transform['mirror']['feature'] != 'default'
                         || $transform['rotation']['feature'] != 'noRotation'
                         || $transform['quality']['feature'] != 'default'
-                        || $transform['format']['feature'] != $pretiled['media_type']
+                        || $transform['format']['feature'] != $pretiled['source']['media_type']
                     ) {
                         $args = $transform;
-                        $args['source']['filepath'] = $pretiled['filepath'];
-                        $args['source']['media_type'] = $pretiled['media_type'];
-                        $args['source']['width'] = $pretiled['width'];
-                        $args['source']['height'] = $pretiled['height'];
-                        // The tile server returns always the true tile, so crop
-                        // it when there is an overlap.
-                        if ($pretiled['overlap']) {
-                            $args['region']['feature'] = 'regionByPx';
-                            $args['region']['x'] = $pretiled['isFirstColumn'] ? 0 : $pretiled['overlap'];
-                            $args['region']['y'] = $pretiled['isFirstRow'] ? 0 : $pretiled['overlap'];
-                            $args['region']['width'] = $pretiled['size'];
-                            $args['region']['height'] = $pretiled['size'];
-                        }
-                        // Normal tile.
-                        else {
-                            $args['region']['feature'] = 'full';
-                            $args['region']['x'] = 0;
-                            $args['region']['y'] = 0;
-                            $args['region']['width'] = $pretiled['width'];
-                            $args['region']['height'] = $pretiled['height'];
-                        }
-                        $args['size']['feature'] = 'max';
+                        $args['source'] = $pretiled['source'];
+                        $args['region'] = $pretiled['region'];
+                        $args['size'] = $pretiled['size'];
                         $imagePath = $this->imageServer()->transform($args);
                     }
                     // No transformation.
@@ -793,7 +774,6 @@ class ImageController extends AbstractActionController
      */
     protected function _usePreTiled(MediaRepresentation $media, array $transform): ?array
     {
-        // TODO Fix the use of pre-tiled images with an arbitrary size.
         $tileInfo = $this->tileInfo($media);
         return $tileInfo
             ? $this->tileServer($tileInfo, $transform)

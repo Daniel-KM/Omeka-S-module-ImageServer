@@ -42,7 +42,7 @@ class TileServer extends AbstractPlugin
      *
      * @todo For non standard requests, the tiled images may be used to rebuild
      * a fullsize image that is larger the Omeka derivatives. In that case,
-     * multiple tiles should be joined.
+     * multiple tiles should be joined. Use vips.
      *
      * Because the position of the requested region may be anything (it depends
      * of the client), until four images may be needed to build the resulting

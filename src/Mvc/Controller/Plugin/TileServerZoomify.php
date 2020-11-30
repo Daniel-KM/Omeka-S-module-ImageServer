@@ -39,7 +39,8 @@ class TileServerZoomify extends TileServer
 
         // Quick check of supported transformation of tiles.
         if (!in_array($transform['region']['feature'], ['regionByPx', 'regionByPct', 'full'])
-            || !in_array($transform['size']['feature'], ['sizeByW', 'sizeByH', 'sizeByWh', 'sizeByWhListed', 'full', 'max'])
+            // || !in_array($transform['size']['feature'], ['sizeByW', 'sizeByH', 'sizeByWh', 'sizeByWhListed', 'full', 'max'])
+            || !in_array($transform['size']['feature'], ['full', 'max'])
         ) {
             return null;
         }
@@ -91,18 +92,47 @@ class TileServerZoomify extends TileServer
 
         list($tileWidth, $tileHeight) = array_values($this->getWidthAndHeight($imagePath));
 
+        // TODO To be checked.
+        if ($tileInfo['overlap']) {
+            $region = [
+                'feature' => 'regionByPx',
+                'x' => $cellData['isFirstColumn'] ? 0 : $tileInfo['overlap'],
+                'y' => $cellData['isFirstRow'] ? 0 : $tileInfo['overlap'],
+                'width' => $tileWidth,
+                'height' => $tileHeight,
+            ];
+        }
+        // Normal tile.
+        else {
+            $region = [
+                'feature' => 'full',
+                'x' => 0,
+                'y' => 0,
+                'width' => $tileWidth,
+                'height' => $tileHeight,
+            ];
+        }
+
         $result = [
-            'fileurl' => $imageUrl,
-            'filepath' => $imagePath,
-            // Useful?
-            'derivativeType' => 'tile',
-            'media_type' => 'image/jpeg',
-            'width' => $tileWidth,
-            'height' => $tileHeight,
-            'overlap' => $tileInfo['overlap'],
+            'cell' => $cellData,
+            'source' => [
+                'fileurl' => $imageUrl,
+                'filepath' => $imagePath,
+                // Useful?
+                'derivativeType' => 'tile',
+                'media_type' => 'image/jpeg',
+                'width' => $tileWidth,
+                'height' => $tileHeight,
+                'overlap' => $tileInfo['overlap'],
+            ],
+            // Only full size is supported currently.
+            'region' => $region,
+            'size' => [
+                'feature' => 'max',
+            ],
         ];
 
-        return $result + $cellData;
+        return $result;
     }
 
     /**
