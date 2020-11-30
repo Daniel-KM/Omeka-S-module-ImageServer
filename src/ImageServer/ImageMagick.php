@@ -245,10 +245,10 @@ class ImageMagick extends AbstractImager
         }
 
         // Save resulted resource into the specified format.
-        $extension = $this->supportedFormats[$args['format']['feature']];
-        $tempFile = $this->tempFileFactory->build();
-        $destination = $tempFile->getTempPath() . '.' . $extension;
-        $tempFile->delete();
+        $destination = $this->prepareDestinationPath();
+        if (!$destination) {
+            return null;
+        }
 
         $command = sprintf(
             '%s %s %s %s',

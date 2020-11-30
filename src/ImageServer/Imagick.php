@@ -203,10 +203,10 @@ class Imagick extends AbstractImager
         }
 
         // Save resulted resource into the specified format.
-        $extension = $this->supportedFormats[$args['format']['feature']];
-        $tempFile = $this->tempFileFactory->build();
-        $destination = $tempFile->getTempPath() . '.' . $extension;
-        $tempFile->delete();
+        $destination = $this->prepareDestinationPath();
+        if (!$destination) {
+            return null;
+        }
 
         $imagick->setImageFormat($this->supportedFormats[$args['format']['feature']]);
         $result = $imagick->writeImage($this->supportedFormats[$args['format']['feature']] . ':' . $destination);

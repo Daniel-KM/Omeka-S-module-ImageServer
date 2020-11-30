@@ -268,10 +268,10 @@ class GD extends AbstractImager
 
         // Save resulted resource into the specified format.
         // TODO Use a true name to allow cache, or is it managed somewhere else?
-        $extension = $this->supportedFormats[$args['format']['feature']];
-        $tempFile = $this->tempFileFactory->build();
-        $destination = $tempFile->getTempPath() . '.' . $extension;
-        $tempFile->delete();
+        $destination = $this->prepareDestinationPath();
+        if (!$destination) {
+            return null;
+        }
 
         switch ($args['format']['feature']) {
             case 'image/jpeg':

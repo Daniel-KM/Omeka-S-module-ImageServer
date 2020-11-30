@@ -255,4 +255,30 @@ abstract class AbstractImager implements LoggerAwareInterface
             (int) $destinationHeight,
         ];
     }
+
+    protected function prepareDestinationPath(): ?string
+    {
+        if (empty($this->args['destination']['filepath'])) {
+            $extension = $this->supportedFormats[$this->args['format']['feature']];
+            $tempFile = $this->tempFileFactory->build();
+            $destination = $tempFile->getTempPath() . '.' . $extension;
+            $tempFile->delete();
+            return $destination;
+        }
+
+        $destination = $this->args['destination']['filepath'];
+        if (file_exists($destination)) {
+            if (!is_writeable($destination)) {
+                $message = new Message('Unable to save the file \"%s\".', $destination); // @translate
+                $this->getLogger()->err($message);
+                return null;
+            }
+            @unlink($destination);
+            return $destination;
+        }
+
+        return is_writeable(dirname($destination))
+            ? $destination
+            : null;
+    }
 }
