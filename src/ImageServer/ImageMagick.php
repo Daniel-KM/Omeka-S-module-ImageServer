@@ -131,9 +131,9 @@ class ImageMagick extends AbstractImager
      * @param array $args List of arguments for the transformation.
      * @return string|null The filepath to the temp image if success.
      */
-    public function transform(array $args = null): ?string
+    public function transform(array $args): ?string
     {
-        if (empty($args)) {
+        if (!count($args)) {
             return null;
         }
 

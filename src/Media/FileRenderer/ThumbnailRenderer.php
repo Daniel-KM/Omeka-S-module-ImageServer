@@ -83,6 +83,10 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
                 'crossOriginPolicy' => 'Anonymous',
                 'ajaxWithCredentials' => false,
             ];
+        } elseif (empty($mediaTileInfo['metadata_path'])) {
+            // Render a single file without metadata for tiled tiff or jpeg2000,
+            // so use iiif image server.
+            $tileSources = [$view->iiifInfo($media)];
         } else {
             // Deepzoom just needs the metadata url.
             $tileSources = $mediaTileInfo['url_base'] . '/' . $mediaTileInfo['metadata_path'];

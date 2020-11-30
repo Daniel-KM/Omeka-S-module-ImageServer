@@ -119,7 +119,7 @@ abstract class AbstractImager implements LoggerAwareInterface
      * @param array $args List of arguments for the transformation.
      * @return string|null The filepath to the temp image if success.
      */
-    abstract public function transform(array $args = null): ?string;
+    abstract public function transform(array $args): ?string;
 
     /**
      * Prepare the extraction from the source and the requested region and size.

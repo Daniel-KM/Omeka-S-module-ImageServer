@@ -237,12 +237,23 @@ class ImageController extends AbstractActionController
 
                 // The image needs to be transformed dynamically.
                 else {
-                    $maxFileSize = $settings->get('imageserver_image_max_size');
-                    if (!empty($maxFileSize) && $media->size() > $maxFileSize) {
-                        return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
-                            'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.', // @translate
-                            \Laminas\Http\Response::STATUS_CODE_500
-                        ));
+                    // Vips can manage any size instantly, so skip check of it.
+                    $imager = $settings->get('imageserver_imager');
+                    if ($imager === 'Auto') {
+                        /** @var \ImageServer\ImageServer\Auto $imager */
+                        $imager = $this->imageServer()->getImager()->getImager($transform);
+                        if ($imager && $imager instanceof \ImageServer\ImageServer\Vips) {
+                            $imager = 'Vips';
+                        }
+                    }
+                    if ($imager !== 'Vips') {
+                        $maxFileSize = $settings->get('imageserver_image_max_size');
+                        if (!empty($maxFileSize) && $media->size() > $maxFileSize) {
+                            return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
+                                'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.', // @translate
+                                \Laminas\Http\Response::STATUS_CODE_500
+                            ));
+                        }
                     }
                     $imagePath = $this->imageServer()->transform($transform);
                 }

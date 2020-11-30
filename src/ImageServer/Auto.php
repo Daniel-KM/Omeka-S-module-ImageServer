@@ -99,14 +99,14 @@ class Auto extends AbstractImager
         $this->store = $store;
         $this->commandLineArgs = $commandLineArgs;
 
-        $processor = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        $this->supportedFormats = $processor->getSupportedFormats();
-        $processor = new GD($this->tempFileFactory, $this->store);
-        $this->supportedFormats = array_merge($this->supportedFormats, $processor->getSupportedFormats());
-        $processor = new Imagick($this->tempFileFactory, $this->store);
-        $this->supportedFormats = array_merge($this->supportedFormats, $processor->getSupportedFormats());
-        $processor = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        $this->supportedFormats = array_merge($this->supportedFormats, $processor->getSupportedFormats());
+        $imager = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
+        $this->supportedFormats = $imager->getSupportedFormats();
+        $imager = new GD($this->tempFileFactory, $this->store);
+        $this->supportedFormats = array_merge($this->supportedFormats, $imager->getSupportedFormats());
+        $imager = new Imagick($this->tempFileFactory, $this->store);
+        $this->supportedFormats = array_merge($this->supportedFormats, $imager->getSupportedFormats());
+        $imager = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
+        $this->supportedFormats = array_merge($this->supportedFormats, $imager->getSupportedFormats());
     }
 
     /**
@@ -117,13 +117,28 @@ class Auto extends AbstractImager
      * @param array $args List of arguments for the transformation.
      * @return string|null The filepath to the temp image if success.
      */
-    public function transform(array $args = null): ?string
+    public function transform(array $args): ?string
     {
-        $processor = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        if ($processor->checkMediaType($args['source']['media_type'])
-            && $processor->checkMediaType($args['format']['feature'])
+        if (!count($args)) {
+            return null;
+        }
+
+        $imager = $this->getImager($args);
+        if (empty($imager)) {
+            return null;
+        }
+
+        return $imager->transform($args);
+    }
+
+    public function getImager(array $args)
+    {
+        $imager = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
+        if ($imager->checkMediaType($args['source']['media_type'])
+            && $imager->checkMediaType($args['format']['feature'])
         ) {
-            return $processor->transform($args);
+            return $imager
+                ->setLogger($this->getLogger());
         }
 
         // GD seems to be 15% speeder, so it is used first if available.
@@ -132,24 +147,27 @@ class Auto extends AbstractImager
             // The arbitrary rotation is not managed currently.
             && $args['rotation']['feature'] != 'rotationArbitrary'
         ) {
-            $processor = new GD($this->tempFileFactory, $this->store);
-            return $processor->transform($args);
+            $imager = new GD($this->tempFileFactory, $this->store);
+            return $imager
+                ->setLogger($this->getLogger());
         }
 
         // Else use the extension Imagick, that manages more formats.
         if (!empty($this->_imagickMediaTypes[$args['source']['media_type']])
             && !empty($this->_imagickMediaTypes[$args['format']['feature']])
         ) {
-            $processor = new Imagick($this->tempFileFactory, $this->store);
-            return $processor->transform($args);
+            $imager = new Imagick($this->tempFileFactory, $this->store);
+            return $imager
+                ->setLogger($this->getLogger());
         }
 
         // Else use the command line ImageMagick.
-        $processor = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        if ($processor->checkMediaType($args['source']['media_type'])
-            && $processor->checkMediaType($args['format']['feature'])
+        $imager = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
+        if ($imager->checkMediaType($args['source']['media_type'])
+            && $imager->checkMediaType($args['format']['feature'])
         ) {
-            return $processor->transform($args);
+            return $imager
+                ->setLogger($this->getLogger());
         }
 
         return null;

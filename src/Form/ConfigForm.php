@@ -173,7 +173,8 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     'label' => 'Max dynamic size for images', // @translate
                     'info' => $this->translate('Set the maximum size in bytes for the dynamic processing of images.') // @translate
                         . ' ' . $this->translate('Beyond this limit, the plugin will require a tiled image.') // @translate
-                        . ' ' . $this->translate('Let empty to allow processing of any image.'), // @translate
+                        . ' ' . $this->translate('Let empty to allow processing of any image.') // @translate
+                        . ' ' . $this->translate('With vips, this option is bypassed.') // @translate
                 ],
                 'attributes' => [
                     'id' => 'imageserver-image-max-size',
