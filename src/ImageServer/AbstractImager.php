@@ -90,6 +90,28 @@ abstract class AbstractImager implements LoggerAwareInterface
     }
 
     /**
+     * Check if an extension is supported.
+     *
+     * @param string $extension
+     * @return bool
+     */
+    public function checkExtension($extension): bool
+    {
+        return in_array(strtolower((string) $extension), $this->supportedFormats);
+    }
+
+    /**
+     * Get extension for a media type.
+     *
+     * @param string $mediaType
+     * @return ?string
+     */
+    public function getExtensionForMediaType($mediaType): ?string
+    {
+        return $this->supportedFormats[$mediaType] ?? null;
+    }
+
+    /**
      * Transform an image into another image according to params.
      *
      * @internal The args are currently already checked in the controller.

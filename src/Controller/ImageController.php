@@ -643,8 +643,8 @@ class ImageController extends AbstractActionController
         // The regex in route checks it.
         $transform['quality']['feature'] = $quality;
 
-        // Determine the format.
-        // The regex in route checks it.
+        // Determine the format. The regex in route checks it first.
+        // @see https://www.php.net/manual/fr/function.imagetypes.php
         $mediaTypes = [
             'jpg' => 'image/jpeg',
             'png' => 'image/png',
@@ -654,9 +654,9 @@ class ImageController extends AbstractActionController
             'jp2' => 'image/jp2',
             'webp' => 'image/webp',
         ];
-        // TODO Check if the tiler support it. Here, the rule is for gd. Manage other libraries.
-        // @see https://www.php.net/manual/fr/function.imagetypes.php
-        if (in_array($format, ['pdf', 'jp2', 'tif'])) {
+        if (!isset($mediaTypes, $format)
+            || !$this->imageServer()->getImager()->checkExtension($format)
+        ) {
             $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), $format));
             return null;
         }

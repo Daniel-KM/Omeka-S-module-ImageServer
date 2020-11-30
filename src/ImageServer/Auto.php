@@ -98,6 +98,13 @@ class Auto extends AbstractImager
         $this->tempFileFactory = $tempFileFactory;
         $this->store = $store;
         $this->commandLineArgs = $commandLineArgs;
+
+        $processor = new GD($this->tempFileFactory, $this->store);
+        $this->supportedFormats = $processor->getSupportedFormats();
+        $processor = new Imagick($this->tempFileFactory, $this->store);
+        $this->supportedFormats = array_merge($this->supportedFormats, $processor->getSupportedFormats());
+        $processor = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
+        $this->supportedFormats = array_merge($this->supportedFormats, $processor->getSupportedFormats());
     }
 
     /**
@@ -128,8 +135,14 @@ class Auto extends AbstractImager
             return $processor->transform($args);
         }
 
-        // Else use the command line convert, if available.
+        // Else use the command line ImageMagick.
         $processor = new ImageMagick($this->tempFileFactory, $this->store, $this->commandLineArgs);
-        return $processor->transform($args);
+        if ($processor->checkMediaType($args['source']['media_type'])
+            && $processor->checkMediaType($args['format']['feature'])
+        ) {
+            return $processor->transform($args);
+        }
+
+        return null;
     }
 }

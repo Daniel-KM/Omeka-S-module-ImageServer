@@ -47,24 +47,19 @@ class ImageMagick extends AbstractImager
      * @var array
      */
     protected $supportedFormats = [
-        'image/jpeg' => 'JPG',
-        'image/png' => 'PNG',
-        'image/tiff' => 'TIFF',
-        'image/gif' => 'GIF',
-        'application/pdf' => 'PDF',
-        'image/jp2' => 'JP2',
-        'image/webp' => 'WEBP',
+        'image/jpeg' => 'jpeg',
+        'image/png' => 'png',
+        'image/tiff' => 'tiff',
+        'image/gif' => 'gif',
+        'application/pdf' => 'pdf',
+        'image/jp2' => 'jp2',
+        'image/webp' => 'webp',
     ];
 
     /**
      * @var Cli
      */
     protected $cli;
-
-    /**
-     * @var string
-     */
-    protected $convertDir;
 
     /**
      * Path to the ImageMagick "convert" command.
@@ -97,7 +92,36 @@ class ImageMagick extends AbstractImager
         $this->store = $store;
         $this->cli = $commandLineArgs['cli'];
         $this->convertPath = $commandLineArgs['convertPath'];
-        $this->supportedFormats = array_map('strtolower', array_intersect($this->supportedFormats, \Imagick::queryFormats()));
+        if (empty($this->convertPath)) {
+            $this->supportedFormats = [];
+            return;
+        }
+
+        // The version list the common formats simpler than "-list format", but
+        // it is not complete.
+        $command = sprintf($this->convertPath . ' -list format 2>/dev/null ; echo ""', $this->convertPath);
+        $result = $this->cli->execute($command);
+        $matches = [];
+        // For simplicity, manage only read and write formats.
+        if (preg_match_all('~^\s*(?<format>[^ *]+)\*?\s+(?<module>[^ ]+)\s+(?<mode>rw).*$~m', $result, $matches, PREG_SET_ORDER, 0)) {
+            $formats = [];
+            foreach ($matches as $match) {
+                $key = array_search(strtolower($match['module']), $this->supportedFormats);
+                if ($key) {
+                    $formats[$key] = $this->supportedFormats[$key];
+                }
+            }
+            $this->supportedFormats = $formats;
+            // The IIIF standard requires "jpg" and "tif", not "jpeg" or "tiff".
+            if (isset($this->supportedFormats['image/jpeg'])) {
+                $this->supportedFormats['image/jpeg'] = 'jpg';
+            }
+            if (isset($this->supportedFormats['image/tiff'])) {
+                $this->supportedFormats['image/tiff'] = 'tif';
+            }
+        } else {
+            $this->supportedFormats = [];
+        }
     }
 
     /**
