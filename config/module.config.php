@@ -398,7 +398,7 @@ return [
             'imageserver_tile_fallback' => 'tile_large',
         ],
         'site_settings' => [
-            'imageserver_default_thumbnail_type' => 'tile',
+            'imageserver_default_thumbnail_type' => 'large',
             'imageserver_tile_fallback' => 'tile_large',
         ],
     ],
