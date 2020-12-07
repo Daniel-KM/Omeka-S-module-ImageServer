@@ -258,8 +258,7 @@ To save the height and the width of all images and derivatives allows to speed u
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Query', // @translate
-                    'info' => $this->translate('This query will be used to select all items whose attached images will be prepared in the background.') // @translate
-                        . ' ' . $this->translate('Warning: The renderer of all tiled images will be set to "tile".'), // @translate
+                    'info' => 'This query will be used to select all items whose attached images will be prepared in the background.', // @translate
                     'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
                 ],
                 'attributes' => [
