@@ -101,7 +101,7 @@ class Vips extends AbstractImager
             return;
         }
 
-        // The version list the common formats simpler than "-list format", but
+        // The version lists the common formats simpler than "-list format", but
         // it is not complete.
         // Available only in version 8.8.
         // $command = sprintf($this->vipsPath . ' -l foreign | grep save', $this->vipsPath);
