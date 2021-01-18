@@ -167,8 +167,8 @@ class MediaController extends AbstractActionController
         // TODO This is a local file (normal server): use 200.
 
         // Redirect (302/307) to the url of the file.
-        $fileurl = $media->originalUrl();
-        return $this->redirect()->toUrl($fileurl);
+        $fileUrl = $media->originalUrl();
+        return $this->redirect()->toUrl($fileUrl);
     }
 
     /**

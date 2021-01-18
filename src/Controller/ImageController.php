@@ -61,6 +61,22 @@ class ImageController extends AbstractActionController
      */
     protected $version;
 
+    /**
+     * Standard and common Iiif media types.
+     *
+     * @var array
+     */
+    protected $mediaTypes = [
+        'jpg' => 'image/jpeg',
+        'png' => 'image/png',
+        'tif' => 'image/tiff',
+        'gif' => 'image/gif',
+        'pdf' => 'application/pdf',
+        'jp2' => 'image/jp2',
+        'webp' => 'image/webp',
+    ];
+
+
     public function __construct(
         $basePath
     ) {
@@ -310,6 +326,26 @@ class ImageController extends AbstractActionController
                 \Laminas\Http\Response::STATUS_CODE_500
             ));
         }
+    }
+
+    public function placeholderAction()
+    {
+        $response = $this->getResponse();
+
+        // TODO Manage other placeholders or use a setting.
+        $placeholder = 'img/thumbnails/placeholder-image.png';
+        $extension = pathinfo($placeholder, PATHINFO_EXTENSION);
+
+        // Header for CORS, required for access.
+        $response->getHeaders()
+            ->addHeaderLine('access-control-allow-origin', '*')
+            ->addHeaderLine('Content-Type', $this->mediaTypes[$extension]);
+
+        // TODO This is a local file (normal server): use 200.
+
+        // Redirect (302/307) to the url of the file.
+        $assetUrl = $this->viewHelpers()->get('assetUrl')->__invoke($placeholder, 'ImageServer');
+        return $this->redirect()->toUrl($assetUrl);
     }
 
     /**
@@ -656,22 +692,13 @@ class ImageController extends AbstractActionController
 
         // Determine the format. The regex in route checks it first.
         // @see https://www.php.net/manual/fr/function.imagetypes.php
-        $mediaTypes = [
-            'jpg' => 'image/jpeg',
-            'png' => 'image/png',
-            'tif' => 'image/tiff',
-            'gif' => 'image/gif',
-            'pdf' => 'application/pdf',
-            'jp2' => 'image/jp2',
-            'webp' => 'image/webp',
-        ];
-        if (!isset($mediaTypes, $format)
+        if (!isset($this->mediaTypes, $format)
             || !$this->imageServer()->getImager()->checkExtension($format)
         ) {
             $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), $format));
             return null;
         }
-        $transform['format']['feature'] = $mediaTypes[$format];
+        $transform['format']['feature'] = $this->mediaTypes[$format];
 
         return $transform;
     }

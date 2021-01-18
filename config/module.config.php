@@ -243,6 +243,24 @@ return [
                             ],
                         ],
                     ],
+
+                    // Special route for the canvas placeholder in manifest v2,
+                    // that is used in particular when there is no image server
+                    // or when the media is private.
+                    // @see \IiifServer\View\Helper\IiifManifest2::_iiifCanvasPlaceholder()
+                    'placeholder' => [
+                        'type' => \Laminas\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '[/:version]/ixif-message-0/res/placeholder',
+                            'constraints' => [
+                                'version' => '2|3',
+                            ],
+                            'defaults' => [
+                                'version' => $version,
+                                'action' => 'placeholder',
+                            ],
+                        ],
+                    ],
                 ],
             ],
 
