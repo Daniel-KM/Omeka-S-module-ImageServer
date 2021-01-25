@@ -3,8 +3,8 @@
 namespace ImageServer\File\Thumbnailer;
 
 use Omeka\File\Exception;
-use Omeka\File\Thumbnailer\AbstractThumbnailer;
 use Omeka\File\TempFileFactory;
+use Omeka\File\Thumbnailer\AbstractThumbnailer;
 use Omeka\Stdlib\Cli;
 
 class Vips extends AbstractThumbnailer
@@ -12,9 +12,16 @@ class Vips extends AbstractThumbnailer
     const VIPS_COMMAND = 'vips';
 
     /**
-     * @var string Path to the "vips" command
+     * @var string|false Path to the "vips" command. False means unavailable.
      */
     protected $vipsPath;
+
+    /**
+     * Old means version < 8.6.
+     *
+     * @var bool
+     */
+    protected $isOldVips;
 
     /**
      * @var Cli
@@ -39,15 +46,18 @@ class Vips extends AbstractThumbnailer
     public function setOptions(array $options)
     {
         parent::setOptions($options);
-        if (!isset($this->vipsPath)) {
+        if (is_null($this->vipsPath)) {
             $this->setVipsPath($this->getOption('vips_dir'));
         }
     }
 
     public function create($strategy, $constraint, array $options = [])
     {
-        $version = (string) $this->cli->execute($this->vipsPath . ' --version');
-        if (version_compare($version, 'vips-8.6', '<')) {
+        if ($this->vipsPath === false) {
+            throw new Exception\CannotCreateThumbnailException;
+        }
+
+        if ($this->getIsOldVips()) {
             return $this->createWithOldVips($strategy, $constraint, $options);
         }
 
@@ -182,20 +192,38 @@ class Vips extends AbstractThumbnailer
      *
      * @param string $vipsDir
      */
-    public function setVipsPath($vipsDir)
+    public function setVipsPath($vipsDir): self
     {
         $cli = $this->cli;
-        if ($vipsDir) {
+        if (is_null($vipsDir)) {
+            $vipsPath = $cli->getCommandPath(self::VIPS_COMMAND);
+            if (false === $vipsPath) {
+                throw new Exception\InvalidThumbnailerException('Vips error: cannot determine path to vips command.');
+            }
+        } elseif ($vipsDir) {
             $vipsPath = $cli->validateCommand($vipsDir, self::VIPS_COMMAND);
             if (false === $vipsPath) {
                 throw new Exception\InvalidThumbnailerException('Vips error: invalid vips command.');
             }
         } else {
-            $vipsPath = $cli->getCommandPath(self::VIPS_COMMAND);
-            if (false === $vipsPath) {
-                throw new Exception\InvalidThumbnailerException('Vips error: cannot determine path to vips command.');
-            }
+            $vipsPath = false;
         }
         $this->vipsPath = $vipsPath;
+        return $this;
+    }
+
+    public function setIsOldVips($isOldVips): self
+    {
+        $this->setIsOldVips = (bool) $isOldVips;
+        return $this;
+    }
+
+    public function getIsOldVips(): bool
+    {
+        if (is_null($this->isOldVips)) {
+            $version = (string) $this->cli->execute($this->vipsPath . ' --version');
+            $this->setIsOldVips = version_compare($version, 'vips-8.6', '<');
+        }
+        return $this->setIsOldVips;
     }
 }
