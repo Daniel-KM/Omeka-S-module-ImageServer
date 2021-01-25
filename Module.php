@@ -82,7 +82,7 @@ class Module extends AbstractModule
         $t = $services->get('MvcTranslator');
 
         $module = $moduleManager->getModule('Generic');
-        if ($module && version_compare($module->getIni('version'), '3.3.27', '<')) {
+        if ($module && version_compare($module->getIni('version') ?? '', '3.3.27', '<')) {
             $translator = $services->get('MvcTranslator');
             $message = new \Omeka\Stdlib\Message(
                 $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
