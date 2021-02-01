@@ -17,6 +17,11 @@ class BulkTiler extends AbstractJob
     const SQL_LIMIT = 25;
 
     /**
+     * @var \Omeka\Mvc\Controller\Plugin\Logger
+     */
+    protected $logger;
+
+    /**
      * @var int
      */
     protected $totalImages;
@@ -35,6 +40,7 @@ class BulkTiler extends AbstractJob
     {
         /** @var \Omeka\Api\Manager $api */
         $services = $this->getServiceLocator();
+        $this->logger = $services->get('Omeka\Logger');
         $api = $services->get('Omeka\ApiManager');
 
         $query = $this->getArg('query', []);
