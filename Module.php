@@ -330,7 +330,7 @@ SQL;
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $defaultSettings['imageserver_image_tile_dir'];
         if (empty($tileDir)) {
-            throw new ModuleCannotInstallException(new Message(
+            throw new ModuleCannotInstallException((string) new Message(
                 'The tile dir is not defined.', // @translate
                 $tileDir
             ));
