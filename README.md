@@ -111,7 +111,26 @@ or higher. Versions prior to 8.4 have not been tested.
 
 * Jpeg 2000
 
-To support Jpeg 2000, the format should be available with ImageMagick.
+To support Jpeg 2000, the format should be available with ImageMagick. It is
+available by default since version 6.9.1.2-1 (2015, Debian/Ubuntu 2017). In some
+cases, you may need to install openjpeg tools:
+
+```sh
+sudo apt install libopenjp2-tools
+```
+
+Or add a specific and maintained repository. See https://launchpad.net/~lyrasis/+archive/ubuntu/imagemagick-jp2.
+
+```sh
+sudo add-apt-repository ppa:lyrasis/imagemagick-jp2
+sudo apt-get update
+# Force install of the full stack, included libmagickcore-6.
+sudo apt install --reinstall libopenjp2-tools libopenjp2-7 imagemagick libmagickcore-6.q16-6
+# Check installed version.
+apt-cache policy imagemagick
+# Check support
+/usr/bin/convert --version
+```
 
 * Tiled pyramidal tiff
 
