@@ -105,9 +105,21 @@ To fix Amazon cors issues, see the [aws documentation].
 
 * Vips
 
-To install [vips], just run `sudo apt install libvips-tools` on Debian/Ubuntu,
-or `sudo yum install vips-tools` on Centos/RedHat. Recommanded version is 8.10
-or higher. Versions prior to 8.4 have not been tested.
+To install [vips], just run on Debian/Ubuntu, without the recommended graphical
+interface:
+
+```sh
+sudo apt install --no-install-recommends libvips-tools
+```
+
+or for on Centos/RedHat:
+
+```sh
+sudo dnf install vips-tools
+```
+
+Recommanded version is 8.10 or higher. Versions prior to 8.4 have not been
+tested.
 
 * Jpeg 2000
 
