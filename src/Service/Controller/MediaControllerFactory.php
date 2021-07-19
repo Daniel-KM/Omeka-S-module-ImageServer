@@ -7,7 +7,7 @@ use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class MediaControllerFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $services, $requestedNamed, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $store = $services->get('Omeka\File\Store');
         $config = $services->get('Config');
