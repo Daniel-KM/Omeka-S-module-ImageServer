@@ -6,6 +6,9 @@
         "daniel-km/deepzoom": "^0.6.2",
         "daniel-km/zoomify": "^1.0"
     },
+    "replace": {
+        "lsolesen/pel": "*"
+    },
     "license": "CECILL-2.1",
     "authors": [
         {
