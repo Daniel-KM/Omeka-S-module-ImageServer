@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2015-2020 Daniel Berthereau
+ * Copyright 2015-2021 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -37,6 +37,7 @@ if (!class_exists(\Generic\AbstractModule::class)) {
 }
 
 use Generic\AbstractModule;
+use ImageServer\Form\ConfigForm;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\ModuleManager\ModuleManager;
@@ -52,7 +53,6 @@ class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
 
-    // TODO Remove dependency to IIIF Server.
     protected $dependency = 'IiifServer';
 
     public function init(ModuleManager $moduleManager): void
@@ -103,12 +103,21 @@ class Module extends AbstractModule
         $module = $moduleManager->getModule('ArchiveRepertory');
         if ($module) {
             $version = $module->getDb('version');
-            // Check if installed.
-            if (empty($version)) {
-                // Nothing to do.
-            } elseif (version_compare($version, '3.15.4', '<')) {
+            if ($version && version_compare($version, '3.15.4', '<')) {
                 throw new ModuleCannotInstallException(
-                    $t->translate('This version requires Archive Repertory 3.15.4 or greater (used for some 3D views).') // @translate
+                    $t->translate('This version requires module %1$s %2$s or greater.'), // @translate
+                    'ArchiveRepertory', '3.15.4'
+                );
+            }
+        }
+
+        $module = $moduleManager->getModule('IiifServer');
+        if ($module) {
+            $version = $module->getDb('version');
+            if ($version && version_compare($version, '3.6.5.3', '<')) {
+                throw new ModuleCannotInstallException(
+                    $t->translate('This version requires module %1$s %2$s or greater.'), // @translate
+                    'IiifServer', '3.6.5.3'
                 );
             }
         }
@@ -256,25 +265,35 @@ SQL;
 
     public function handleConfigForm(AbstractController $controller)
     {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $form = $services->get('FormElementManager')->get(ConfigForm::class);
+        $params = $controller->getRequest()->getPost();
+
         if (!parent::handleConfigForm($controller)) {
             return false;
         }
 
-        $services = $this->getServiceLocator();
-        $settings = $services->get('Omeka\Settings');
         $urlHelper = $services->get('ViewHelperManager')->get('url');
         $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
         $settings->set('imageserver_base_url', $top);
 
         // Form is already validated in parent.
-        $params = (array) $controller->getRequest()->getPost();
-        if (empty($params['imageserver_bulk_prepare']['process'])
-            || empty($params['imageserver_bulk_prepare']['tasks'])
+        $post = $params;
+        $form->init();
+        $form->setData($params);
+        $form->isValid();
+        $params = $form->getData();
+
+        $this->normalizeMediaApiSettings($params);
+
+        if (empty($post['imageserver_bulk_prepare']['process'])
+            || empty($post['imageserver_bulk_prepare']['tasks'])
         ) {
             return true;
         }
 
-        $params = $params['imageserver_bulk_prepare'];
+        $params = $post['imageserver_bulk_prepare'];
 
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
@@ -320,6 +339,55 @@ SQL;
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
         return true;
+    }
+
+    /**
+     * Same in Iiif server and Image server.
+     *
+     * @see \ImageServer\Module::normalizeMediaApiSettings()
+     */
+    protected function normalizeMediaApiSettings(array $params): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+
+        // Check and normalize image api versions.
+        $defaultVersion = $params['iiifserver_media_api_default_version'] ?: '0';
+        $has = ['1' => null, '2' => null, '3' => null];
+        foreach ($params['iiifserver_media_api_supported_versions'] ?? [] as $supportedVersion) {
+            $service = strtok($supportedVersion, '/');
+            $level = strtok('/') ?: '0';
+            $has[$service] = isset($has[$service]) && $has[$service] > $level
+                ? $has[$service]
+                : $level;
+        }
+        $has = array_filter($has);
+        if ($defaultVersion && !isset($has[$defaultVersion])) {
+            $has[$defaultVersion] = '0';
+        }
+        ksort($has);
+        $supportedVersions = [];
+        foreach ($has as $service => $level) {
+            $supportedVersions[] = $service . '/' . $level;
+        }
+        $settings->set('iiifserver_media_api_default_version', $defaultVersion);
+        $settings->set('iiifserver_media_api_supported_versions', $supportedVersions);
+
+        // Avoid to do the computation each time for manifest v2, that supports
+        // only one service.
+        $defaultSupportedVersion = ['service' => '0', 'level' => '0'];
+        foreach ($supportedVersions as $supportedVersion) {
+            $service = strtok($supportedVersion, '/');
+            if ($service === $defaultVersion) {
+                $level = strtok('/') ?: '0';
+                $defaultSupportedVersion = [
+                    'service' => $service,
+                    'level' => $level,
+                ];
+                break;
+            }
+        }
+        $settings->set('iiifserver_media_api_default_supported_version', $defaultSupportedVersion);
     }
 
     protected function createTilesMainDir(ServiceLocatorInterface $services): void

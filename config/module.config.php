@@ -134,7 +134,7 @@ return [
         'routes' => [
             // The Api version 2 and 3 are supported via the optional "/version".
             // When version is not indicated in url, the default version is the one set in headers, else
-            // via the setting "imageserver_info_default_version".
+            // via the setting "iiifserver_media_api_default_version".
 
             // @link http://iiif.io/api/image/2.0
             // @link http://iiif.io/api/image/3.0
@@ -394,9 +394,25 @@ return [
     ],
     'imageserver' => [
         'config' => [
-            'imageserver_info_default_version' => '2',
-            'imageserver_info_version_append' => false,
-            'imageserver_identifier_prefix' => '',
+            // Use the same name than the module Iiif Server for simplicity.
+            // Except "iiifserver_media_api_url", that is hidden.
+            // Hidden key.
+            'iiifserver_media_api_url' => '',
+            'iiifserver_media_api_default_version' => '2',
+            'iiifserver_media_api_supported_versions' => [
+                '2/2',
+                '3/2',
+            ],
+            // The version and the prefix should be set in module config routing for now.
+            'iiifserver_media_api_version_append' => false,
+            'iiifserver_media_api_prefix' => '',
+            'iiifserver_media_api_identifier' => 'media_id',
+            // Hidden option.
+            'iiifserver_media_api_default_supported_version' => [
+                'service' => '2',
+                'level' => '2',
+            ],
+            // Content of the info.json.
             'imageserver_info_rights' => 'property_or_url',
             'imageserver_info_rights_property' => 'dcterms:license',
             'imageserver_info_rights_url' => 'http://rightsstatements.org/vocab/CNE/1.0/',

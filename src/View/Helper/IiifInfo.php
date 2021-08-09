@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2015-2020 Daniel Berthereau
+ * Copyright 2015-2021 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -48,15 +48,14 @@ class IiifInfo extends AbstractHelper
      * @param MediaRepresentation|null $media
      * @param string $version
      * @throws \IiifServer\Iiif\Exception\RuntimeException
-     * @return \ImageServer\View\Helper\IiifInfo3||\ImageServer\View\Helper\IiifInfo2
-Object|null
+     * @return \ImageServer\View\Helper\IiifInfo3||\ImageServer\View\Helper\IiifInfo2|null
      */
     public function __invoke(MediaRepresentation $media, $version = null)
     {
         $view = $this->getView();
 
         if (is_null($version)) {
-            $version = $view->setting('imageserver_info_default_version', '2');
+            $version = $view->setting('iiifserver_media_api_default_version', '2');
         } else {
             $version = (string) $version === '2' ? '2' : '3';
         }

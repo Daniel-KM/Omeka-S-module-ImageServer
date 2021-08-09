@@ -74,7 +74,7 @@ class AbstractServerController extends AbstractActionController
         $this->requestedVersion();
         $url = $this->url()->fromRoute($this->routeInfo, [
             'version' => $this->version,
-            'prefix' => $this->params('prefix') ?: $settings->get('imageserver_identifier_prefix', ''),
+            'prefix' => $this->params('prefix') ?: $settings->get('iiifserver_media_api_prefix', ''),
             'id' => $id,
         ], ['force_canonical' => true]);
         $this->getResponse()
@@ -120,26 +120,6 @@ class AbstractServerController extends AbstractActionController
         return $this->iiifImageJsonLd($info, $this->version);
     }
 
-    public function placeholderAction()
-    {
-        $response = $this->getResponse();
-
-        // TODO Manage other placeholders or use a setting.
-        $placeholder = 'img/thumbnails/placeholder-image.png';
-        $extension = pathinfo($placeholder, PATHINFO_EXTENSION);
-
-        // Header for CORS, required for access.
-        $response->getHeaders()
-            ->addHeaderLine('access-control-allow-origin', '*')
-            ->addHeaderLine('Content-Type', $this->mediaTypes[$extension]);
-
-        // TODO This is a local file (normal server): use 200.
-
-        // Redirect (302/307) to the url of the file.
-        $assetUrl = $this->viewHelpers()->get('assetUrl')->__invoke($placeholder, 'ImageServer');
-        return $this->redirect()->toUrl($assetUrl);
-    }
-
     /**
      * Get a storage path.
      *
@@ -153,26 +133,50 @@ class AbstractServerController extends AbstractActionController
     }
 
     /**
-     * @todo Factorize with \IiifServer\Controller\PresentationController::fetchResource()
-     *
-     * @param string $resourceType
-     * @return \Omeka\Api\Representation\AbstractResourceEntityRepresentation|null
+     * Similar to \IiifServer\Controller\PresentationController::fetchResource(), but for media.
      */
     protected function fetchResource(string $resourceType): ?AbstractResourceEntityRepresentation
     {
         $id = $this->params('id');
-
-        $useCleanIdentifier = $this->useCleanIdentifier();
-        if ($useCleanIdentifier) {
-            $getResourceFromIdentifier = $this->viewHelpers()->get('getResourceFromIdentifier');
-            return $getResourceFromIdentifier($id, $resourceType);
+        $identifierType = $this->settings()->get('imageserver_identifier');
+        switch ($identifierType) {
+            default:
+            case 'default':
+                $useCleanIdentifier = $this->useCleanIdentifier();
+                if ($useCleanIdentifier) {
+                    $getResourceFromIdentifier = $this->viewHelpers()->get('getResourceFromIdentifier');
+                    $resource = $getResourceFromIdentifier($id, $resourceType);
+                    if ($resource) {
+                        return $resource;
+                    }
+                }
+                // no break.
+            case 'media_id':
+                try {
+                    return $this->api()->read($resourceType, $id)->getContent();
+                } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                    return null;
+                }
+            case 'storage_id':
+                try {
+                    return $this->api()->read($resourceType, ['storageId' => $id])->getContent();
+                } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                    return null;
+                }
+            case 'filename':
+                $id = str_replace(['%2F', '%2f'], ['/', '/'], $id);
+                $extension = (string) pathinfo($id, PATHINFO_EXTENSION);
+                $lengthExtension = strlen($extension);
+                $storageId = $lengthExtension
+                    ? substr($id, 0, strlen($id) - $lengthExtension - 1)
+                    : $id;
+                try {
+                    return $this->api()->read($resourceType, ['storageId' => $storageId, 'extension' => $extension])->getContent();
+                } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                    return null;
+                }
         }
-
-        try {
-            return $this->api()->read($resourceType, $id)->getContent();
-        } catch (\Omeka\Api\Exception\NotFoundException $e) {
-            return null;
-        }
+        return null;
     }
 
     protected function useCleanIdentifier(): bool
@@ -198,7 +202,7 @@ class AbstractServerController extends AbstractActionController
         } elseif (strpos($accept, 'iiif.io/api/image/2/context.json')) {
             $this->version = '2';
         } else {
-            $this->version = $this->settings()->get('imageserver_info_default_version', '2') ?: '2';
+            $this->version = $this->settings()->get('iiifserver_media_api_default_version', '2') ?: '2';
         }
         return $this->version;
     }

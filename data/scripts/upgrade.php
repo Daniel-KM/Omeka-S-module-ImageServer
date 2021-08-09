@@ -92,3 +92,23 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
     $message->setEscapeHtml(false);
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.6.7.3', '<')) {
+    $module = $services->get('Omeka\ModuleManager')->getModule('IiifServer');
+    if (!$module || version_compare($module->getIni('version') ?? '', '3.6.5.3', '<')) {
+        $translator = $services->get('MvcTranslator');
+        $message = new \Omeka\Stdlib\Message(
+            $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
+            'IiifServer', '3.6.5.3'
+        );
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+    }
+
+    $settings->set('iiifserver_media_api_url', '');
+    // Renamed "iiifserver_media_api_default_version".
+    $settings->delete('imageserver_info_default_version');
+    // Renamed "iiifserver_media_api_version_append".
+    $settings->delete('imageserver_info_version_append');
+    //  Renamed "iiifserver_media_api_prefix".
+    $settings->delete('imageserver_identifier_prefix');
+}

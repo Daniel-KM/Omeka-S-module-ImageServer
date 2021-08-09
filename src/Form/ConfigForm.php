@@ -2,6 +2,7 @@
 
 namespace ImageServer\Form;
 
+use IiifServer\Form\Element\OptionalUrl;
 use ImageServer\Form\Element\Note;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Form\Element;
@@ -32,58 +33,119 @@ class ConfigForm extends Form implements TranslatorAwareInterface
 
     public function init(): void
     {
+        // Use the same name than the module Iiif Server for simplicity.
+        // Except "iiifserver_media_api_url", that is hidden.
+
         $this
             ->add([
-                'name' => 'imageserver_iif',
-                'type' => Fieldset::class,
+                'name' => 'fieldset_media_api',
+                'type' => \Laminas\Form\Fieldset::class,
                 'options' => [
-                    'label' => 'Iiif info', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'imageserver_iiif',
-                ],
-            ])
-            ->add([
-                'name' => 'imageserver_info_default_version',
-                'type' => Element\Radio::class,
-                'options' => [
-                    'label' => 'Default IIIF api version (info)', // @translate
-                    'info' => 'Set the version of the manifest to provide.', // @translate
-                    'value_options' => [
-                        '2' => '2', // @translate
-                        '3' => '3', // @translate
-                    ],
-                ],
-                'attributes' => [
-                    'id' => 'imageserver_info_default_version',
+                    'label' => 'Image server', // @translate
                 ],
             ])
 
             ->add([
-                'name' => 'imageserver_info_version_append',
+                'name' => 'iiifserver_media_api_url',
+                'type' => Element\Hidden::class,
+                'attributes' => [
+                    'value' => '',
+                ],
+            ])
+
+            ->add([
+                'name' => 'iiifserver_media_api_default_version',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Default IIIF image api version', // @translate
+                    'info' => 'Set the version of the iiif info.json to provide. The image server should support it.', // @translate
+                    'value_options' => [
+                        '0' => 'No image server', // @translate
+                        '1' => 'Image Api 1', // @translate
+                        '2' => 'Image Api 2', // @translate
+                        '3' => 'Image Api 3', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'iiifserver_media_api_default_version',
+                    'required' => true,
+                ],
+            ])
+
+            ->add([
+                'name' => 'iiifserver_media_api_supported_versions',
+                'type' => Element\MultiCheckbox::class,
+                'options' => [
+                    'label' => 'Supported IIIF image api versions and max compliance level', // @translate
+                    'value_options' => [
+                        '1/0' => 'Image Api 1 level 0', // @translate
+                        '1/1' => 'Image Api 1 level 1', // @translate
+                        '1/2' => 'Image Api 1 level 2', // @translate
+                        '2/0' => 'Image Api 2 level 0', // @translate
+                        '2/1' => 'Image Api 2 level 1', // @translate
+                        '2/2' => 'Image Api 2 level 2', // @translate
+                        '3/0' => 'Image Api 3 level 0', // @translate
+                        '3/1' => 'Image Api 3 level 1', // @translate
+                        '3/2' => 'Image Api 3 level 2', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'iiifserver_media_api_supported_versions',
+                ],
+            ])
+
+            ->add([
+                'name' => 'iiifserver_media_api_version_append',
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'Append the version to the url (to be set inside module.config.php currently)', // @translate
                     'info' => 'If set, the version will be appended to the url of the server: "iiif-img/3".', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_info_version_append',
+                    'id' => 'iiifserver_media_api_version_append',
                 ],
             ])
 
             /*
             ->add([
-                'name' => 'imageserver_identifier_prefix',
+                'name' => 'iiifserver_media_api_prefix',
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Append a prefix to the url (to be set inside module.config.php currently)', // @translate
                     'info' => 'If set, the prefix will be added after the version: "iiif-img/3/xxx".', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_identifier_prefix',
+                    'id' => 'iiifserver_media_api_prefix',
                 ],
             ])
             */
+
+            ->add([
+                'name' => 'iiifserver_media_api_identifier',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Media identifier', // @translate
+                    'info' => 'Using the full filename allows to use an image server like Cantaloupe sharing the Omeka original files directory.', // @translate
+                    'value_options' => [
+                        'default' => 'Default', // @translate
+                        'media_id' => 'Media id', // @translate
+                        'storage_id' => 'Filename', // @translate
+                        'filename' => 'Filename with extension', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'iiifserver_media_api_identifier',
+                    'required' =>  true,
+                ],
+            ])
+
+            ->add([
+                'name' => 'fieldset_media_infojson',
+                'type' => \Laminas\Form\Fieldset::class,
+                'options' => [
+                    'label' => 'Content of media info.json', // @translate
+                ],
+            ])
 
             ->add([
                 'name' => 'imageserver_info_rights',
@@ -143,13 +205,13 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ])
 
             ->add([
-                'name' => 'imageserver_image',
+                'name' => 'imageserver_tiling',
                 'type' => Fieldset::class,
                 'options' => [
-                    'label' => 'Image server', // @translate
+                    'label' => 'Tiling service', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_image',
+                    'id' => 'imageserver_tiling',
                 ],
             ])
             ->add([
