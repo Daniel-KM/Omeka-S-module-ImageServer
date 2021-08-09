@@ -199,7 +199,7 @@ OUTPUT;
         $args = [];
         $args['id'] = 'iiif-' . $media->id();
         $args['prefixUrl'] = '';
-        $args['tileSources'] = $view->iiifImageUrl($media, 'imageserver/info');
+        $args['tileSources'] = $view->iiifMediaUrl($media, 'imageserver/info');
         return $args;
     }
 
@@ -233,7 +233,7 @@ OUTPUT;
 
         $tileSource = [];
         $tileSource['@context'] = 'http://iiif.io/api/image/2/context.json';
-        $tileSource['@id'] = $view->iiifImageUrl($media, 'imageserver/info');
+        $tileSource['@id'] = $view->iiifMediaUrl($media, 'imageserver/info');
         $tileSource['protocol'] = 'http://iiif.io/api/image';
         $tileSource['profile'] = 'http://iiif.io/api/image/2/level2.json';
         $tileSource += $data;

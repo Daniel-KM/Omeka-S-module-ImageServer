@@ -69,12 +69,9 @@ return [
     ],
     'view_helpers' => [
         'invokables' => [
-            'iiifInfo' => View\Helper\IiifInfo::class,
             'formNote' => View\Helper\FormNote::class,
         ],
         'factories' => [
-            'iiifInfo2' => Service\ViewHelper\IiifInfo2Factory::class,
-            'iiifInfo3' => Service\ViewHelper\IiifInfo3Factory::class,
             'tileInfo' => Service\ViewHelper\TileInfoFactory::class,
             'tileMediaInfo' => Service\ViewHelper\TileMediaInfoFactory::class,
         ],
@@ -98,12 +95,10 @@ return [
     'controllers' => [
         'factories' => [
             Controller\ImageController::class => Service\Controller\ImageControllerFactory::class,
-            Controller\MediaController::class => Service\Controller\MediaControllerFactory::class,
         ],
     ],
     'controller_plugins' => [
         'invokables' => [
-            'iiifImageJsonLd' => Mvc\Controller\Plugin\IiifImageJsonLd::class,
             'tileMediaInfo' => Mvc\Controller\Plugin\TileMediaInfo::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
             'tileServerDeepZoom' => Mvc\Controller\Plugin\TileServerDeepZoom::class,
@@ -267,97 +262,6 @@ return [
                     ],
                 ],
             ],
-
-            'mediaserver' => [
-                'type' => \Laminas\Router\Http\Literal::class,
-                'options' => [
-                    'route' => '/iiif',
-                    'defaults' => [
-                        '__NAMESPACE__' => 'ImageServer\Controller',
-                        'controller' => Controller\MediaController::class,
-                        'action' => 'index',
-                    ],
-                ],
-                'may_terminate' => false,
-                'child_routes' => [
-                    // Same as imageserver/id, but needed to create urls.
-                    // A redirect to the info.json is required by the specification.
-                    'id' => [
-                        'type' => \Laminas\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => "[/:version]/$prefix:id",
-                            'constraints' => [
-                                'version' => '2|3',
-                                'prefix' => $constraintPrefix,
-                                'id' => '[^\/]+',
-                            ],
-                            'defaults' => [
-                                'version' => $version,
-                                'action' => 'id',
-                            ],
-                        ],
-                    ],
-                    // This route is a garbage collector that allows to return an error 400 or 501 to
-                    // invalid or not implemented requests, as required by specification.
-                    // This route should be set before the mediaserver/media in order to be
-                    // processed after it.
-                    'media-bad' => [
-                        'type' => \Laminas\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => "[/:version]/$prefix:id:.:format",
-                            'constraints' => [
-                                'version' => '2|3',
-                                'prefix' => $constraintPrefix,
-                                'id' => '[^\/]+',
-                                'format' => '.+',
-                            ],
-                            'defaults' => [
-                                'version' => $version,
-                                'action' => 'bad',
-                            ],
-                        ],
-                    ],
-                    // Same as imageserver/info, but needed to create urls.
-                    'info' => [
-                        'type' => \Laminas\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => "[/:version]/$prefix:id/info.json",
-                            'constraints' => [
-                                'version' => '2|3',
-                                'prefix' => $constraintPrefix,
-                                'id' => '[^\/]+',
-                            ],
-                            'defaults' => [
-                                'version' => $version,
-                                'action' => 'info',
-                            ],
-                        ],
-                    ],
-                    // Warning: the format is separated with a ".", not a "/".
-                    // TODO pdf is not an audio video media.
-                    'media' => [
-                        'type' => \Laminas\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => "[/:version]/$prefix:id:.:format",
-                            'constraints' => [
-                                'version' => '2|3',
-                                'prefix' => $constraintPrefix,
-                                'id' => '[^\/]+',
-                                'format' => 'pdf|mp3|ogg|mp4|webm|ogv',
-                            ],
-                            'defaults' => [
-                                'version' => $version,
-                                'action' => 'fetch',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-
-            // For IXIF, some json files should be available to describe media for context.
-            // This is not used currently: the Wellcome uris are kept because they are set
-            // for main purposes in ImageServer.
-            // @link https://gist.github.com/tomcrane/7f86ac08d3b009c8af7c
         ],
     ],
     'translator' => [

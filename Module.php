@@ -70,7 +70,6 @@ class Module extends AbstractModule
                 null,
                 [
                     \ImageServer\Controller\ImageController::class,
-                    \ImageServer\Controller\MediaController::class,
                 ]
             );
     }

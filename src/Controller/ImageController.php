@@ -30,7 +30,9 @@
 
 namespace ImageServer\Controller;
 
+use IiifServer\Controller\IiifServerControllerTrait;
 use ImageServer\ImageServer\ImageServer;
+use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Stdlib\Message;
@@ -42,8 +44,10 @@ use Omeka\Stdlib\Message;
  *
  * @package ImageServer
  */
-class ImageController extends AbstractServerController
+class ImageController extends AbstractActionController
 {
+    use IiifServerControllerTrait;
+
     /**
      * @var string
      */
@@ -215,7 +219,7 @@ class ImageController extends AbstractServerController
                 // Header for CORS, required for access of IIIF.
                 ->addHeaderLine('access-control-allow-origin', '*')
                 // Recommanded by feature "profileLinkHeader".
-                ->addHeaderLine('Link', version_compare($this->version, '3', '<')
+                ->addHeaderLine('Link', version_compare($this->requestedApiVersion, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
                     : '<http://iiif.io/api/image/3/>;rel="profile"'
                 )
@@ -241,7 +245,7 @@ class ImageController extends AbstractServerController
                 // Header for CORS, required for access of IIIF.
                 ->addHeaderLine('access-control-allow-origin', '*')
                 // Recommanded by feature "profileLinkHeader".
-                ->addHeaderLine('Link', version_compare($this->version, '3', '<')
+                ->addHeaderLine('Link', version_compare($this->requestedApiVersion, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
                     : '<http://iiif.io/api/image/3/>;rel="profile"'
                 )
@@ -272,7 +276,7 @@ class ImageController extends AbstractServerController
     {
         $transform = [];
 
-        $transform['version'] = $this->version;
+        $transform['version'] = $this->requestedApiVersion;
 
         $transform['source']['type'] = 'original';
         $transform['source']['filepath'] = $this->_getImagePath($media, 'original');
@@ -327,7 +331,10 @@ class ImageController extends AbstractServerController
         elseif (strpos($region, 'pct:') === 0) {
             $regionValues = explode(',', substr($region, 4));
             if (count($regionValues) !== 4) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), $region));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), // @translate
+                    $region
+                ));
                 return null;
             }
             $regionValues = array_map('floatval', $regionValues);
@@ -358,7 +365,10 @@ class ImageController extends AbstractServerController
         else {
             $regionValues = explode(',', $region);
             if (count($regionValues) != 4) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), $region));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), // @translate
+                    $region
+                ));
                 return null;
             }
             $regionValues = array_map('intval', $regionValues);
@@ -389,9 +399,13 @@ class ImageController extends AbstractServerController
 
         // Manage the main difference between version 2 and 3.
         $upscale = mb_substr($size, 0, 1) === '^';
-        $versionIsGreaterOrEqual3 = version_compare($this->version, '3', '>=');
+        $versionIsGreaterOrEqual3 = version_compare($this->requestedApiVersion, '3', '>=');
         if ($upscale && !$versionIsGreaterOrEqual3) {
-            $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for API version %s.'), $size, $this->version));
+            $this->_view->setVariable('message', sprintf(
+                $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for API version %s.'), // @translate
+                $size,
+                $this->requestedApiVersion
+            ));
             return null;
         }
 
@@ -399,7 +413,10 @@ class ImageController extends AbstractServerController
         elseif ($size === 'full') {
             // This value is not allowed in version 3.
             if ($versionIsGreaterOrEqual3) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
+                    $size
+                ));
                 return null;
             }
             $transform['size']['feature'] = 'max';
@@ -415,7 +432,10 @@ class ImageController extends AbstractServerController
         elseif (strpos($size, 'pct:') === 0 || strpos($size, '^pct:') === 0) {
             $sizePercentage = floatval(substr($size, $upscale ? 5 : 4));
             if (empty($sizePercentage)) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
+                    $size
+                ));
                 return null;
             }
             // A quick check to avoid a possible transformation.
@@ -424,7 +444,11 @@ class ImageController extends AbstractServerController
             }
             // Check strict upscale for version 3.
             elseif (!$upscale && $sizePercentage > 100 && $versionIsGreaterOrEqual3) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), // @translate
+                    $size,
+                    $this->requestedApiVersion
+                ));
                 return null;
             }
             // Normal size.
@@ -446,7 +470,10 @@ class ImageController extends AbstractServerController
             $destinationWidth = (int) substr($size, $upscale ? 2 : 1, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) || empty($destinationHeight)) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
+                    $size
+                ));
                 return null;
             }
 
@@ -460,7 +487,11 @@ class ImageController extends AbstractServerController
             elseif (!$upscale && $versionIsGreaterOrEqual3
                 && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
             ) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), // @translate
+                    $size,
+                    $this->requestedApiVersion
+                ));
                 return null;
             }
             // Upscaled size.
@@ -483,14 +514,21 @@ class ImageController extends AbstractServerController
             $destinationWidth = (int) substr($size, $upscale ? 1 : 0, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) && empty($destinationHeight)) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), $size));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
+                    $size
+                ));
                 return null;
             }
 
             if (!$upscale && $versionIsGreaterOrEqual3
                 && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
             ) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), $size, $this->version));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), // @translate
+                    $size,
+                    $this->requestedApiVersion
+                ));
                 return null;
             }
 
@@ -544,7 +582,10 @@ class ImageController extends AbstractServerController
 
             // Not supported.
             else {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), $size));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), // @translate
+                    $size
+                ));
                 return null;
             }
 
@@ -552,7 +593,10 @@ class ImageController extends AbstractServerController
             if (isset($transform['size']['width']) && empty($transform['size']['width'])
                 || isset($transform['size']['height']) && empty($transform['size']['height'])
             ) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), $size));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), // @translate
+                    $size
+                ));
                 return null;
             }
         }
@@ -607,7 +651,10 @@ class ImageController extends AbstractServerController
             /** @var \ImageServer\ImageServer\AbstractImager $imager */
             $imager = $this->imageServer()->getImager();
             if (!$imager->checkExtension($format)) {
-                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), $format));
+                $this->_view->setVariable('message', sprintf(
+                    $this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), // @translate
+                    $format
+                ));
                 return null;
             }
             $transform['format']['feature'] = $imager->getMediaTypeFromExtension($format);
