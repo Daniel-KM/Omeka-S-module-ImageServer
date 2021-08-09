@@ -30,12 +30,9 @@
 
 namespace ImageServer\Controller;
 
+use IiifServer\Controller\IiifServerControllerTrait;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\View\Model\JsonModel;
-use Laminas\View\Model\ViewModel;
-use Omeka\Api\Exception\BadRequestException;
-use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Stdlib\Message;
 
 /**
@@ -45,6 +42,8 @@ use Omeka\Stdlib\Message;
  */
 class AbstractServerController extends AbstractActionController
 {
+    use IiifServerControllerTrait;
+
     /**
      * Full path to the files.
      *
@@ -63,38 +62,6 @@ class AbstractServerController extends AbstractActionController
     protected $routeInfo;
 
     /**
-     * Redirect to the 'info' action, required by the feature "baseUriRedirect".
-     *
-     * @see self::infoAction()
-     */
-    public function indexAction()
-    {
-        $settings = $this->settings();
-        $id = $this->params('id');
-        $this->requestedVersion();
-        $url = $this->url()->fromRoute($this->routeInfo, [
-            'version' => $this->version,
-            'prefix' => $this->params('prefix') ?: $settings->get('iiifserver_media_api_prefix', ''),
-            'id' => $id,
-        ], ['force_canonical' => true]);
-        $this->getResponse()
-            // The iiif image api specification recommands 303, not 302.
-            ->setStatusCode(\Laminas\Http\Response::STATUS_CODE_303)
-            ->getHeaders()->addHeaderLine('Location', $url);
-        // The output automatically adds the version in headers.
-        return $this->iiifImageJsonLd('', $this->version);
-    }
-
-    /**
-     * Returns an error 400 to requests that are invalid.
-     */
-    public function badAction()
-    {
-        $message = 'The Image server cannot fulfill the request: the arguments are incorrect.'; // @translate
-        return $this->viewError(new BadRequestException($message), \Laminas\Http\Response::STATUS_CODE_400);
-    }
-
-    /**
      * Send "info.json" for the current file.
      *
      * The info is managed by the ImageControler because it indicates
@@ -110,7 +77,7 @@ class AbstractServerController extends AbstractActionController
             ), \Laminas\Http\Response::STATUS_CODE_404);
         }
 
-        $this->requestedVersion();
+        $this->requestedVersionMedia();
 
         /** @var \ImageServer\View\Helper\IiifInfo $iiifInfo */
         $iiifInfo = $this->viewHelpers()->get('iiifInfo');
@@ -136,62 +103,9 @@ class AbstractServerController extends AbstractActionController
     }
 
     /**
-     * Similar to \IiifServer\Controller\PresentationController::fetchResource(), but for media.
-     */
-    protected function fetchResource(string $resourceType): ?AbstractResourceEntityRepresentation
-    {
-        $id = $this->params('id');
-        $identifierType = $this->settings()->get('imageserver_identifier');
-        switch ($identifierType) {
-            default:
-            case 'default':
-                $useCleanIdentifier = $this->useCleanIdentifier();
-                if ($useCleanIdentifier) {
-                    $getResourceFromIdentifier = $this->viewHelpers()->get('getResourceFromIdentifier');
-                    $resource = $getResourceFromIdentifier($id, $resourceType);
-                    if ($resource) {
-                        return $resource;
-                    }
-                }
-                // no break.
-            case 'media_id':
-                try {
-                    return $this->api()->read($resourceType, $id)->getContent();
-                } catch (\Omeka\Api\Exception\NotFoundException $e) {
-                    return null;
-                }
-            case 'storage_id':
-                try {
-                    return $this->api()->read($resourceType, ['storageId' => $id])->getContent();
-                } catch (\Omeka\Api\Exception\NotFoundException $e) {
-                    return null;
-                }
-            case 'filename':
-                $id = str_replace(['%2F', '%2f'], ['/', '/'], $id);
-                $extension = (string) pathinfo($id, PATHINFO_EXTENSION);
-                $lengthExtension = strlen($extension);
-                $storageId = $lengthExtension
-                    ? substr($id, 0, strlen($id) - $lengthExtension - 1)
-                    : $id;
-                try {
-                    return $this->api()->read($resourceType, ['storageId' => $storageId, 'extension' => $extension])->getContent();
-                } catch (\Omeka\Api\Exception\NotFoundException $e) {
-                    return null;
-                }
-        }
-        return null;
-    }
-
-    protected function useCleanIdentifier(): bool
-    {
-        return $this->viewHelpers()->has('getResourcesFromIdentifiers')
-            && $this->settings()->get('iiifserver_identifier_clean');
-    }
-
-    /**
      * Get the requested version from the route, headers, or settings.
      */
-    protected function requestedVersion(): string
+    protected function requestedVersionMedia(): string
     {
         // Check the version from the url first.
         $this->version = $this->params('version');
@@ -208,41 +122,5 @@ class AbstractServerController extends AbstractActionController
             $this->version = $this->settings()->get('iiifserver_media_api_default_version', '2') ?: '2';
         }
         return $this->version;
-    }
-
-    protected function jsonError($exceptionOrMessage, $statusCode = 500): JsonModel
-    {
-        $this->getResponse()->setStatusCode($statusCode);
-        return new JsonModel([
-            'status' => 'error',
-            'message' => $this->viewMessage($exceptionOrMessage),
-        ]);
-    }
-
-    /**
-     * @see https://iiif.io/api/image/3.0/#73-error-conditions
-     */
-    protected function viewError($exceptionOrMessage, $statusCode = 500): ViewModel
-    {
-        $this->getResponse()->setStatusCode($statusCode);
-        $view = new ViewModel([
-            'message' => $this->viewMessage($exceptionOrMessage),
-        ]);
-        return $view
-        ->setTerminal(true)
-        ->setTemplate('iiif-server/error');
-    }
-
-    protected function viewMessage($exceptionOrMessage): string
-    {
-        if (is_object($exceptionOrMessage)) {
-            if ($exceptionOrMessage instanceof \Exception) {
-                return $exceptionOrMessage->getMessage();
-            }
-            if ($exceptionOrMessage instanceof Message) {
-                return (string) sprintf($this->translate($exceptionOrMessage->getMessage()), ...$exceptionOrMessage->getArgs());
-            }
-        }
-        return $this->translate((string) $exceptionOrMessage);
     }
 }

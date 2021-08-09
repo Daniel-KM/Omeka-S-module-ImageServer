@@ -94,7 +94,7 @@ class ImageController extends AbstractServerController
             ), \Laminas\Http\Response::STATUS_CODE_501);
         }
 
-        $this->requestedVersion();
+        $this->requestedVersionMedia();
 
         // Check, clean and optimize and fill values according to the request.
         $this->_view = new ViewModel;

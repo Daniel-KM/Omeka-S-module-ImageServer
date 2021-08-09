@@ -1,5 +1,7 @@
 <?php declare(strict_types=1);
 /**
+ * Some variables should be manually set for now.
+ *
  * @var string $defaultVersion
  * @var bool $versionAppend
  * @var string $prefix
@@ -128,6 +130,9 @@ return [
         ],
     ],
     'router' => [
+        // The routes override the ones set in the module Iiif Server in order
+        // to redirect most of the urls directly to the image server.
+
         // In order to use clean urls, the identifier "id" can be any string without "/", not only Omeka id.
         // A specific config file is used is used to manage identifiers with "/", like arks.
         'routes' => [
@@ -142,18 +147,17 @@ return [
             'imageserver' => [
                 'type' => \Laminas\Router\Http\Literal::class,
                 'options' => [
-                    'route' => '/iiif-img',
+                    'route' => '/iiif',
                     'defaults' => [
-                        '__API__' => true,
                         '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\ImageController::class,
                         'action' => 'index',
                     ],
                 ],
-                // This should be false, but we need the default url.
-                'may_terminate' => true,
+                'may_terminate' => false,
                 'child_routes' => [
                     // The specification requires a 303 redirect to the info.json.
+                    // Same as iiifserver/id, but needed to create urls.
                     'id' => [
                         'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
@@ -164,8 +168,9 @@ return [
                                 // 'id' => '\d+',
                                 'id' => '[^\/]+',
                             ],
-                            'defauls' => [
+                            'defaults' => [
                                 'version' => $version,
+                                'action' => 'id',
                             ],
                         ],
                     ],
@@ -266,16 +271,16 @@ return [
             'mediaserver' => [
                 'type' => \Laminas\Router\Http\Literal::class,
                 'options' => [
-                    'route' => '/ixif-media',
+                    'route' => '/iiif',
                     'defaults' => [
                         '__NAMESPACE__' => 'ImageServer\Controller',
                         'controller' => Controller\MediaController::class,
                         'action' => 'index',
                     ],
                 ],
-                // This should be false, but we need the default url.
-                'may_terminate' => true,
+                'may_terminate' => false,
                 'child_routes' => [
+                    // Same as imageserver/id, but needed to create urls.
                     // A redirect to the info.json is required by the specification.
                     'id' => [
                         'type' => \Laminas\Router\Http\Segment::class,
@@ -287,8 +292,8 @@ return [
                                 'id' => '[^\/]+',
                             ],
                             'defaults' => [
-                                '__API__' => true,
                                 'version' => $version,
+                                'action' => 'id',
                             ],
                         ],
                     ],
@@ -312,6 +317,7 @@ return [
                             ],
                         ],
                     ],
+                    // Same as imageserver/info, but needed to create urls.
                     'info' => [
                         'type' => \Laminas\Router\Http\Segment::class,
                         'options' => [
@@ -322,7 +328,6 @@ return [
                                 'id' => '[^\/]+',
                             ],
                             'defaults' => [
-                                '__API__' => true,
                                 'version' => $version,
                                 'action' => 'info',
                             ],
@@ -349,7 +354,7 @@ return [
                 ],
             ],
 
-            // For IxIF, some json files should be available to describe media for context.
+            // For IXIF, some json files should be available to describe media for context.
             // This is not used currently: the Wellcome uris are kept because they are set
             // for main purposes in ImageServer.
             // @link https://gist.github.com/tomcrane/7f86ac08d3b009c8af7c
