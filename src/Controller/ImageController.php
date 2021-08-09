@@ -692,14 +692,18 @@ class ImageController extends AbstractActionController
 
         // Determine the format. The regex in route checks it first.
         // @see https://www.php.net/manual/fr/function.imagetypes.php
-        if (!isset($this->mediaTypes, $format)
-            || !$this->imageServer()->getImager()->checkExtension($format)
-        ) {
-            $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), $format));
-            return null;
+        if (!isset($this->mediaTypes, $format)) {
+            /** @var \ImageServer\ImageServer\AbstractImager $imager */
+            $imager = $this->imageServer()->getImager();
+            if (!$imager->checkExtension($format)) {
+                $this->_view->setVariable('message', sprintf($this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), $format));
+                return null;
+            }
+            $transform['format']['feature'] = $imager->getMediaTypeFromExtension($format);
+            return $transform;
         }
-        $transform['format']['feature'] = $this->mediaTypes[$format];
 
+        $transform['format']['feature'] = $this->mediaTypes[$format] ?? $format;
         return $transform;
     }
 

@@ -112,6 +112,15 @@ abstract class AbstractImager implements LoggerAwareInterface
     }
 
     /**
+     * Get media type for an extension.
+     */
+    public function getMediaTypeFromExtension(?string $extension): ?string
+    {
+        $result = array_search(strtolower((string) $extension), $this->supportedFormats);
+        return $result === false ? null : $result;
+    }
+
+    /**
      * Transform an image into another image according to params.
      *
      * @internal The args are currently already checked in the controller.
