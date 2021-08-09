@@ -30,12 +30,7 @@
 
 namespace ImageServer\Controller;
 
-use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\View\Model\JsonModel;
-use Laminas\View\Model\ViewModel;
-use Omeka\Api\Exception\BadRequestException;
 use Omeka\Api\Exception\NotFoundException;
-use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\File\Store\StoreInterface;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
 
@@ -44,81 +39,19 @@ use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
  *
  * @package ImageServer
  */
-class MediaController extends AbstractActionController
+class MediaController extends AbstractServerController
 {
+    protected $routeInfo = 'mediaserver/info';
+
     /**
      * @var StoreInterface
      */
     protected $store;
 
-    /**
-     * Full path to the files.
-     *
-     * @var string
-     */
-    protected $basePath;
-
     public function __construct($store, $basePath)
     {
         $this->store = $store;
         $this->basePath = $basePath;
-    }
-
-    /**
-     * Redirect to the 'info' action, required by the feature "baseUriRedirect".
-     *
-     * @see self::infoAction()
-     */
-    public function indexAction()
-    {
-        $settings = $this->settings();
-        $id = $this->params('id');
-        $version = $this->params('version') ?: $settings->get('imageserver_info_default_version', '2');
-        $url = $this->url()->fromRoute('mediaserver/info', [
-            'id' => $id,
-            'version' => $version,
-            'prefix' => $this->params('prefix') ?: $settings->get('imageserver_identifier_prefix', ''),
-        ], ['force_canonical' => true]);
-        $this->getResponse()
-            // TODO The iiif image api specification recommands 303, not 302.
-            ->setStatusCode(\Laminas\Http\Response::STATUS_CODE_303)
-            ->getHeaders()->addHeaderLine('Location', $url);
-        return $this->iiifImageJsonLd('', $version);
-    }
-
-    /**
-     * Returns an error 400 to requests that are invalid.
-     */
-    public function badAction()
-    {
-        $message = 'The Image server cannot fulfill the request: the arguments are incorrect.'; // @translate
-        return $this->viewError(new BadRequestException($message), \Laminas\Http\Response::STATUS_CODE_400);
-    }
-
-    /**
-     * Send "info.json" for the current file.
-     *
-     * The info is managed by the MediaControler because it indicates
-     * capabilities of the IXIF server for the request of a file.
-     */
-    public function infoAction()
-    {
-        $resource = $this->fetchResource('media');
-        if (!$resource) {
-            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
-        }
-
-        $version = $this->requestedVersion();
-
-        /** @var \ImageServer\View\Helper\IiifInfo $iiifInfo */
-        $iiifInfo = $this->viewHelpers()->get('iiifInfo');
-        try {
-            $info = $iiifInfo($resource, $version);
-        } catch (\IiifServer\Iiif\Exception\RuntimeException $e) {
-            return $this->jsonError($e, \Laminas\Http\Response::STATUS_CODE_400);
-        }
-
-        return $this->iiifImageJsonLd($info, $version);
     }
 
     /**
@@ -169,93 +102,5 @@ class MediaController extends AbstractActionController
         // Redirect (302/307) to the url of the file.
         $fileUrl = $media->originalUrl();
         return $this->redirect()->toUrl($fileUrl);
-    }
-
-    /**
-     * Get a storage path.
-     *
-     * @param string $prefix The storage prefix
-     * @param string $name The file name, or basename if extension is passed
-     * @param string|null $extension The file extension
-     * @return string
-     * @todo Refactorize.
-     */
-    protected function getStoragePath(string $prefix, string $name, $extension = null): string
-    {
-        return sprintf('%s/%s%s', $prefix, $name, $extension ? ".$extension" : null);
-    }
-
-    /**
-     * @todo Factorize with \IiifServer\Controller\PresentationController::fetchResource()
-     *
-     * @param string $resourceType
-     * @return \Omeka\Api\Representation\AbstractResourceEntityRepresentation|null
-     */
-    protected function fetchResource(string $resourceType): ?AbstractResourceEntityRepresentation
-    {
-        $id = $this->params('id');
-
-        $useCleanIdentifier = $this->useCleanIdentifier();
-        if ($useCleanIdentifier) {
-            $getResourceFromIdentifier = $this->viewHelpers()->get('getResourceFromIdentifier');
-            return $getResourceFromIdentifier($id, $resourceType);
-        }
-
-        try {
-            return $this->api()->read($resourceType, $id)->getContent();
-        } catch (\Omeka\Api\Exception\NotFoundException $e) {
-            return null;
-        }
-    }
-
-    protected function useCleanIdentifier(): bool
-    {
-        return $this->viewHelpers()->has('getResourcesFromIdentifiers')
-            && $this->settings()->get('iiifserver_identifier_clean');
-    }
-
-    /**
-     * Get the requested version from the headers.
-     *
-     * @todo Factorize with ImageController::requestedVersion()
-     *
-     * @return string|null
-     */
-    protected function requestedVersion(): string
-    {
-        // Check the version from the url first.
-        $version = $this->params('version');
-        if ($version === '2' || $version === '3') {
-            return $version;
-        }
-
-        $accept = $this->getRequest()->getHeaders()->get('Accept')->toString();
-        if (strpos($accept, 'iiif.io/api/image/3/context.json')) {
-            return '3';
-        }
-        if (strpos($accept, 'iiif.io/api/image/2/context.json')) {
-            return '2';
-        }
-        return $this->settings()->get('imageserver_info_default_version', '2') ?: '2';
-    }
-
-    protected function jsonError(\Exception $exception, $statusCode = 500): JsonModel
-    {
-        /* @var \Laminas\Http\Response $response */
-        $this->getResponse()->setStatusCode($statusCode);
-        return new JsonModel([
-            'status' => 'error',
-            'message' => $exception->getMessage(),
-        ]);
-    }
-
-    protected function viewError(\Exception $exception, $statusCode = 500): ViewModel
-    {
-        /* @var \Laminas\Http\Response $response */
-        $this->getResponse()->setStatusCode($statusCode);
-        $view = new ViewModel;
-        return $view
-            ->setTemplate('image-server/media/error')
-            ->setVariable('message', $exception->getMessage());
     }
 }
