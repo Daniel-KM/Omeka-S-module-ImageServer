@@ -29,9 +29,9 @@
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
+use IiifServer\Mvc\Controller\Plugin\ImageSize;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Representation\MediaRepresentation;
-use Laminas\Validator\File\ImageSize;
 
 class TileInfo extends AbstractPlugin
 {
@@ -87,15 +87,16 @@ class TileInfo extends AbstractPlugin
 
     /**
      * @param string $tileBaseDir Full path prepended to a storage id. Is equal
-     *   to tileBaseUrl for remote storage.
-     * @param string $tileBaseUrl
-     * @param string $tileBaseQuery
-     * @param bool $hasAmazonS3
-     * @param \AmazonS3\File\Store\AwsS3 $store
-     * @param ImageSize $imageSize
+     *   to $tileBaseUrl for remote storage.
      */
-    public function __construct($tileBaseDir, $tileBaseUrl, $tileBaseQuery, $hasAmazonS3, $store, $imageSize)
-    {
+    public function __construct(
+        ?string $tileBaseDir,
+        ?string $tileBaseUrl,
+        ?string $tileBaseQuery,
+        bool $hasAmazonS3,
+        ?\AmazonS3\File\Store\AwsS3 $store,
+        ImageSize $imageSize
+    ) {
         $this->tileBaseDir = $tileBaseDir;
         $this->tileBaseUrl = $tileBaseUrl;
         $this->tileBaseQuery = $tileBaseQuery;

@@ -4,6 +4,7 @@ namespace ImageServer\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
+use IiifServer\Mvc\Controller\Plugin\ImageSize;
 use ImageServer\Job\SizerTrait;
 use Laminas\Log\LoggerInterface;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
@@ -13,10 +14,6 @@ class Sizer extends AbstractPlugin
 {
     use SizerTrait;
 
-    /**
-     * @param array $params
-     * @param LoggerInterface $logger
-     */
     public function __construct(
         LoggerInterface $logger,
         ImageSize $imageSize,
@@ -33,12 +30,8 @@ class Sizer extends AbstractPlugin
 
     /**
      * Save sizes of an image.
-     *
-     * @var MediaRepresentation $media
-     * @var array $params
-     * @return array|null Null on error, else data about sizing.
      */
-    public function __invoke(MediaRepresentation $media, array $params = [])
+    public function __invoke(MediaRepresentation $media, array $params = []): ?array
     {
         $params = $params + [
             'filter' => 'all',

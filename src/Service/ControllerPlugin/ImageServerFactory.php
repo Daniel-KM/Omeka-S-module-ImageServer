@@ -39,11 +39,6 @@ class ImageServerFactory implements FactoryInterface
 
     /**
      * Check and get the path of a command.
-     *
-     * @param Cli $cli
-     * @param string $dir
-     * @param string $command
-     * @return string
      */
     protected function getPath(Cli $cli, ?string $dir, string $command): string
     {

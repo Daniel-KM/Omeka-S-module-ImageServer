@@ -3,6 +3,7 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use finfo;
+use IiifServer\Mvc\Controller\Plugin\ImageSize;
 use ImageServer\ImageServer\AbstractImager;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
@@ -14,14 +15,10 @@ class ConvertToImage extends AbstractPlugin
     protected $imager;
 
     /**
-     * @var ImageSize
+     * @var \IiifServer\Mvc\Controller\Plugin\ImageSize
      */
     protected $imageSize;
 
-    /**
-     * @param \ImageServer\ImageServer\AbstractImager $imager
-     * @param ImageSize $imageSize
-     */
     public function __construct(AbstractImager $imager, ImageSize $imageSize)
     {
         $this->imager = $imager;
@@ -30,11 +27,6 @@ class ConvertToImage extends AbstractPlugin
 
     /**
      * Convert an asset into another format.
-     *
-     * @param string $source
-     * @param string $destination
-     * @param array $params
-     * @return bool
      */
     public function __invoke(string $source, string $destination, array $params = []): bool
     {
