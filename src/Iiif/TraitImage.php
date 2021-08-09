@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2020 Daniel Berthereau
+ * Copyright 2020-2021 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -36,7 +36,7 @@ trait TraitImage
     use TraitThumbnail;
 
     /**
-     * @var \IiifServer\View\Helper\ImageSize
+     * @var \IiifServer\Mvc\Controller\Plugin\ImageSize
      */
     protected $imageSize;
 
@@ -47,33 +47,29 @@ trait TraitImage
 
     protected function initImage(): void
     {
-        $viewHelpers = $this->resource->getServiceLocator()->get('ViewHelperManager');
-        $this->imageSize = $viewHelpers->get('imageSize');
-        $this->iiifImageUrl = $viewHelpers->get('iiifImageUrl');
+        $services = $this->resource->getServiceLocator();
+        $this->imageSize = $services->get('ControllerPluginManager')->get('imageSize');
+        $this->iiifImageUrl = $services->get('ViewHelperManager')->get('iiifImageUrl');
     }
 
-    public function isImage()
+    public function isImage(): bool
     {
         return $this->type === 'Image';
     }
 
-    /**
-     * @return int|null
-     */
-    public function getHeight()
+    public function width(): ?int
     {
-        return $this->imageSize()['height'];
+        $size = $this->imageSize();
+        return $size ? (int) $size['width'] : null;
     }
 
-    /**
-     * @return int|null
-     */
-    public function getWidth()
+    public function height(): ?int
     {
-        return $this->imageSize()['width'];
+        $size = $this->imageSize();
+        return $size ? (int) $size['height'] : null;
     }
 
-    protected function imageSize($type = 'original')
+    protected function imageSize($type = 'original'): ?array
     {
         if (!$this->isImage()) {
             return null;

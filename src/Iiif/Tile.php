@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2020 Daniel Berthereau
+ * Copyright 2020-2021 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -68,12 +68,12 @@ class Tile extends AbstractType
         $this->prepareTilingInfo();
     }
 
-    public function isImage()
+    public function isImage(): bool
     {
         return true;
     }
 
-    public function getWidth()
+    public function width(): ?int
     {
         return empty($this->tilingInfo)
             ? null
@@ -82,29 +82,27 @@ class Tile extends AbstractType
 
     /**
      * @todo getHeight() is optional for tile and useless here.
-     *
-     * @return int|null
      */
-    public function getHeight()
+    public function height(): ?int
     {
         return empty($this->tilingInfo)
             ? null
-            : @$this->tilingInfo['height'];
+            : $this->tilingInfo['height'] ?? null;
     }
 
-    public function getScaleFactors()
+    public function scaleFactors(): ?array
     {
         return empty($this->tilingInfo)
             ? null
             : $this->tilingInfo['scaleFactors'];
     }
 
-    public function hasTilingInfo()
+    public function hasTilingInfo(): bool
     {
         return !empty($this->tilingInfo);
     }
 
-    protected function prepareTilingInfo()
+    protected function prepareTilingInfo(): AbstractType
     {
         if (empty($this->options['tilingData'])) {
             return null;
@@ -128,6 +126,6 @@ class Tile extends AbstractType
         $this->tilingInfo = [];
         $this->tilingInfo['width'] = $tileSize;
         $this->tilingInfo['scaleFactors'] = $scaleFactors;
-        return $this->tilingInfo;
+        return $this;
     }
 }

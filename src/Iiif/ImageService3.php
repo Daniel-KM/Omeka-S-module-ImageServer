@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2020 Daniel Berthereau
+ * Copyright 2020-2021 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -31,6 +31,7 @@ namespace ImageServer\Iiif;
 
 use IiifServer\Iiif\AbstractResourceType;
 use IiifServer\Iiif\TraitRights;
+use IiifServer\Iiif\ValueLanguage;
 use Omeka\Api\Representation\MediaRepresentation;
 
 /**
@@ -103,7 +104,7 @@ class ImageService3 extends AbstractResourceType
         $this->initImage();
     }
 
-    public function isImage()
+    public function isImage(): bool
     {
         return true;
     }
@@ -114,49 +115,49 @@ class ImageService3 extends AbstractResourceType
      * {@inheritDoc}
      * @see \IiifServer\Iiif\AbstractResourceType::getContext()
      */
-    public function getContext()
+    public function context(): ?string
     {
         return 'http://iiif.io/api/image/3/context.json';
     }
 
-    public function getLabel()
+    public function label(): ?ValueLanguage
     {
-        // There is no label for an image.
+        // There is no label for an image service.
         return null;
     }
 
-    public function getId()
+    public function id(): ?string
     {
         return $this->iiifImageUrl->__invoke($this->resource, 'imageserver/id', '3');
     }
 
-    public function getProtocol()
+    public function protocol(): ?string
     {
         return 'http://iiif.io/api/image';
     }
 
-    public function getProfile()
+    public function profile(): ?string
     {
         return 'level2';
     }
 
-    public function getMaxWidth()
+    public function maxWidth(): ?int
     {
-        return $this->getWidth();
+        return $this->width();
     }
 
-    public function getMaxHeight()
+    public function maxHeight(): ?int
     {
-        return $this->getHeight();
+        return $this->height();
     }
 
-    public function getMaxArea()
+    public function maxArea(): ?int
     {
         $size = $this->imageSize();
         return $size['width'] * $size['height'] ?: null;
     }
 
-    public function getSizes()
+    public function sizes(): ?array
     {
         if (!$this->isImage()) {
             return null;
@@ -176,7 +177,7 @@ class ImageService3 extends AbstractResourceType
         return $sizes;
     }
 
-    public function getTiles()
+    public function tiles(): ?array
     {
         if (!$this->isImage()) {
             return null;
@@ -200,17 +201,15 @@ class ImageService3 extends AbstractResourceType
      * The preferred format is jpeg, since the image server uses it by default.
      *
      * @todo Allow to create tiles with webp, gif, and png and add them here.
-     *
-     * @return array
      */
-    public function getPreferredFormats()
+    public function preferredFormats(): ?array
     {
         return [
             'jpg',
         ];
     }
 
-    public function getRights()
+    public function rights(): ?string
     {
         $url = null;
         $orUrl = false;
@@ -259,12 +258,12 @@ class ImageService3 extends AbstractResourceType
         return null;
     }
 
-    public function getExtraQualities()
+    public function extraQualities(): ?array
     {
         return null;
     }
 
-    public function getExtraFormats()
+    public function extraFormats(): ?array
     {
         return null;
     }
@@ -273,7 +272,7 @@ class ImageService3 extends AbstractResourceType
      * @link https://iiif.io/api/image/2.1/#profile-description
      * @link https://iiif.io/api/image/3.0/#6-compliance-level-and-profile-document
      */
-    public function getExtraFeatures()
+    public function extraFeatures(): ?array
     {
         // See https://iiif.io/api/image/3/context.json.
         /*

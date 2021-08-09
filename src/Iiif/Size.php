@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2020 Daniel Berthereau
+ * Copyright 2020-2021 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -67,36 +67,30 @@ class Size extends AbstractType
         $this->initImage();
     }
 
-    public function isImage()
+    public function isImage(): bool
     {
         return true;
     }
 
-    public function hasSize()
+    public function hasSize(): bool
     {
         $size = $this->imageSize($this->imageType());
         return !empty(array_filter($size));
     }
 
-    /**
-     * @return int|null
-     */
-    public function getHeight()
+    public function height(): ?int
     {
         $size = $this->imageSize($this->imageType());
-        return $size ? $size['height'] : null;
+        return $size ? (int) $size['height'] : null;
     }
 
-    /**
-     * @return int|null
-     */
-    public function getWidth()
+    public function width(): ?int
     {
         $size = $this->imageSize($this->imageType());
-        return $size ? $size['width'] : null;
+        return $size ? (int) $size['width'] : null;
     }
 
-    protected function imageType()
+    protected function imageType(): ?string
     {
         return $this->options['image_type'];
     }
