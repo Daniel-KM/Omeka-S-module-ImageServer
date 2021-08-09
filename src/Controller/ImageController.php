@@ -32,9 +32,8 @@ namespace ImageServer\Controller;
 
 use ImageServer\ImageServer\ImageServer;
 use Laminas\View\Model\ViewModel;
-use Omeka\Api\Exception\NotFoundException;
 use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
+use Omeka\Stdlib\Message;
 
 /**
  * The Image controller class.
@@ -79,17 +78,20 @@ class ImageController extends AbstractServerController
         /** @var \Omeka\Api\Representation\MediaRepresentation $media */
         $media = $this->fetchResource('media');
         if (!$media) {
-            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
+            return $this->viewError(new Message(
+                'Media "%s" not found.', // @translate
+                $this->params('id')
+            ), \Laminas\Http\Response::STATUS_CODE_404);
         }
 
         $response = $this->getResponse();
 
         // Check if the original file is an image.
         if (strpos($media->mediaType(), 'image/') !== 0) {
-            return $this->viewError(new UnsupportedMediaTypeException(
-                sprintf('The media "%d" is not an image', $media->id()), // @translate
-                \Laminas\Http\Response::STATUS_CODE_501
-            ));
+            return $this->viewError(new Message(
+                'The media "%d" is not an image', // @translate
+                $media->id()
+            ), \Laminas\Http\Response::STATUS_CODE_501);
         }
 
         $this->requestedVersion();
@@ -101,7 +103,7 @@ class ImageController extends AbstractServerController
             // The message is set in view.
             $response->setStatusCode(400);
             return $this->_view
-                ->setTemplate('image-server/image/error');
+                ->setTemplate('iiif-server/error');
         }
 
         $settings = $this->settings();
@@ -197,10 +199,9 @@ class ImageController extends AbstractServerController
                     if ($imager !== 'Vips') {
                         $maxFileSize = $settings->get('imageserver_image_max_size');
                         if (!empty($maxFileSize) && $media->size() > $maxFileSize) {
-                            return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
-                                'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.', // @translate
-                                \Laminas\Http\Response::STATUS_CODE_500
-                            ));
+                            return $this->viewError(new Message(
+                                'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.' // @translate
+                            ), \Laminas\Http\Response::STATUS_CODE_500);
                         }
                     }
                     $imagePath = $this->imageServer()->transform($transform);
@@ -231,10 +232,9 @@ class ImageController extends AbstractServerController
             unlink($imagePath);
 
             if (empty($output)) {
-                return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
-                    'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.', // @translate
-                    \Laminas\Http\Response::STATUS_CODE_500
-                ));
+                return $this->viewError(new Message(
+                    'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.' // @translate
+                ), \Laminas\Http\Response::STATUS_CODE_500);
             }
 
             $response->getHeaders()
@@ -253,10 +253,9 @@ class ImageController extends AbstractServerController
 
         // No result.
         else {
-            return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
-                'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.', // @translate
-                \Laminas\Http\Response::STATUS_CODE_500
-            ));
+            return $this->viewError(new Message(
+                'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.' // @translate
+            ), \Laminas\Http\Response::STATUS_CODE_500);
         }
     }
 

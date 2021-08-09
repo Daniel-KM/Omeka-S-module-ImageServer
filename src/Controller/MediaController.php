@@ -30,9 +30,9 @@
 
 namespace ImageServer\Controller;
 
-use Omeka\Api\Exception\NotFoundException;
 use Omeka\File\Store\StoreInterface;
 use Omeka\Mvc\Exception\UnsupportedMediaTypeException;
+use Omeka\Stdlib\Message;
 
 /**
  * The Media controller class.
@@ -61,7 +61,10 @@ class MediaController extends AbstractServerController
     {
         $media = $this->fetchResource('media');
         if (!$media) {
-            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
+            return $this->viewError(new Message(
+                'Media "%s" not found.', // @translate
+                $this->params('id')
+            ), \Laminas\Http\Response::STATUS_CODE_404);
         }
 
         $response = $this->getResponse();
@@ -70,10 +73,9 @@ class MediaController extends AbstractServerController
         // checked.
         $format = strtolower((string) $this->params('format'));
         if (pathinfo($media->filename(), PATHINFO_EXTENSION) != $format) {
-            return $this->viewError(new UnsupportedMediaTypeException(
-                'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.', // @translate
-                \Laminas\Http\Response::STATUS_CODE_500
-            ));
+            return $this->viewError(new Message(
+                'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the requested format is not supported.' // @translate
+            ), \Laminas\Http\Response::STATUS_CODE_500);
         }
 
         // A check is added if the file is local: the source can be a local file
@@ -83,10 +85,9 @@ class MediaController extends AbstractServerController
                 $filepath = $this->basePath
                     . DIRECTORY_SEPARATOR . $this->getStoragePath('original', $media->filename());
                 if (!file_exists($filepath) || filesize($filepath) == 0) {
-                    return $this->viewError(new \IiifServer\Iiif\Exception\RuntimeException(
-                        'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.', // @translate
-                        \Laminas\Http\Response::STATUS_CODE_500
-                    ));
+                    return $this->viewError(new Message(
+                        'The IXIF server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found.' // @translate
+                    ), \Laminas\Http\Response::STATUS_CODE_500);
                 }
                 break;
         }

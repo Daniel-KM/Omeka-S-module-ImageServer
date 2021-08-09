@@ -35,8 +35,8 @@ use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 use Omeka\Api\Exception\BadRequestException;
-use Omeka\Api\Exception\NotFoundException;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
+use Omeka\Stdlib\Message;
 
 /**
  * The server controller class.
@@ -104,7 +104,10 @@ class AbstractServerController extends AbstractActionController
     {
         $resource = $this->fetchResource('media');
         if (!$resource) {
-            return $this->jsonError(new NotFoundException, \Laminas\Http\Response::STATUS_CODE_404);
+            return $this->jsonError(new Message(
+                'Media "%s" not found.', // @translate
+                $this->params('id')
+            ), \Laminas\Http\Response::STATUS_CODE_404);
         }
 
         $this->requestedVersion();
@@ -207,22 +210,39 @@ class AbstractServerController extends AbstractActionController
         return $this->version;
     }
 
-    protected function jsonError(\Exception $exception, $statusCode = 500): JsonModel
+    protected function jsonError($exceptionOrMessage, $statusCode = 500): JsonModel
     {
         $this->getResponse()->setStatusCode($statusCode);
         return new JsonModel([
             'status' => 'error',
-            'message' => $exception->getMessage(),
+            'message' => $this->viewMessage($exceptionOrMessage),
         ]);
     }
 
-    protected function viewError(\Exception $exception, $statusCode = 500): ViewModel
+    /**
+     * @see https://iiif.io/api/image/3.0/#73-error-conditions
+     */
+    protected function viewError($exceptionOrMessage, $statusCode = 500): ViewModel
     {
         $this->getResponse()->setStatusCode($statusCode);
         $view = new ViewModel([
-            'message' => $exception->getMessage(),
+            'message' => $this->viewMessage($exceptionOrMessage),
         ]);
         return $view
-            ->setTemplate('image-server/image/error');
+        ->setTerminal(true)
+        ->setTemplate('iiif-server/error');
+    }
+
+    protected function viewMessage($exceptionOrMessage): string
+    {
+        if (is_object($exceptionOrMessage)) {
+            if ($exceptionOrMessage instanceof \Exception) {
+                return $exceptionOrMessage->getMessage();
+            }
+            if ($exceptionOrMessage instanceof Message) {
+                return (string) sprintf($this->translate($exceptionOrMessage->getMessage()), ...$exceptionOrMessage->getArgs());
+            }
+        }
+        return $this->translate((string) $exceptionOrMessage);
     }
 }
