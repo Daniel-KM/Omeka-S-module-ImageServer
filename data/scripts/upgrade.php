@@ -111,4 +111,14 @@ if (version_compare($oldVersion, '3.6.7.3', '<')) {
     $settings->delete('imageserver_info_version_append');
     //  Renamed "iiifserver_media_api_prefix".
     $settings->delete('imageserver_identifier_prefix');
+
+    $messenger = new Messenger();
+    $message = new Message(
+        'The routes to the image server have been renamed from "iiif-img/" and "ixif-media/" to the more standard "iiif/".' // @translate
+    );
+    $messenger->addWarning($message);
+    $message = new Message(
+        'Check the config of the module.' // @translate
+    );
+    $messenger->addWarning($message);
 }
