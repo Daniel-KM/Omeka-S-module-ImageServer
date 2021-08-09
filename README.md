@@ -235,11 +235,11 @@ The options for the default viewer can be changed in the theme (in partial "comm
 to copy in your theme, or by passing option `template` in the renderer).
 
 When the viewer doesn’t support a format, but the IIIF protocol, the image can
-be displayed through its IIIF url (https://example.org/iiif-img/{identifier}).
+be displayed through its IIIF url (https://example.org/iiif/{identifier}).
 It can be done for any image, even if it is not tiled, because of the dynamic
 transformation of images. OpenSeadragon supports iiif too (v2 and v3).
 
-To display an image with the IIIF protocol, set its url (https://example.org/iiif-img/{identifier}/info.json)
+To display an image with the IIIF protocol, set its url (https://example.org/iiif/{identifier}/info.json)
 in an attached media of type "IIIF" or use it directly in your viewer. The id is
 the one of the media, not the item.
 
@@ -251,11 +251,11 @@ They follow the recommandations of the [IIIF specifications].
 To view the json-ld manifests created for each resources of Omeka S, simply try
 these urls (replace :id by a true id):
 
-- https://example.org/iiif-img/:id/info.json for images files;
-- https://example.org/iiif-img/:id/:region/:size/:rotation/:quality.:format for
-images, for example: https://example.org/iiif-img/1/full/full/270/gray.png;
-- https://example.org/ixif-media/:id/info.json for other files;
-- https://example.org/ixif-media/:id.:format for the files.
+- https://example.org/iiif/:id/info.json for images files;
+- https://example.org/iiif/:id/:region/:size/:rotation/:quality.:format for
+images, for example: https://example.org/iiif/1/full/full/270/gray.png;
+- https://example.org/iiif/:id/info.json for other files;
+- https://example.org/iiif/:id.:format for the files.
 
 By default, ids are the internal ids of Omeka S, but it is recommended to use
 your own single and permanent identifiers that don’t depend on an internal
