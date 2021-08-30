@@ -3,7 +3,7 @@
 namespace ImageServer\View\Helper;
 
 use Laminas\Form\ElementInterface;
-use Laminas\View\Helper\AbstractHelper;
+use Laminas\Form\View\Helper\AbstractHelper;
 
 class FormNote extends AbstractHelper
 {
@@ -33,6 +33,7 @@ class FormNote extends AbstractHelper
             return $content;
         }
 
+        // It may use attributes, even if the text is empty.
         $view = $this->getView();
         return $this->openTag($element)
             . $view->escapeHtml($view->translate($element->getOption('text')))
@@ -52,11 +53,21 @@ class FormNote extends AbstractHelper
         }
 
         if (is_array($attributesOrElement)) {
-            $attributes = $this->createAttributesString($attributesOrElement);
-            return sprintf('<p %s>', $attributes);
+            $attributes = $attributesOrElement;
+        } else {
+            if (!is_object($attributesOrElement)
+                || !($attributesOrElement instanceof ElementInterface)
+            ) {
+                return '<p>';
+            }
+            $attributes = $attributesOrElement->getAttributes();
+            if (is_object($attributes)) {
+                $attributes = iterator_to_array($attributes);
+            }
         }
 
-        return '<p>';
+        $attributes = $this->createAttributesString($attributes);
+        return sprintf('<p %s>', $attributes);
     }
 
     /**
