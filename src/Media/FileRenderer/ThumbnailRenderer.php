@@ -15,6 +15,11 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
         static $defaultThumbnailType;
         static $tileFallback;
 
+        $mediaType = $media->mediaType();
+        if (substr($mediaType, 0, 5) !== 'image' || $mediaType === 'image/svg+xml') {
+            return parent::render($view, $media, $options);
+        }
+
         if (is_null($defaultThumbnailType)) {
             $setting = $view->plugin($view->status()->isSiteRequest() ? 'siteSetting' : 'setting');
             $defaultThumbnailType = (string) $setting('imageserver_default_thumbnail_type', 'large');
