@@ -612,7 +612,7 @@ SQL;
         if (!file_exists($dir)
             || !is_dir($dir)
             || !is_readable($dir)
-            || !is_writable($dir)
+            || !is_writeable($dir)
         ) {
             return false;
         }
