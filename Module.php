@@ -44,6 +44,7 @@ use Laminas\ModuleManager\ModuleManager;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Entity\Media;
 use Omeka\Module\Exception\ModuleCannotInstallException;
 use Omeka\Mvc\Controller\Plugin\Messenger;
@@ -262,8 +263,16 @@ SQL;
         );
     }
 
+    public function getConfigForm(PhpRenderer $renderer)
+    {
+        $this->checkAutoTiling();
+        return parent::getConfigForm($renderer);
+    }
+
     public function handleConfigForm(AbstractController $controller)
     {
+        $this->checkAutoTiling();
+
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
         $form = $services->get('FormElementManager')->get(ConfigForm::class);
@@ -338,6 +347,21 @@ SQL;
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
         return true;
+    }
+
+    protected function checkAutoTiling(): bool
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        if ($settings->get('imageserver_auto_tile')) {
+            return true;
+        }
+        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+        $message = new \Omeka\Stdlib\Message(
+            'The option "auto-tiling" is not set: it is recommended to enable it once all existing images have been tiled to avoid to tile new images manually.' // @translate
+        );
+        $messenger->addWarning($message);
+        return false;
     }
 
     /**

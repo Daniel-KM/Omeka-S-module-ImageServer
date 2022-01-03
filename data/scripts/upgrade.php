@@ -122,3 +122,7 @@ if (version_compare($oldVersion, '3.6.7.3', '<')) {
     );
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.6.9.3', '<')) {
+    $this->checkAutoTiling();
+}
