@@ -380,7 +380,7 @@ The minimal sRGB ICC v2 profile is a domain public one [from Gimp].
 Copyright
 ---------
 
-* Copyright Daniel Berthereau, 2015-2020 (see [Daniel-KM])
+* Copyright Daniel Berthereau, 2015-2022 (see [Daniel-KM])
 * Copyright BibLibre, 2016-2017
 
 This module is a rewrite of the [Universal Viewer plugin for Omeka Classic],
