@@ -241,6 +241,11 @@ SQL;
         );
         $sharedEventManager->attach(
             \Omeka\Api\Adapter\MediaAdapter::class,
+            'api.create.post',
+            [$this, 'handleAfterSaveMedia']
+        );
+        $sharedEventManager->attach(
+            \Omeka\Api\Adapter\MediaAdapter::class,
             'api.update.post',
             [$this, 'handleAfterSaveMedia']
         );
@@ -563,9 +568,15 @@ SQL;
      */
     protected function afterSaveMedia(Media $media): void
     {
-        if (strtok((string) $media->getMediaType(), '/') !== 'image') {
+        static $processingMedia = [];
+
+        if (strtok((string) $media->getMediaType(), '/') !== 'image'
+            || empty($processingMedia[$media->getId()])
+        ) {
             return;
         }
+
+        $processingMedia[$media->getId()] = true;
 
         $services = $this->getServiceLocator();
         $mediaRepr = $services->get('Omeka\ApiAdapterManager')->get('media')->getRepresentation($media);
