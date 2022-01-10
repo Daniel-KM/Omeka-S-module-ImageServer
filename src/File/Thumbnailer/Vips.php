@@ -109,7 +109,7 @@ class Vips extends AbstractThumbnailer
             $mapImagickToVips = [
                 'northwest' => 'high',
                 'north' => 'high',
-                'northearth' => 'high',
+                'northeast' => 'high',
                 'west' => 'centre',
                 'center' => 'centre',
                 'east' => 'centre',
@@ -134,14 +134,15 @@ class Vips extends AbstractThumbnailer
         $tempFile->delete();
 
         $command = sprintf(
-            '%s thumbnail %s %s %d --height %d%s%s --size both --linear --intent absolute',
+            '%s thumbnail %s %s %d --height %d%s%s --size %s --linear --intent absolute',
             $this->vipsPath,
             escapeshellarg($origPath),
             escapeshellarg($tempPathCommand),
             (int) $constraint,
             (int) $constraint,
             $crop,
-            $this->getOption('autoOrient', true) ? ' --no-rotate' : ''
+            $this->getOption('autoOrient', true) ? ' --no-rotate' : '',
+            $strategy === 'square' ? 'both' : 'down'
         );
 
         $output = $this->cli->execute($command);
