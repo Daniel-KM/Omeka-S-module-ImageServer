@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2015-2021 Daniel Berthereau
+ * Copyright 2015-2022 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -78,47 +78,45 @@ class Module extends AbstractModule
     protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
-        $moduleManager = $services->get('Omeka\ModuleManager');
-        $t = $services->get('MvcTranslator');
-
-        $module = $moduleManager->getModule('Generic');
-        if ($module && version_compare($module->getIni('version') ?? '', '3.3.27', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'Generic', '3.3.27'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
-        }
 
         $checkDeepzoom = __DIR__ . '/vendor/daniel-km/deepzoom/src/DeepzoomFactory.php';
         $checkZoomify = __DIR__ . '/vendor/daniel-km/zoomify/src/ZoomifyFactory.php';
         if (!file_exists($checkDeepzoom) || !file_exists($checkZoomify)) {
-            throw new ModuleCannotInstallException(
+            $t = $services->get('MvcTranslator');
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException(
                 $t->translate('You should run "composer install" from the root of the module, or install a release with the dependencies.') // @translate
                     . ' ' . $t->translate('See module’s installation documentation.') // @translate
             );
         }
 
-        $module = $moduleManager->getModule('ArchiveRepertory');
-        if ($module) {
-            $version = $module->getDb('version');
-            if ($version && version_compare($version, '3.15.4', '<')) {
-                throw new ModuleCannotInstallException(
-                    $t->translate('This version requires module %1$s %2$s or greater.'), // @translate
-                    'ArchiveRepertory', '3.15.4'
+        $modules = [
+            ['name' => 'Generic', 'version' => '3.3.34', 'required' => false],
+            ['name' => 'ArchiveRepertory', 'version' => '3.15.4', 'required' => false],
+            ['name' => 'IiifServer', 'version' => '3.6.6.6', 'required' => true],
+        ];
+        foreach ($modules as $moduleData) {
+            if (method_exists($this, 'checkModuleAvailability')) {
+                $this->checkModuleAvailability($moduleData['name'], $moduleData['version'], $moduleData['required'], true);
+            } else {
+                // @todo Adaptation from Generic method, to be removed in next version.
+                $moduleName = $moduleData['name'];
+                $version = $moduleData['version'];
+                $required = $moduleData['required'];
+                $module = $services->get('Omeka\ModuleManager')->getModule($moduleName);
+                if (!$module || !$this->isModuleActive($moduleName)) {
+                    if (!$required) {
+                        continue;
+                    }
+                    // Else throw message below (required module).
+                } elseif (!$version || version_compare($module->getIni('version') ?? '', $version, '>=')) {
+                    continue;
+                }
+                $translator = $services->get('MvcTranslator');
+                $message = new \Omeka\Stdlib\Message(
+                    $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
+                    $moduleName, $version
                 );
-            }
-        }
-
-        $module = $moduleManager->getModule('IiifServer');
-        if ($module) {
-            $version = $module->getDb('version');
-            if ($version && version_compare($version, '3.6.5.3', '<')) {
-                throw new ModuleCannotInstallException(
-                    $t->translate('This version requires module %1$s %2$s or greater.'), // @translate
-                    'IiifServer', '3.6.5.3'
-                );
+                throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
             }
         }
     }

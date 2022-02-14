@@ -126,3 +126,36 @@ if (version_compare($oldVersion, '3.6.7.3', '<')) {
 if (version_compare($oldVersion, '3.6.9.3', '<')) {
     $this->checkAutoTiling();
 }
+
+if (version_compare($oldVersion, '3.6.10.3', '<')) {
+    $modules = [
+        ['name' => 'Generic', 'version' => '3.3.34', 'required' => false],
+        ['name' => 'ArchiveRepertory', 'version' => '3.15.4', 'required' => false],
+        ['name' => 'IiifServer', 'version' => '3.6.6.6', 'required' => true],
+    ];
+    foreach ($modules as $moduleData) {
+        if (method_exists($this, 'checkModuleAvailability')) {
+            $this->checkModuleAvailability($moduleData['name'], $moduleData['version'], $moduleData['required'], true);
+        } else {
+            // @todo Adaptation from Generic method, to be removed in next version.
+            $moduleName = $moduleData['name'];
+            $version = $moduleData['version'];
+            $required = $moduleData['required'];
+            $module = $services->get('Omeka\ModuleManager')->getModule($moduleName);
+            if (!$module || !$this->isModuleActive($moduleName)) {
+                if (!$required) {
+                    continue;
+                }
+                // Else throw message below (required module with a version or not).
+            } elseif (!$version || version_compare($module->getIni('version') ?? '', $version, '>=')) {
+                continue;
+            }
+            $translator = $services->get('MvcTranslator');
+            $message = new \Omeka\Stdlib\Message(
+                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
+                $moduleName, $version
+            );
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        }
+    }
+}
