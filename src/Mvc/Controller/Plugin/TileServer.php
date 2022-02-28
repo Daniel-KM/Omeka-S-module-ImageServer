@@ -377,7 +377,7 @@ class TileServer extends AbstractPlugin
     /**
      * Helper to get width and height of an image.
      *
-     * @see \ImageServer\View\Helper\IiifInfo::getWidthAndHeight()
+     * @see \IiifServer\View\Helper\IiifManifest2::getWidthAndHeight()
      *
      * @param string $filepath This should be an image (no check here).
      * @return array Associative array of width and height of the image file.
