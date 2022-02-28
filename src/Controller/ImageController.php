@@ -232,10 +232,9 @@ class ImageController extends AbstractActionController
 
         //This is a transformed file.
         elseif ($imagePath) {
-            $output = file_get_contents($imagePath);
-            unlink($imagePath);
-
-            if (empty($output)) {
+            $filesize = filesize($imagePath);
+            if (empty($filesize)) {
+                @unlink($imagePath);
                 return $this->viewError(new Message(
                     'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.' // @translate
                 ), \Laminas\Http\Response::STATUS_CODE_500);
@@ -251,7 +250,24 @@ class ImageController extends AbstractActionController
                 )
                 ->addHeaderLine('Content-Type', $transform['format']['feature']);
 
-            $response->setContent($output);
+            // Send headers separately to handle large files.
+            $response->sendHeaders();
+
+            // TODO Use Laminas stream response.
+
+            // Clears all active output buffers to avoid memory overflow.
+            $response->setContent('');
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            readfile($imagePath);
+
+            // TODO Fix issue with session. See readme of module XmlViewer.
+            ini_set('display_errors', '0');
+
+            @unlink($imagePath);
+
+            // Return response to avoid default view rendering and to manage events.
             return $response;
         }
 
