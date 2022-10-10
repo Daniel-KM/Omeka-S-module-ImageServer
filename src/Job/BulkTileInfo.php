@@ -78,7 +78,7 @@ class BulkTileInfo extends AbstractJob
 
         $query = $this->getArg('query', []);
 
-        $response = $api->search('items', $query);
+        $response = $api->search('items', ['limit' => 0] + $query);
         $this->totalToProcess = $response->getTotalResults();
         if (empty($this->totalToProcess)) {
             $this->logger->warn(new Message(
