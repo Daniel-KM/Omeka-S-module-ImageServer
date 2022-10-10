@@ -69,7 +69,7 @@ return [
     ],
     'view_helpers' => [
         'invokables' => [
-            'formNote' => View\Helper\FormNote::class,
+            'formNote' => Form\View\Helper\FormNote::class,
         ],
         'factories' => [
             'tileInfo' => Service\ViewHelper\TileInfoFactory::class,

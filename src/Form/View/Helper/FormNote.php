@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace ImageServer\View\Helper;
+namespace ImageServer\Form\View\Helper;
 
 use Laminas\Form\ElementInterface;
 use Laminas\Form\View\Helper\AbstractHelper;
