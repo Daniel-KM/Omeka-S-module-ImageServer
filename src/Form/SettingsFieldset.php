@@ -15,6 +15,7 @@ class SettingsFieldset extends Fieldset
     public function init(): void
     {
         $this
+            ->setAttribute('id', 'image-server')
             ->add([
                 'name' => 'imageserver_default_thumbnail_type',
                 'type' => OptionalRadio::class,
