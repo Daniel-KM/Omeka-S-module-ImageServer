@@ -90,7 +90,7 @@ class Module extends AbstractModule
         }
 
         $modules = [
-            ['name' => 'Generic', 'version' => '3.3.34', 'required' => false],
+            ['name' => 'Generic', 'version' => '3.3.35', 'required' => false],
             ['name' => 'ArchiveRepertory', 'version' => '3.15.4', 'required' => false],
             ['name' => 'IiifServer', 'version' => '3.6.6.6', 'required' => true],
         ];
