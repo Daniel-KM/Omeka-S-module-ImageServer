@@ -145,7 +145,7 @@ SQL;
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
-            $messenger = new Messenger();
+            $messenger = $services->get('ControllerPluginManager')->get('messenger');
             $messenger->addWarning('The tile dir is not defined and was not removed.'); // @translate
         } else {
             $tileDir = $basePath . '/' . $tileDir;
@@ -154,7 +154,7 @@ SQL;
             if ($removable) {
                 $this->rrmdir($tileDir);
             } else {
-                $messenger = new Messenger();
+                $messenger = $services->get('ControllerPluginManager')->get('messenger');
                 $messenger->addWarning(
                     'The tile dir "%s" is not a real path and was not removed.', // @translate
                     $tileDir
@@ -359,7 +359,7 @@ SQL;
         if ($settings->get('imageserver_auto_tile')) {
             return true;
         }
-        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
         $message = new \Omeka\Stdlib\Message(
             'The option "auto-tiling" is not set: it is recommended to enable it once all existing images have been tiled to avoid to tile new images manually.' // @translate
         );
@@ -456,7 +456,7 @@ SQL;
             }
         }
 
-        $messenger = new Messenger();
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
         $messenger->addSuccess(new Message(
             'The tiles will be saved in the directory "%s".', // @translate
             $dir

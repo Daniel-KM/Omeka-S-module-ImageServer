@@ -24,6 +24,7 @@ $connection = $services->get('Omeka\Connection');
 $api = $services->get('Omeka\ApiManager');
 $config = require dirname(__DIR__, 2) . '/config/module.config.php';
 $settings = $services->get('Omeka\Settings');
+$messenger = $services->get('ControllerPluginManager')->get('messenger');
 
 if (version_compare($oldVersion, '3.6.2', '<')) {
     $settings->set('imageserver_info_default_version', $settings->get('imageserver_manifest_version'));
@@ -42,7 +43,6 @@ if (version_compare($oldVersion, '3.6.3.3', '<')) {
         throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
     }
 
-    $messenger = new Messenger();
     $message = new Message(
         'Now, all images can be automatically converted into tiles and an option in settings and site settings allows to specify the default display.
 It can be selected directly in the theme too (thumbnail "tile").
@@ -112,7 +112,6 @@ if (version_compare($oldVersion, '3.6.7.3', '<')) {
     //  Renamed "iiifserver_media_api_prefix".
     $settings->delete('imageserver_identifier_prefix');
 
-    $messenger = new Messenger();
     $message = new Message(
         'The routes to the image server have been renamed from "iiif-img/" and "ixif-media/" to the more standard "iiif/".' // @translate
     );
