@@ -12,14 +12,20 @@ class SettingsFieldset extends Fieldset
      */
     protected $label = 'Image Server'; // @translate
 
+    protected $elementGroups = [
+        'image_server' => 'Image server', // @translate
+    ];
+
     public function init(): void
     {
         $this
             ->setAttribute('id', 'image-server')
+            ->setOption('element_groups', $this->elementGroups)
             ->add([
                 'name' => 'imageserver_default_thumbnail_type',
                 'type' => OptionalRadio::class,
                 'options' => [
+                    'element_group' => 'image_server',
                     'label' => 'Default display of images', // @translate
                     'info' => 'To use the original file is not recommended when files are bigger than 1-10 MB.', // @translate
                     'value_options' => [
@@ -36,6 +42,7 @@ class SettingsFieldset extends Fieldset
                 'name' => 'imageserver_tile_fallback',
                 'type' => OptionalRadio::class,
                 'options' => [
+                    'element_group' => 'image_server',
                     'label' => 'Fallback when there is no tile', // @translate
                     'info' => 'To use the original file is not recommended when files are bigger than 1-10 MB.', // @translate
                     'value_options' => [
