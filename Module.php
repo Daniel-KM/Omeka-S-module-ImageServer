@@ -54,7 +54,9 @@ class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
 
-    protected $dependency = 'IiifServer';
+    protected $dependencies = [
+        'IiifServer',
+    ];
 
     public function init(ModuleManager $moduleManager): void
     {
