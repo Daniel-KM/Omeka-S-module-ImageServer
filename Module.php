@@ -95,7 +95,7 @@ SET `renderer` = "file"
 WHERE `renderer` = "tile";
 SQL;
         $connection = $services->get('Omeka\Connection');
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
 
         // Nuke all the tiles.
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');

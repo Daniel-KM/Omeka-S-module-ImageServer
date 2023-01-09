@@ -212,7 +212,7 @@ $storeOriginal
 WHERE `id` = $mediaId;
 SQL;
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
 
         if ($this->hasAmazonS3) {
             if (file_exists($this->sourcePath)) {
