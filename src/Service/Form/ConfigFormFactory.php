@@ -56,7 +56,7 @@ class ConfigFormFactory implements FactoryInterface
 
         $imageServer = $services->get('ControllerPluginManager')->get('imageServer');
 
-        $form = new ConfigForm(null, $options);
+        $form = new ConfigForm(null, $options ?? []);
         return $form
             ->setTranslator($services->get('MvcTranslator'))
             ->setImageServer($imageServer())

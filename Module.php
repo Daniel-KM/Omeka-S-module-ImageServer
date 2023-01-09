@@ -75,52 +75,6 @@ class Module extends AbstractModule
             );
     }
 
-    protected function preInstall(): void
-    {
-        $services = $this->getServiceLocator();
-
-        $checkDeepzoom = __DIR__ . '/vendor/daniel-km/deepzoom/src/DeepzoomFactory.php';
-        $checkZoomify = __DIR__ . '/vendor/daniel-km/zoomify/src/ZoomifyFactory.php';
-        if (!file_exists($checkDeepzoom) || !file_exists($checkZoomify)) {
-            $t = $services->get('MvcTranslator');
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException(
-                $t->translate('You should run "composer install" from the root of the module, or install a release with the dependencies.') // @translate
-                    . ' ' . $t->translate('See module’s installation documentation.') // @translate
-            );
-        }
-
-        $modules = [
-            ['name' => 'Generic', 'version' => '3.3.35', 'required' => false],
-            ['name' => 'ArchiveRepertory', 'version' => '3.15.4', 'required' => false],
-            ['name' => 'IiifServer', 'version' => '3.6.6.6', 'required' => true],
-        ];
-        foreach ($modules as $moduleData) {
-            if (method_exists($this, 'checkModuleAvailability')) {
-                $this->checkModuleAvailability($moduleData['name'], $moduleData['version'], $moduleData['required'], true);
-            } else {
-                // @todo Adaptation from Generic method, to be removed in next version.
-                $moduleName = $moduleData['name'];
-                $version = $moduleData['version'];
-                $required = $moduleData['required'];
-                $module = $services->get('Omeka\ModuleManager')->getModule($moduleName);
-                if (!$module || !$this->isModuleActive($moduleName)) {
-                    if (!$required) {
-                        continue;
-                    }
-                    // Else throw message below (required module).
-                } elseif (!$version || version_compare($module->getIni('version') ?? '', $version, '>=')) {
-                    continue;
-                }
-                $translator = $services->get('MvcTranslator');
-                $message = new \Omeka\Stdlib\Message(
-                    $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                    $moduleName, $version
-                );
-                throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
-            }
-        }
-    }
-
     protected function postInstall(): void
     {
         $services = $this->getServiceLocator();

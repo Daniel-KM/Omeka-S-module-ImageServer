@@ -335,7 +335,7 @@ SQL;
         if (file_exists($path)) {
             if (is_dir($path)) {
                 @chmod($path, 0775);
-                if (is_writable($path)) {
+                if (is_writeable($path)) {
                     return true;
                 }
                 $msg = $this->translate('Error directory non writable: "%s".', $path);
