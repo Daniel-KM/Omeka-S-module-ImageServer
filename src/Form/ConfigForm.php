@@ -2,7 +2,6 @@
 
 namespace ImageServer\Form;
 
-use IiifServer\Form\Element\OptionalUrl;
 use ImageServer\Form\Element\Note;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Form\Element;
@@ -10,7 +9,7 @@ use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
 use Laminas\I18n\Translator\TranslatorAwareInterface;
 use Laminas\I18n\Translator\TranslatorAwareTrait;
-use Omeka\Form\Element\PropertySelect;
+use Omeka\Form\Element as OmekaElement;
 
 class ConfigForm extends Form implements TranslatorAwareInterface
 {
@@ -39,7 +38,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         $this
             ->add([
                 'name' => 'fieldset_media_api',
-                'type' => \Laminas\Form\Fieldset::class,
+                'type' => Fieldset::class,
                 'options' => [
                     'label' => 'Image server', // @translate
                 ],
@@ -141,7 +140,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
 
             ->add([
                 'name' => 'fieldset_media_infojson',
-                'type' => \Laminas\Form\Fieldset::class,
+                'type' => Fieldset::class,
                 'options' => [
                     'label' => 'Content of media info.json', // @translate
                 ],
@@ -170,7 +169,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ])
             ->add([
                 'name' => 'imageserver_info_rights_property',
-                'type' => PropertySelect::class,
+                'type' => OmekaElement\PropertySelect::class,
                 'options' => [
                     'label' => 'Property to use for rights (license)', // @translate
                     'empty_option' => '',
@@ -183,7 +182,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 ],
             ])
             ->add([
-                'name' => 'imageserver_manifest_rights_uri',
+                'name' => 'imageserver_info_rights_uri',
                 'type' => Element\Select::class,
                 'options' => [
                     'label' => 'Uri of the license or rights', // @translate
@@ -241,7 +240,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_manifest_rights_uri',
+                    'id' => 'imageserver_info_rights_uri',
                     'class' => 'chosen-select',
                 ],
             ])
@@ -472,11 +471,15 @@ To save the height and the width of all images and derivatives allows to speed u
                 'required' => false,
             ])
             ->add([
-                'name' => 'imageserver_info_rights_url',
+                'name' => 'imageserver_info_rights_property',
                 'required' => false,
             ])
             ->add([
-                'name' => 'imageserver_info_rights_property',
+                'name' => 'imageserver_info_rights_uri',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'imageserver_info_rights_url',
                 'required' => false,
             ])
             ->add([
