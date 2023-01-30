@@ -30,6 +30,7 @@
 
 namespace ImageServer\Controller;
 
+use AccessResource\Mvc\Controller\Plugin\IsForbiddenFile;
 use IiifServer\Controller\IiifServerControllerTrait;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -47,6 +48,11 @@ use Omeka\Stdlib\Message;
 class ImageController extends AbstractActionController
 {
     use IiifServerControllerTrait;
+
+    /**
+     * @var \AccessResource\Mvc\Controller\Plugin\IsForbiddenFile
+     */
+    protected $isForbiddenFile;
 
     /**
      * @var string
@@ -74,9 +80,11 @@ class ImageController extends AbstractActionController
     protected $_view;
 
     public function __construct(
-        $basePath
+        ?string $basePath,
+        ?IsForbiddenFile $isForbiddenFile
     ) {
         $this->basePath = $basePath;
+        $this->isForbiddenFile = $isForbiddenFile;
     }
 
     /**
@@ -104,6 +112,23 @@ class ImageController extends AbstractActionController
         }
 
         $this->requestedVersionMedia();
+
+        // Compatibility with module AccessResource: rights should be checked
+        // for the file, not only for the media
+        if ($this->isForbiddenFile && $this->isForbiddenFile->__invoke($media)) {
+            // Manage custom asset file from the theme.
+            $viewHelpers = $this->viewHelpers();
+            $assetUrl = $viewHelpers->get('assetUrl');
+            $fileUrl = $assetUrl('img/locked-file.png', 'AccessResource', true, true, true);
+
+            $response->getHeaders()
+                ->addHeaderLine('Content-Transfer-Encoding: binary')
+                // ->addHeaderLine(sprintf('Content-Length: %s', $filesize))
+                ->addHeaderLine('Content-Type', 'image/png');
+
+            // Redirect (302/307) to the url of the file.
+            return $this->redirect()->toUrl($fileUrl);
+        }
 
         // Check, clean and optimize and fill values according to the request.
         $this->_view = new ViewModel;

@@ -12,8 +12,10 @@ class ImageControllerFactory implements FactoryInterface
     {
         $config = $services->get('Config');
         $basePath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $plugins = $services->get('ControllerPluginManager');
         return new ImageController(
-            $basePath
+            $basePath,
+            $plugins->has('isForbiddenFile') ? $plugins->get('isForbiddenFile') : null
         );
     }
 }
