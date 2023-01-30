@@ -288,12 +288,16 @@ abstract class AbstractImager implements LoggerAwareInterface
                     $image = $source;
                     break;
 
-                    // When the storage is external, the file is fetched before.
                 default:
+                    // When the storage is external, the file is fetched before.
                     $tempFile = $this->tempFileFactory->build();
                     $tempPath = $tempFile->getTempPath();
                     $tempFile->delete();
-                    $result = copy($source, $tempPath);
+                    try {
+                        $result = copy($source, $tempPath);
+                    } catch (\Exception $e) {
+                        return false;
+                    }
                     if (!$result) {
                         return false;
                     }
