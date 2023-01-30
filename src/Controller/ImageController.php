@@ -68,6 +68,11 @@ class ImageController extends AbstractActionController
         'webp' => 'image/webp',
     ];
 
+    /**
+     * @var ViewModel
+     */
+    protected $_view;
+
     public function __construct(
         $basePath
     ) {
@@ -816,7 +821,6 @@ class ImageController extends AbstractActionController
      * @param MediaRepresentation $media
      * @param string $imageType
      * @return string|null Null if not exists.
-     * @see \ImageServer\View\Helper\IiifInfo::_getImagePath()
      */
     protected function _getImagePath(MediaRepresentation $media, string $imageType = 'original'): ?string
     {
