@@ -306,8 +306,8 @@ abstract class AbstractImager implements LoggerAwareInterface
                     break;
             }
         } catch (\Exception $e) {
-            $message = new Message('Image Server failed to open the file "%s". Details:
-%s', $source, $e->getMessage()); // @translate
+            $message = new Message('Image Server failed to open the file "%1$s". Details:
+%2$s', $source, $e->getMessage()); // @translate
             $this->getLogger()->err($message);
             return false;
         }
