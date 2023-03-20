@@ -218,7 +218,7 @@ class ImageController extends AbstractActionController
                     }
                     // No transformation.
                     else {
-                        $imageUrl = $pretiled['fileurl'];
+                        $imageUrl = $pretiled['source']['fileurl'];
                     }
                 }
 
