@@ -314,7 +314,7 @@ class TileInfo extends AbstractPlugin
             return null;
         }
         $properties = $xml->attributes();
-        $properties = reset($properties);
+        // reset($properties) is deprecated, so use object properties directly.
 
         $tilingData = [];
         $tilingData['tile_type'] = 'zoomify';
@@ -323,12 +323,12 @@ class TileInfo extends AbstractPlugin
         $tilingData['url_base'] = $this->tileBaseUrl;
         $tilingData['path_base'] = $this->hasAmazonS3 ? $this->tileBaseUrl : $this->tileBaseDir;
         $tilingData['url_query'] = $this->tileBaseQuery;
-        $tilingData['size'] = (int) $properties['TILESIZE'];
+        $tilingData['size'] = (int) @$properties->TILESIZE;
         $tilingData['overlap'] = 0;
-        $tilingData['total'] = (int) $properties['NUMTILES'];
-        $tilingData['source']['width'] = (int) $properties['WIDTH'];
-        $tilingData['source']['height'] = (int) $properties['HEIGHT'];
-        $tilingData['format'] = $properties['FORMAT'] ?? 'jpg';
+        $tilingData['total'] = (int) @$properties->NUMTILES;
+        $tilingData['source']['width'] = (int) @$properties->WIDTH;
+        $tilingData['source']['height'] = (int) @$properties->HEIGHT;
+        $tilingData['format'] = (string) @$properties->FORMAT ?: 'jpg';
         return $tilingData;
     }
 
