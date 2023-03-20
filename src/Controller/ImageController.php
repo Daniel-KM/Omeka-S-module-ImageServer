@@ -416,6 +416,14 @@ class ImageController extends AbstractActionController
                 $regionHeight = $regionValues[3];
                 $x = $sourceWidth * $regionX / 100;
                 $y = $sourceHeight * $regionY / 100;
+                // Don't return x or y greater than source.
+                if ($x > $sourceWidth || $y > $sourceHeight) {
+                    $this->_view->setVariable('message', sprintf(
+                        $this->translate('The Image server cannot fulfill the request: the region "%s" is  outside the source.'), // @translate
+                        $region
+                    ));
+                    return null;
+                }
                 $width = ($regionX + $regionWidth) <= 100
                     ? $sourceWidth * $regionWidth / 100
                     : $sourceWidth - $x;
@@ -466,17 +474,61 @@ class ImageController extends AbstractActionController
             }
             // Normal region.
             else {
+                // Don't return x or y greater than source.
+                $regionX = $regionValues[0];
+                $regionY = $regionValues[1];
+                if ($regionX > $sourceWidth || $regionY > $sourceHeight) {
+                    $this->_view->setVariable('message', sprintf(
+                        $this->translate('The Image server cannot fulfill the request: the region "%s" is  outside the source.'), // @translate
+                        $region
+                    ));
+                    return null;
+                }
+                $regionWidth = $regionValues[2];
+                $regionHeight = $regionValues[3];
+                $x = $regionX;
+                $y = $regionY;
+                $width = ($x + $regionWidth) <= $sourceWidth
+                    ? $regionWidth
+                    : $sourceWidth - $x;
+                $height = ($y + $regionHeight) <= $sourceHeight
+                    ? $regionHeight
+                    : $sourceHeight - $y;
                 $transform['region'] = [
                     'feature' => 'regionByPx',
-                    'x' => $regionValues[0],
-                    'y' => $regionValues[1],
-                    'width' => $regionValues[2],
-                    'height' => $regionValues[3],
+                    'x' => (int) $x,
+                    'y' => (int) $y,
+                    'width' => (int) $width,
+                    'height' => (int) $height,
                 ];
+                if ($transform['region']['x'] === 0
+                    && $transform['region']['y'] === 0
+                    && $transform['region']['width'] === $sourceWidth
+                    && $transform['region']['height'] === $sourceHeight
+                ) {
+                    $transform['region']['feature'] = 'full';
+                }
             }
         }
 
+        // Check sizes to avoid a possible issue.
+        if ($transform['region']['x'] < 0
+            || $transform['region']['y'] < 0
+            || $transform['region']['width'] <= 0
+            || $transform['region']['height'] <= 0
+        ) {
+            $this->_view->setVariable('message', sprintf(
+                $this->translate('The Image server cannot fulfill the request: the region"%s" is invalid.'), // @translate
+                $region
+            ));
+            return null;
+        }
+
         // Determine the size.
+        // The width and height are set in all cases, so it is useless to check
+        // the feature in most of the case.
+        // TODO Clarify feature names (even if useless now since width and height are always determined early).
+        // TODO Manage upscaling via a parameter in config.
 
         // Manage the main difference between version 2 and 3.
         $upscale = mb_substr($size, 0, 1) === '^';
@@ -500,13 +552,32 @@ class ImageController extends AbstractActionController
                 ));
                 return null;
             }
-            $transform['size']['feature'] = 'max';
+            $transform['size'] = [
+                'feature' => 'max',
+                'upscale' => $upscale,
+                'width' => $transform['region']['width'],
+                'height' => $transform['region']['height'],
+            ];
         }
 
         // Max image (but below the max of the server).
-        // Note: Currently, the module doesn't set any max size, so max is full.
-        elseif ($size === 'max' || $size === '^max') {
-            $transform['size']['feature'] = 'max';
+        elseif ($size === 'max') {
+            $transform['size'] = [
+                'feature' => 'max',
+                'upscale' => $upscale,
+                'width' => $transform['region']['width'],
+                'height' => $transform['region']['height'],
+            ];
+        }
+
+        // TODO Currently, the module doesn't set any max size, so max is full.
+        elseif ($size === '^max') {
+            $transform['size'] = [
+                'feature' => 'max',
+                'upscale' => $upscale,
+                'width' => $transform['region']['width'],
+                'height' => $transform['region']['height'],
+            ];
         }
 
         // "pct:x": sizeByPct
@@ -521,31 +592,27 @@ class ImageController extends AbstractActionController
             }
             // A quick check to avoid a possible transformation.
             if ($sizePercentage == 100) {
-                $transform['size']['feature'] = 'max';
-            }
-            // Check strict upscale for version 3.
-            elseif (!$upscale && $sizePercentage > 100 && $versionIsGreaterOrEqual3) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), // @translate
-                    $size,
-                    $this->requestedApiVersion
-                ));
-                return null;
+                // TODO Manage upscaling.
+                $transform['size'] = [
+                    'feature' => 'max',
+                    'upscale' => $upscale,
+                    'width' => $transform['region']['width'],
+                    'height' => $transform['region']['height'],
+                ];
             }
             // Normal size.
             else {
-                $transform['size']['feature'] = 'sizeByPct';
-                $transform['size']['percentage'] = $sizePercentage;
+                $transform['size'] = [
+                    'feature' => 'sizeByWh',
+                    'upscale' => $upscale,
+                    'width' => (int) ($transform['region']['width'] * $sizePercentage / 100),
+                    'height' => (int) ($transform['region']['height'] * $sizePercentage / 100),
+                ];
+                // TODO Manage max upscale.
             }
         }
 
-        // Warning: "sizeByWh" has not the same meaning in api 2 and api 3.
-        // In api 2, it preserves aspect ratio, but not in api 3 (use
-        // "sizeByConfinedWh" instead).
-        // Anyway, it's just used as an internal convention here, only to have
-        // the same meaning in image server.
-
-        // "!w,h": sizeByWh / sizeByConfinedWh (keep ratio).
+        // "!w,h": sizeByConfinedWh (keep ratio), with or without upscale.
         elseif (strpos($size, '!') === 0 || strpos($size, '^!') === 0) {
             $pos = strpos($size, ',');
             $destinationWidth = (int) substr($size, $upscale ? 2 : 1, $pos);
@@ -562,34 +629,41 @@ class ImageController extends AbstractActionController
             if (($destinationWidth >= $transform['region']['width'] && $destinationHeight == $transform['region']['height'])
                 || ($destinationWidth == $transform['region']['width'] && $destinationHeight >= $transform['region']['height'])
             ) {
-                $transform['size']['feature'] = 'max';
-            }
-            // Check strict upscale for version 3.
-            elseif (!$upscale && $versionIsGreaterOrEqual3
-                && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
-            ) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), // @translate
-                    $size,
-                    $this->requestedApiVersion
-                ));
-                return null;
-            }
-            // Upscaled size.
-            elseif ($destinationWidth > $transform['region']['width'] && $destinationHeight > $transform['region']['height']) {
-                $transform['size']['feature'] = 'sizeByConfinedWh';
-                $transform['size']['width'] = $destinationWidth;
-                $transform['size']['height'] = $destinationHeight;
-            }
-            // Normal size.
-            else {
-                $transform['size']['feature'] = 'sizeByWh';
-                $transform['size']['width'] = $destinationWidth;
-                $transform['size']['height'] = $destinationHeight;
+                $transform['size'] = [
+                    'feature' => 'max',
+                    'upscale' => $upscale,
+                    'width' => $transform['region']['width'],
+                    'height' => $transform['region']['height'],
+                ];
+            } else {
+                $pctWidth = $transform['region']['width'] / $destinationWidth;
+                $pctHeight = $transform['region']['height'] / $destinationHeight;
+                if ($pctWidth > $pctHeight) {
+                    $transform['size'] = [
+                        'feature' => 'sizeByConfinedWh',
+                        'upscale' => $upscale,
+                        'width' => (int) ($transform['region']['width'] * $pctHeight),
+                        'height' => $destinationHeight,
+                    ];
+                } elseif ($pctWidth < $pctHeight) {
+                    $transform['size'] = [
+                        'feature' => 'sizeByConfinedWh',
+                        'upscale' => $upscale,
+                        'width' => $destinationWidth,
+                        'height' => (int) ($transform['region']['height'] * $pctWidth),
+                    ];
+                } else {
+                    $transform['size'] = [
+                        'feature' => 'sizeByConfinedWh',
+                        'upscale' => $upscale,
+                        'width' => $destinationWidth,
+                        'height' => $destinationHeight,
+                    ];
+                }
             }
         }
 
-        // "w,h", "w," or ",h".
+        // "w,h" (no ratio check), "w," or ",h" (keep ratio) with upscale or not.
         else {
             $pos = strpos($size, ',');
             $destinationWidth = (int) substr($size, $upscale ? 1 : 0, $pos);
@@ -602,18 +676,7 @@ class ImageController extends AbstractActionController
                 return null;
             }
 
-            if (!$upscale && $versionIsGreaterOrEqual3
-                && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
-            ) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for api version %s.'), // @translate
-                    $size,
-                    $this->requestedApiVersion
-                ));
-                return null;
-            }
-
-            // "w,h": sizeByWhListed or sizeByForcedWh.
+            // "w,h": sizeByWhListed or sizeByForcedWh (no ratio check).
             if ($destinationWidth && $destinationHeight) {
                 // Check the size only if the region is full, else it's forced.
                 if ($transform['region']['feature'] == 'full') {
@@ -624,6 +687,9 @@ class ImageController extends AbstractActionController
                             $imageSize = $this->imageSize($media, $imageType);
                             if ($destinationWidth == $imageSize['width'] && $destinationHeight == $imageSize['height']) {
                                 $transform['size']['feature'] = 'max';
+                                $transform['size']['upscale'] = $upscale;
+                                $transform['size']['width'] = $destinationWidth;
+                                $transform['size']['height'] = $destinationHeight;
                                 // Change the source file to avoid a transformation.
                                 // TODO Check the format?
                                 if ($imageType != 'original') {
@@ -643,22 +709,35 @@ class ImageController extends AbstractActionController
                     }
                 }
                 if (empty($transform['size']['feature'])) {
-                    $transform['size']['feature'] = 'sizeByForcedWh';
-                    $transform['size']['width'] = $destinationWidth;
-                    $transform['size']['height'] = $destinationHeight;
+                    $transform['size'] = [
+                        'feature' => 'sizeByForcedWh',
+                        'upscale' => $upscale,
+                        'width' => $destinationWidth,
+                        'height' => $destinationHeight,
+                    ];
                 }
             }
 
-            // "w,": sizeByW.
+            // "w,": sizeByW (keep ratio).
             elseif ($destinationWidth && empty($destinationHeight)) {
-                $transform['size']['feature'] = 'sizeByW';
-                $transform['size']['width'] = $destinationWidth;
+                $pctWidth = $transform['region']['width'] / $destinationWidth;
+                $transform['size'] = [
+                    'feature' => 'sizeByW',
+                    'upscale' => $upscale,
+                    'width' => $destinationWidth,
+                    'height' => (int) ($transform['region']['height'] * $pctWidth),
+                ];
             }
 
-            // ",h": sizeByH.
+            // ",h": sizeByH (keep ratio).
             elseif (empty($destinationWidth) && $destinationHeight) {
-                $transform['size']['feature'] = 'sizeByH';
-                $transform['size']['height'] = $destinationHeight;
+                $pctHeight = $transform['region']['height'] / $destinationHeight;
+                $transform['size'] = [
+                    'feature' => 'sizeByH',
+                    'upscale' => $upscale,
+                    'width' => (int) ($transform['region']['width'] * $pctHeight),
+                    'height' => $destinationHeight,
+                ];
             }
 
             // Not supported.
@@ -669,17 +748,30 @@ class ImageController extends AbstractActionController
                 ));
                 return null;
             }
+        }
 
-            // A quick check to avoid a possible transformation.
-            if (isset($transform['size']['width']) && empty($transform['size']['width'])
-                || isset($transform['size']['height']) && empty($transform['size']['height'])
-            ) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), // @translate
-                    $size
-                ));
-                return null;
-            }
+        // Check sizes to avoid a possible issue.
+        if ($transform['size']['width'] <= 0
+            || $transform['size']['height'] <= 0
+        ) {
+            $this->_view->setVariable('message', sprintf(
+                $this->translate('The Image server cannot fulfill the request: the size "%s" is invalid.'), // @translate
+                $size
+            ));
+            return null;
+        }
+
+        // Check strict upscale of api v3.
+        if (!$upscale && $versionIsGreaterOrEqual3
+            && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
+        ) {
+            $this->_view->setVariable('message', sprintf(
+                $this->translate('The Image server cannot fulfill the request: the region "%1$s" or size "%2$s" is incorrect for api version %3$s.'), // @translate
+                $region,
+                $size,
+                $this->requestedApiVersion
+            ));
+            return null;
         }
 
         // Determine the mirroring and the rotation.
