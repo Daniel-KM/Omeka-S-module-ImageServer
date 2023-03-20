@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-01-03 00:00+0000\n"
-"PO-Revision-Date: 2022-01-03 00:00+0000\n"
+"POT-Creation-Date: 2023-02-13 00:00+0000\n"
+"PO-Revision-Date: 2023-02-13 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -37,6 +37,8 @@ msgid ""
 "This version requires Archive Repertory 3.15.4 or greater (used for some 3D "
 "views)."
 msgstr ""
+"Cette version requiert le module Archive Repertory 3.15.4 ou supérieur (pour "
+"les modèles 3D)."
 
 #: src/Controller/ImageController.php:419
 #: src/Controller/ImageController.php:450
@@ -183,6 +185,12 @@ msgid ""
 "The conversion of the renderer from \"tile\" to the standard \"file\" can be "
 "done with the job in the config form."
 msgstr ""
+"Désormais, toutes les images sont automatiquement converties en tuiles et "
+"une option dans les paramètres généraux et dans les paramètres de site "
+"permet d’indiquer l’affichage par défaut.\n"
+"Cela peut également être indiqué dans le thème (vignette \"tile\").\n"
+"La conversion du rendu de \"tile\" au \"file\" standard peut être réalisé "
+"via une tâche dans le formulaire de configuration."
 
 #: data/scripts/upgrade.php:79
 #, php-format
@@ -248,7 +256,7 @@ msgstr ""
 #: Module.php:351
 #, php-format
 msgid "The directory \"%s\" is not writeable."
-msgstr ""
+msgstr "Le dossier « %s » ne permet pas l’écriture."
 
 #: Module.php:359
 #, php-format
@@ -276,7 +284,7 @@ msgstr ""
 
 #: src/Form/SettingsFieldset.php:25 src/Form/ConfigForm.php:307
 msgid "Tile"
-msgstr ""
+msgstr "Tuile"
 
 #: src/Form/SettingsFieldset.php:26
 msgid "Large"
@@ -322,6 +330,7 @@ msgstr "3"
 msgid ""
 "Append the version to the url (to be set inside module.config.php currently)"
 msgstr ""
+"Ajouter la version à l’url (à définir dans le fichier module.config.php)"
 
 #: src/Form/ConfigForm.php:67
 msgid ""
@@ -335,15 +344,15 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:92
 msgid "Rights (license)"
-msgstr ""
+msgstr "Droits (licence)"
 
 #: src/Form/ConfigForm.php:94
 msgid "No mention"
-msgstr ""
+msgstr "Pas de mention"
 
 #: src/Form/ConfigForm.php:95
 msgid "Specified text below (only for iiif 2.0)"
-msgstr ""
+msgstr "Texte indiqué ci-dessous (seulement pour iiif 2.0)"
 
 #: src/Form/ConfigForm.php:96
 msgid "Specified license url below"
@@ -351,15 +360,17 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:97
 msgid "Specified property below"
-msgstr ""
+msgstr "Propriété indiquée ci-dessous"
 
 #: src/Form/ConfigForm.php:98
 msgid "Property if any, else specified license text (only for iiif 2.0)"
 msgstr ""
+"Propriété si présente, sinon le texte de la licence (seulement pour iiif "
+"v2.0)"
 
 #: src/Form/ConfigForm.php:99
 msgid "Property if any, else specified license"
-msgstr ""
+msgstr "Propriété si présente, sinon la licence indiquée"
 
 #: src/Form/ConfigForm.php:100
 msgid "Url specified by the iiif server for the item"
@@ -389,7 +400,7 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:138
 msgid "Default license text (only for iiif 2.0)"
-msgstr ""
+msgstr "Licence par défaut (seulement pour IIIF v2.0)"
 
 #: src/Form/ConfigForm.php:149
 msgid "Image server"
@@ -417,7 +428,7 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:198
 msgid "Tiling type"
-msgstr ""
+msgstr "Type de tuilage"
 
 #: src/Form/ConfigForm.php:207
 msgid "Deep Zoom Image"
@@ -463,15 +474,15 @@ msgstr ""
 
 #: src/Form/ConfigForm.php:272
 msgid "Tasks"
-msgstr ""
+msgstr "Tâches"
 
 #: src/Form/ConfigForm.php:274
 msgid "Tiling"
-msgstr ""
+msgstr "Tuilage"
 
 #: src/Form/ConfigForm.php:275
 msgid "Sizing"
-msgstr ""
+msgstr "Taille"
 
 #: src/Form/ConfigForm.php:287
 msgid "Limit process to prepare tiles"
@@ -514,18 +525,24 @@ msgstr "Traitement"
 msgid ""
 "The Image server cannot fulfill the request: the arguments are incorrect."
 msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : les arguments sont "
+"incorrects."
 
 #: src/Controller/MediaController.php:141
 msgid ""
 "The IXIF server encountered an unexpected error that prevented it from "
 "fulfilling the request: the requested format is not supported."
 msgstr ""
+"Le serveur IXIF a rencontré une erreur qui l’a empêché de répondre : le "
+"format demandé n’est pas géré."
 
 #: src/Controller/MediaController.php:154
 msgid ""
 "The IXIF server encountered an unexpected error that prevented it from "
 "fulfilling the request: the resulting file is not found."
 msgstr ""
+"Le serveur IXIF a rencontré une erreur qui l’a empêché de répondre : le "
+"fichier final n’a pas été trouvé."
 
 #: src/Controller/ImageController.php:158
 #, php-format
@@ -572,7 +589,7 @@ msgstr ""
 
 #: src/Media/Ingester/Tile.php:110
 msgid "Tiler"
-msgstr ""
+msgstr "Tuileur"
 
 #: src/Media/Ingester/Tile.php:143
 msgid "No url and no file was submitted for tiling"
@@ -813,7 +830,7 @@ msgstr ""
 
 #: src/Mvc/Controller/Plugin/TileBuilder.php:73
 msgid "Source is empty."
-msgstr ""
+msgstr "La source est vide"
 
 #: src/Mvc/Controller/Plugin/TileBuilder.php:78
 #, php-format
