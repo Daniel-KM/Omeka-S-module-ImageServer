@@ -55,10 +55,11 @@ class TileServerDeepZoom extends TileServer
                 'regionByPct',
             ])
             || !in_array($transform['size']['feature'], [
+                // In all cases, via controller, width and height are set
+                // according to region.
                 // Full and max are nearly synonymous.
                 'full',
                 'max',
-                /*
                 'sizeByH',
                 'sizeByW',
                 'sizeByWh',
@@ -66,7 +67,6 @@ class TileServerDeepZoom extends TileServer
                 'sizeByConfinedWh',
                 'sizeByForcedWh',
                 'sizeByPct',
-                */
             ])
         ) {
             return null;

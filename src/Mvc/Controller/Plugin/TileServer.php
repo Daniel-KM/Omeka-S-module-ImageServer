@@ -140,12 +140,15 @@ class TileServer extends AbstractPlugin
     /**
      * Get the level and the position of the cell from the source and region.
      *
+     * @fixme There may be an offset with big images for zoomify.
+     *
      * @param array $tileInfo
      * @param array $source
      * @param array $region
      * @param array $size
-     * @param bool $isOneBased True if the pyramid starts at 1x1, or false if
-     * it starts at the tile size.
+     * @param bool $isOneBased True if the pyramid starts at 1x1 (deepzoom), or
+     * false if it starts at the tile size (zoomify). In IIIF, levels start at
+     * the tile size.
      * @return array|null
      */
     protected function getLevelAndPosition(
@@ -186,32 +189,21 @@ class TileServer extends AbstractPlugin
         $isLastCell = $isLastColumn && $isLastRow;
         $isSingleCell = $isFirstCell && $isLastCell;
 
+        $size['width'] = $size['width'] ?? $region['width'];
+        $size['height'] = $size['height'] ?? $region['height'];
+
         if ($isSingleCell) {
             // The whole image should be returned, so only check the biggest
             // whole image. With Zoomify, image is always "TileGroup0/0-0-0.jpg".
             // So only check the requested size.
             // Inside Omeka, it is never the case, because the thumbnails are
             // already returned.
+            // These checks are useless when called from controller.
             switch ($size['feature']) {
-                case 'sizeByW':
-                    if ($size['width'] > $cellSize
-                        || ($source['height'] * $size['width'] * $source['width'] > $cellSize)
-                    ) {
-                        return null;
-                    }
-                    break;
-
-                case 'sizeByH':
-                    if ($size['height'] > $cellSize
-                        || ($source['width'] * $size['height'] / $source['height'] > $cellSize)
-                    ) {
-                        return null;
-                    }
-                    break;
-
-                case 'sizeByConfinedWh':
+                case !empty($size['width'] && !empty($size['height'])):
                 case 'sizeByWh':
                 case 'sizeByWhListed':
+                case 'sizeByConfinedWh':
                     if ($size['width'] > $cellSize
                         || ($source['height'] * $size['width'] * $source['width'] > $cellSize)
                         || $size['height'] > $cellSize
@@ -230,13 +222,67 @@ class TileServer extends AbstractPlugin
                     }
                     break;
 
+                case 'sizeByW':
+                    if ($size['width'] > $cellSize
+                        || ($source['height'] * $size['width'] * $source['width'] > $cellSize)
+                    ) {
+                        return null;
+                    }
+                    break;
+
+                case 'sizeByH':
+                    if ($size['height'] > $cellSize
+                        || ($source['width'] * $size['height'] / $source['height'] > $cellSize)
+                    ) {
+                        return null;
+                    }
+                    break;
+
+                case 'sizeByForcedWh':
+                    if ($size['width'] > $cellSize
+                        || $size['height'] > $cellSize
+                    ) {
+                        return null;
+                    }
+                    break;
+
                 default:
                     return null;
             }
         } else {
-            // Determine the position of the cell from the source and the
-            // region.
+            // Determine cell position from source and region.
+            // TODO Here, only "full"/"max" and "sizeByWh" are checked. Anyway, via controller, width and height are always defined.
             switch ($size['feature']) {
+                case !empty($size['width'] && !empty($size['height'])):
+                case 'sizeByWh':
+                case 'sizeByWhListed':
+                    // TODO To improve.
+                    if ($isLastColumn) {
+                        // Normal row. The last cell is an exception below.
+                        if (!$isLastCell) {
+                            // Use row, because tiles are square.
+                            $count = (int) ceil(max($source['width'], $source['height']) / $region['height']);
+                            $cellX = $region['x'] / $region['width'];
+                            $cellY = $region['y'] / $region['height'];
+                        }
+                    }
+                    // Normal column and normal region.
+                    else {
+                        $count = (int) ceil(max($source['width'], $source['height']) / $region['width']);
+                        $cellX = $region['x'] / $region['width'];
+                        $cellY = $region['y'] / $region['height'];
+                    }
+                    break;
+
+                case 'full':
+                case 'max':
+                    // TODO To be checked.
+                    // Normalize the size, but they can be cropped.
+                    $count = (int) ceil(max($source['width'], $source['height']) / $region['width']);
+                    $cellX = $region['x'] / $region['width'];
+                    $cellY = $region['y'] / $region['height'];
+                    break;
+
                 case 'sizeByW':
                     if ($isLastColumn) {
                         // Normal row. The last cell is an exception below.
@@ -275,58 +321,28 @@ class TileServer extends AbstractPlugin
                     }
                     break;
 
-                case 'sizeByPct':
-                    // TODO Manage sizeByPct by tile server.
-                    break;
-
                 case 'sizeByConfinedWh':
-                    // TODO Manage sizeByConfinedWh by tile server.
+                    // TODO Manage sizeByConfinedWh by tile server (see and merge with controller).
                     break;
 
                 case 'sizeByForcedWh':
-                    // TODO Manage sizeByForcedWh by tile server.
+                    // TODO Manage sizeByForcedWh by tile server (see and merge with controller).
                     break;
 
-                case 'sizeByWh':
-                case 'sizeByWhListed':
-                    // TODO To improve.
-                    if ($isLastColumn) {
-                        // Normal row. The last cell is an exception below.
-                        if (!$isLastCell) {
-                            // Use row, because tiles are square.
-                            $count = (int) ceil(max($source['width'], $source['height']) / $region['height']);
-                            $cellX = $region['x'] / $region['width'];
-                            $cellY = $region['y'] / $region['height'];
-                        }
-                    }
-                    // Normal column and normal region.
-                    else {
-                        $count = (int) ceil(max($source['width'], $source['height']) / $region['width']);
-                        $cellX = $region['x'] / $region['width'];
-                        $cellY = $region['y'] / $region['height'];
-                    }
-                    break;
-
-                case 'full':
-                case 'max':
-                    // TODO To be checked.
-                    // Normalize the size, but they can be cropped.
-                    $size['width'] = $region['width'];
-                    $size['height'] = $region['height'];
-                    $count = (int) ceil(max($source['width'], $source['height']) / $region['width']);
-                    $cellX = $region['x'] / $region['width'];
-                    $cellY = $region['y'] / $region['height'];
+                case 'sizeByPct':
+                    // TODO Manage sizeByPct by tile server (see and merge with controller).
                     break;
 
                 default:
                     return null;
             }
 
-            // Get the list of squale factors.
+            // Get the list of squale factors to get the level.
             $maxDimension = max([$source['width'], $source['height']]);
-            $numLevels = $this->getNumLevels($maxDimension);
-            // In IIIF, levels start at the tile size.
-            $numLevels -= (int) log($cellSize, 2);
+            $numLevels = $this->getNumLevels($maxDimension)
+                // IIIF levels start with tile size, so numLevel - 8 for 256.
+                // The one-based level is taken into account below.
+                - (int) log($cellSize, 2);
             $scaleFactors = $this->getScaleFactors($numLevels);
             // TODO Find why maxSize and total were needed.
             // $maxSize = max($source['width'], $source['height']);
