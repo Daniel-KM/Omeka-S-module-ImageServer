@@ -71,7 +71,25 @@ composer install --no-dev
 
 Then install it like any other Omeka module.
 
-* CORS (Cross-Origin Resource Sharing)
+### http/2
+
+It is recommended to set the web server (usually Apache or Nginx) to serve files
+with protocol `http/2`, that allows to send multiple files during the same tcp
+connection, so to serve multiple tiles more quickly.
+
+For Apache, you generally just need to enable the module and to replace
+incompatible modules with new versions, and to make php running via php-fpm:
+
+```sh
+a2dismod mpm_prefork
+a2enmod mpm_event
+a2enmod proxy_fcgi
+a2enmod http2
+systemctl restart apache2
+systemctl restart php7.4-fpm
+```
+
+### CORS (Cross-Origin Resource Sharing)
 
 To be able to share manifests and contents with other Image servers, the server
 should allow CORS. The header is automatically set for manifests, but you may
@@ -103,7 +121,7 @@ directive `<Directory>`.
 
 To fix Amazon cors issues, see the [aws documentation].
 
-* Vips
+### Vips
 
 To install [vips], just run on Debian/Ubuntu, without the recommended graphical
 interface:
@@ -121,11 +139,17 @@ sudo dnf install vips-tools
 Recommanded version is 8.10 or higher. Versions prior to 8.4 have not been
 tested.
 
-* Jpeg 2000
+### Tile formats
 
-To support Jpeg 2000, the format should be available with ImageMagick. It is
-available by default since version 6.9.1.2-1 (2015, Debian/Ubuntu 2017). In some
-cases, you may need to install openjpeg tools:
+Four format are proposed to create tiles: DeepZoom, Zoomify, Jpeg 2000 and
+pyramidal Tiff. The recommended format is DeepZoom. For Jpeg 2000 and pyramidal
+tiff, some other tools may be required.
+
+#### Jpeg 2000
+
+If you choose jpeg 2000 as the tile format, it should be available with ImageMagick.
+It is available by default since version 6.9.1.2-1 (2015, Debian/Ubuntu 2017).
+In some cases, you may need to install openjpeg tools:
 
 ```sh
 sudo apt install libopenjp2-tools
@@ -144,12 +168,12 @@ apt-cache policy imagemagick
 /usr/bin/convert --version
 ```
 
-* Tiled pyramidal tiff
+#### Tiled pyramidal tiff
 
-Tiled pyramidal tiff is supported natively by ImageMagick, but not efficiently
-for reading, because it cannot extract a small portion without reading the whole
-file. So it is recommended to use the separate library [libvips] for dynamic
-extraction.
+If you choose pyramidal tiff as the tile format, note that the Tiled pyramidal
+tiff is supported natively by ImageMagick, but not efficiently for reading,
+because it cannot extract a small portion without reading the whole file. So it
+is recommended to use the separate library [libvips] for dynamic extraction.
 
 
 Image Server
@@ -176,22 +200,24 @@ it is recommended to pre-tile them to load and zoom them instantly. It can be
 done for any size of images. It may be recommended to manage at least the big
 images (more than 10 to 50 MB, according to your server and your public.
 
-Tiles can be created in four formats: Deep Zoom and Zoomify creates tile files.
-[Deep Zoom Image] is a free proprietary format from Microsoft largely supported,
-and [Zoomify] is an old format that was largely supported by proprietary image
-softwares and free viewers, like the [OpenLayers Zoom]. They are manageable by
-the module [Archive Repertory]. The two other formats, jpeg 2000 and tiled
-pyramidal tiff, create only one file that manages tiles internally.
+Tiles can be created in four formats:
+
+- [DeepZoom Image] creates tile files. It is a free proprietary format from
+  Microsoft largely supported.
+- [Zoomify] is an old format that was largely supported by proprietary image
+  softwares and free viewers, like the [OpenLayers Zoom]. Nevertheless, it's
+  integration in the module is less optimized than Deep Zoom and is not
+  recommended for now.
+- Jpeg 2000 creates a single file that can be processed quickly with some image
+  processor.
+- Tiled pyramidal tiff creates a single file too?
+
+All files created are stored in directory `files/tile` of Omeka and can be renamed
+with [Archive Repertory] too.
 
 The tiles are created via a background job for any image if the option is set to
-manage them automatically. Images can be uploaded from a file, or an url, or
+manage them automatically. Images can be uploaded from a file, a url, or
 imported.
-
-The media type "Tile", that was a specific type for that, is no more needed,
-except in some specific cases. For this media type, the source can be an
-uploaded file, a url or a local file (prepended with "file://" in the form, and
-requires the module [File Sideload] to be installed). They can be created via
-the modules [CSV Import] and [Bulk Import] too.
 
 The tiles can be created in bulk via a job, that can be run via a button in the
 config form of the module.
@@ -326,6 +352,10 @@ TODO / Bugs
 - [ ] Fix bitonal with vips.
 - [ ] Fix save jp2 with vips/convert.
 - [ ] Add an auto choice for thumbnailer (and select it accordiing to input format) and tile type.
+- [ ] Check why zoomify and deepzoom arounds (or overlap) are different (deepzoom is more compliant with OpenSeadragon).
+- [ ] Check why zoomify create bigger thumbnails.
+- [ ] Fix conversion of some iiif tiles for zoomify.
+
 
 See module [Iiif Server].
 
@@ -422,9 +452,6 @@ support the [Deep Zoom Image] tile format.
 [OpenLayers]: https://openlayers.org/
 [threejs]: https://threejs.org
 [Archive Repertory]: https://gitlab.com/Daniel-KM/Omeka-S-module-ArchiveRepertory
-[CSV Import]: https://github.com/omeka-s-modules/CSVImport
-[File Sideload]: https://github.com/omeka-s-modules/FileSideload
-[Bulk Import]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkImport
 [Deepzoom library]: https://gitlab.com/Daniel-KM/LibraryDeepzoom
 [Zoomify library]: https://gitlab.com/Daniel-KM/LibraryZoomify
 [Deepzoom]: https://github.com/jeremytubbs/deepzoom
