@@ -347,32 +347,39 @@ class ImageController extends AbstractActionController
         $format = $this->params('format');
 
         // Determine the region.
+        // The region is simplified into "regionByPx" or "full" in all cases.
 
         // Full image.
         // Manage the case where the source and requested images are square too.
         // TODO Square is not supported by 2.0, only by 2.1, but the iiif validator bypasses it.
         if ($region == 'full' || ($region === 'square' && $sourceWidth === $sourceHeight)) {
-            $transform['region']['feature'] = 'full';
-            // Next values may be needed for next parameters.
-            $transform['region']['x'] = 0;
-            $transform['region']['y'] = 0;
-            $transform['region']['width'] = $sourceWidth;
-            $transform['region']['height'] = $sourceHeight;
+            $transform['region'] = [
+                'feature' => 'full',
+                'x' => 0,
+                'y' => 0,
+                'width' => $sourceWidth,
+                'height' => $sourceHeight,
+            ];
         }
 
         // Square image.
         elseif ($region == 'square') {
-            $transform['region']['feature'] = 'regionByPx';
             if ($sourceWidth > $sourceHeight) {
-                $transform['region']['x'] = (int) (($sourceWidth - $sourceHeight) / 2);
-                $transform['region']['y'] = 0;
-                $transform['region']['width'] = $sourceHeight;
-                $transform['region']['height'] = $sourceHeight;
+                $transform['region'] = [
+                    'feature' => 'regionByPx',
+                    'x' => (int) (($sourceWidth - $sourceHeight) / 2),
+                    'y' => 0,
+                    'width' => $sourceHeight,
+                    'height' => $sourceHeight,
+                ];
             } else {
-                $transform['region']['x'] = 0;
-                $transform['region']['y'] = (int) (($sourceHeight - $sourceWidth) / 2);
-                $transform['region']['width'] = $sourceWidth;
-                $transform['region']['height'] = $sourceWidth;
+                $transform['region'] = [
+                    'feature' => 'regionByPx',
+                    'x' => 0,
+                    'y' => (int) (($sourceHeight - $sourceWidth) / 2),
+                    'width' => $sourceWidth,
+                    'height' => $sourceWidth,
+                ];
             }
         }
 
@@ -393,20 +400,42 @@ class ImageController extends AbstractActionController
                 && $regionValues[2] == 100
                 && $regionValues[3] == 100
             ) {
-                $transform['region']['feature'] = 'full';
-                // Next values may be needed for next parameters.
-                $transform['region']['x'] = 0;
-                $transform['region']['y'] = 0;
-                $transform['region']['width'] = $sourceWidth;
-                $transform['region']['height'] = $sourceHeight;
+                $transform['region'] = [
+                    'feature' => 'full',
+                    'x' => 0,
+                    'y' => 0,
+                    'width' => $sourceWidth,
+                    'height' => $sourceHeight,
+                ];
             }
             // Normal region.
             else {
-                $transform['region']['feature'] = 'regionByPct';
-                $transform['region']['x'] = $regionValues[0];
-                $transform['region']['y'] = $regionValues[1];
-                $transform['region']['width'] = $regionValues[2];
-                $transform['region']['height'] = $regionValues[3];
+                $regionX = $regionValues[0];
+                $regionY = $regionValues[1];
+                $regionWidth = $regionValues[2];
+                $regionHeight = $regionValues[3];
+                $x = $sourceWidth * $regionX / 100;
+                $y = $sourceHeight * $regionY / 100;
+                $width = ($regionX + $regionWidth) <= 100
+                    ? $sourceWidth * $regionWidth / 100
+                    : $sourceWidth - $x;
+                $height = ($regionY + $regionHeight) <= 100
+                    ? $sourceHeight * $regionHeight / 100
+                    : $sourceHeight - $y;
+                $transform['region'] = [
+                    'feature' => 'regionByPx',
+                    'x' => (int) $x,
+                    'y' => (int) $y,
+                    'width' => (int) $width,
+                    'height' => (int) $height,
+                ];
+                if ($transform['region']['x'] === 0
+                    && $transform['region']['y'] === 0
+                    && $transform['region']['width'] === $sourceWidth
+                    && $transform['region']['height'] === $sourceHeight
+                ) {
+                    $transform['region']['feature'] = 'full';
+                }
             }
         }
 
@@ -427,20 +456,23 @@ class ImageController extends AbstractActionController
                 && $regionValues[2] == $sourceWidth
                 && $regionValues[3] == $sourceHeight
             ) {
-                $transform['region']['feature'] = 'full';
-                // Next values may be needed for next parameters.
-                $transform['region']['x'] = 0;
-                $transform['region']['y'] = 0;
-                $transform['region']['width'] = $sourceWidth;
-                $transform['region']['height'] = $sourceHeight;
+                $transform['region'] = [
+                    'feature' => 'full',
+                    'x' => 0,
+                    'y' => 0,
+                    'width' => $sourceWidth,
+                    'height' => $sourceHeight,
+                ];
             }
             // Normal region.
             else {
-                $transform['region']['feature'] = 'regionByPx';
-                $transform['region']['x'] = $regionValues[0];
-                $transform['region']['y'] = $regionValues[1];
-                $transform['region']['width'] = $regionValues[2];
-                $transform['region']['height'] = $regionValues[3];
+                $transform['region'] = [
+                    'feature' => 'regionByPx',
+                    'x' => $regionValues[0],
+                    'y' => $regionValues[1],
+                    'width' => $regionValues[2],
+                    'height' => $regionValues[3],
+                ];
             }
         }
 
