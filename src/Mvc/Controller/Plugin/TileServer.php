@@ -71,6 +71,9 @@ class TileServer extends AbstractPlugin
         }
     }
 
+    /**
+     * Get the region by px from region by %.
+     */
     protected function convertRegionByPercent(array $source, array $region): array
     {
         $x = $source['width'] * $region['x'] / 100;
@@ -81,13 +84,21 @@ class TileServer extends AbstractPlugin
         $height = ($region['y'] + $region['height']) <= 100
             ? $source['height'] * $region['height'] / 100
             : $source['height'] - $y;
-        return [
+        $result = [
             'feature' => 'regionByPx',
             'x' => (int) $x,
             'y' => (int) $y,
             'width' => (int) $width,
             'height' => (int) $height,
         ];
+        if ($result['x'] === 0
+            && $result['y'] === 0
+            && $result['width'] === $source['width']
+            && $result['height'] === $source['height']
+        ) {
+            $result['feature'] = 'full';
+        }
+        return $result;
     }
 
     /**
@@ -117,6 +128,7 @@ class TileServer extends AbstractPlugin
         // processor.
         $cellSize = $tileInfo['size'];
 
+        // Simplify region to be "regionByPx" or "full".
         if ($region['feature'] === 'regionByPct') {
             $region = $this->convertRegionByPercent($source, $region);
         }
@@ -189,7 +201,7 @@ class TileServer extends AbstractPlugin
             switch ($size['feature']) {
                 case 'sizeByW':
                     if ($isLastColumn) {
-                        // Normal row. The last cell is an exception.
+                        // Normal row. The last cell is an exception below.
                         if (!$isLastCell) {
                             // Use row, because Deepzoom and Zoomify tiles are
                             // square by default.
@@ -209,7 +221,7 @@ class TileServer extends AbstractPlugin
 
                 case 'sizeByH':
                     if ($isLastRow) {
-                        // Normal column. The last cell is an exception.
+                        // Normal column. The last cell is an exception below.
                         if (!$isLastCell) {
                             // Use column, because tiles are square.
                             $count = (int) ceil(max($source['width'], $source['height']) / $region['width']);
@@ -241,7 +253,7 @@ class TileServer extends AbstractPlugin
                 case 'sizeByWhListed':
                     // TODO To improve.
                     if ($isLastColumn) {
-                        // Normal row. The last cell is an exception.
+                        // Normal row. The last cell is an exception below.
                         if (!$isLastCell) {
                             // Use row, because tiles are square.
                             $count = (int) ceil(max($source['width'], $source['height']) / $region['height']);
