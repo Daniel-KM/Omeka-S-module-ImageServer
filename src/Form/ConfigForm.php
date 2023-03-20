@@ -275,14 +275,14 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
-                'name' => 'imageserver_auto_tile',
+                'name' => 'imageserver_tile_manual',
                 'type' => Element\Checkbox::class,
                 'options' => [
-                    'label' => 'Tile images automatically when saved (important: enable it only when all existing images are already tiled)', // @translate
-                    'info' => 'If set, any action on items will create tiles if they are not present, so it can overload the server. So bulk tile all items first below.', // @translate
+                    'label' => 'Tile images manually and not automatically on save', // @translate
+                    'info' => 'If unset, to run the task below will be required to create tiles. It is recommended to set automatic tiling once all existing items are tiled to avoid to overload the server. So bulk tile all items first below.', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_auto_tile',
+                    'id' => 'imageserver_tile_manual',
                 ],
             ])
             ->add([

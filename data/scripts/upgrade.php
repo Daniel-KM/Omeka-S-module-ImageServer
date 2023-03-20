@@ -155,3 +155,8 @@ if (version_compare($oldVersion, '3.6.10.3', '<')) {
         }
     }
 }
+
+if (version_compare($oldVersion, '3.6.13', '<')) {
+    $settings->set('imageserver_tile_manual', !$settings->get('imageserver_auto_tile'));
+    $settings->delete('imageserver_auto_tile');
+}

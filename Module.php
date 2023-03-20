@@ -311,7 +311,7 @@ SQL;
     {
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
-        if ($settings->get('imageserver_auto_tile')) {
+        if (!$settings->get('imageserver_tile_manual')) {
             return true;
         }
         $messenger = $services->get('ControllerPluginManager')->get('messenger');
@@ -495,9 +495,9 @@ SQL;
         ];
 
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        $services->get('Omeka\Settings')->get('imageserver_auto_tile', false)
-            ? $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params)
-            : $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
+        $services->get('Omeka\Settings')->get('imageserver_tile_manual', false)
+            ? $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params)
+            : $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
     }
 
     public function handleAfterSaveMedia(Event $event): void
@@ -542,7 +542,7 @@ SQL;
         $mediaData = $media->getData() ?: [];
         $hasSize = !empty($mediaData['dimensions']['large']['width']);
         $hasTile = $tileMediaInfo($mediaRepr);
-        $autoTile = $services->get('Omeka\Settings')->get('imageserver_auto_tile', false);
+        $autoTile = !$services->get('Omeka\Settings')->get('imageserver_tile_manual', false);
         if ($hasSize && ($hasTile || !$autoTile)) {
             return;
         }
