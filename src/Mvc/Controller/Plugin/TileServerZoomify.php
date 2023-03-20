@@ -50,7 +50,7 @@ class TileServerZoomify extends TileServer
         if (
             !in_array($transform['region']['feature'], [
                 'full',
-                // 'square',
+                'square',
                 'regionByPx',
                 'regionByPct',
             ])

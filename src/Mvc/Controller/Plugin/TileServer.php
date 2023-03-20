@@ -51,6 +51,10 @@ class TileServer extends AbstractPlugin
      * Nevertheless, OpenSeadragon tries to ask 0-based tiles, so only this case
      * is managed currently.
      *
+     * Some formats for region and size are converted early, but may be coped
+     * here.
+     * @see \ImageServer\Controller\ImageController::_cleanRequest().
+     *
      * @param array $tileInfo
      * @param array $transform
      * @return array|null
@@ -102,6 +106,38 @@ class TileServer extends AbstractPlugin
     }
 
     /**
+     * Get the region by px from region by square.
+     */
+    protected function convertRegionBySquare(array $source, array $region): array
+    {
+        if ($source['width'] === $source['height']) {
+            return [
+                'feature' => 'full',
+                'x' => 0,
+                'y' => 0,
+                'width' => $source['width'],
+                'height' => $source['height'],
+            ];
+        } elseif ($source['width'] > $source['height']) {
+            return [
+                'feature' => 'regionByPx',
+                'x' => (int) (($source['width'] - $source['height']) / 2),
+                'y' => 0,
+                'width' => $source['height'],
+                'height' => $source['height'],
+            ];
+        } else {
+            return [
+                'feature' => 'regionByPx',
+                'x' => 0,
+                'y' => (int) (($source['height'] - $source['width']) / 2),
+                'width' => $source['width'],
+                'height' => $source['width'],
+            ];
+        }
+    }
+
+    /**
      * Get the level and the position of the cell from the source and region.
      *
      * @param array $tileInfo
@@ -131,6 +167,8 @@ class TileServer extends AbstractPlugin
         // Simplify region to be "regionByPx" or "full".
         if ($region['feature'] === 'regionByPct') {
             $region = $this->convertRegionByPercent($source, $region);
+        } elseif ($size['feature'] === 'square') {
+            $region = $this->convertRegionBySquare($source, $region);
         }
 
         // Return only direct single tile, or smaller.
