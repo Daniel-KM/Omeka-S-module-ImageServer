@@ -62,7 +62,8 @@ class TileInfoFactory implements FactoryInterface
             $tileBaseQuery,
             $hasAmazonS3,
             $store,
-            $services->get('ControllerPluginManager')->get('imageSize')
+            $services->get('ControllerPluginManager')->get('imageSize'),
+            $services->get('Omeka\Logger')
         );
     }
 }

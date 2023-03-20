@@ -30,6 +30,7 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use IiifServer\Mvc\Controller\Plugin\ImageSize;
+use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Representation\MediaRepresentation;
 
@@ -86,6 +87,11 @@ class TileInfo extends AbstractPlugin
     protected $imageSize;
 
     /**
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
      * @param string $tileBaseDir Full path prepended to a storage id. Is equal
      *   to $tileBaseUrl for remote storage.
      */
@@ -95,7 +101,8 @@ class TileInfo extends AbstractPlugin
         ?string $tileBaseQuery,
         bool $hasAmazonS3,
         ?\AmazonS3\File\Store\AwsS3 $store,
-        ImageSize $imageSize
+        ImageSize $imageSize,
+        Logger $logger
     ) {
         $this->tileBaseDir = $tileBaseDir;
         $this->tileBaseUrl = $tileBaseUrl;
@@ -103,6 +110,7 @@ class TileInfo extends AbstractPlugin
         $this->hasAmazonS3 = $hasAmazonS3;
         $this->store = $store;
         $this->imageSize = $imageSize;
+        $this->logger = $logger;
     }
 
     /**
@@ -223,6 +231,10 @@ class TileInfo extends AbstractPlugin
         if ($this->hasAmazonS3) {
             $path = $this->store->getUri($path);
         }
+        if (!function_exists('simplexml_load_file')) {
+            $this->logger->err('Php extension php-xml is not installed'); // @translate
+            return null;
+        }
         $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
         if (!$xml) {
             return null;
@@ -292,6 +304,10 @@ class TileInfo extends AbstractPlugin
     {
         if ($this->hasAmazonS3) {
             $path = $this->store->getUri($path);
+        }
+        if (!function_exists('simplexml_load_file')) {
+            $this->logger->err('Php extension php-xml is not installed'); // @translate
+            return null;
         }
         $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
         if (!$xml) {
