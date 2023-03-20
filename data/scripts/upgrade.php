@@ -31,11 +31,11 @@ if (version_compare($oldVersion, '3.6.2', '<')) {
 
 if (version_compare($oldVersion, '3.6.3.3', '<')) {
     $module = $services->get('Omeka\ModuleManager')->getModule('Generic');
-    if ($module && version_compare($module->getIni('version') ?? '', '3.3.27', '<')) {
+    if ($module && version_compare($module->getIni('version') ?? '', '3.4.43', '<')) {
         $translator = $services->get('MvcTranslator');
         $message = new \Omeka\Stdlib\Message(
             $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-            'Generic', '3.3.27'
+            'Generic', '3.4.43'
         );
         throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
     }
@@ -125,7 +125,7 @@ if (version_compare($oldVersion, '3.6.9.3', '<')) {
 
 if (version_compare($oldVersion, '3.6.10.3', '<')) {
     $modules = [
-        ['name' => 'Generic', 'version' => '3.3.34', 'required' => false],
+        ['name' => 'Generic', 'version' => '3.4.43', 'required' => false],
         ['name' => 'ArchiveRepertory', 'version' => '3.15.4', 'required' => false],
         ['name' => 'IiifServer', 'version' => '3.6.6.6', 'required' => true],
     ];
