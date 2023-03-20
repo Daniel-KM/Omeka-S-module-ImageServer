@@ -160,7 +160,7 @@ class Vips extends AbstractImager
 
         // Get width and height if missing.
         if (empty($args['source']['width']) || empty($args['source']['height'])) {
-            list($args['source']['width'], $args['source']['height']) = getimagesize($image);
+            [$args['source']['width'], $args['source']['height']] = getimagesize($image);
         }
 
         // Region + Size.
@@ -175,13 +175,14 @@ class Vips extends AbstractImager
             $isOldVersion = version_compare($version, 'vips-8.10', '<');
         }
 
-        list(
+        [
             $sourceX,
             $sourceY,
             $sourceWidth,
             $sourceHeight,
             $destinationWidth,
-            $destinationHeight) = $extraction;
+            $destinationHeight,
+        ] = $extraction;
 
         // The command line vips is not pipable, so an intermediate file is
         // required when there are more than one operation.

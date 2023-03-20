@@ -43,7 +43,7 @@ class Vips extends AbstractThumbnailer
         $this->tempFileFactory = $tempFileFactory;
     }
 
-    public function setOptions(array $options)
+    public function setOptions(array $options): void
     {
         parent::setOptions($options);
         if (is_null($this->vipsPath)) {

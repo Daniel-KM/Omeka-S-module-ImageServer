@@ -47,7 +47,6 @@ use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Entity\Media;
 use Omeka\Module\Exception\ModuleCannotInstallException;
-use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Stdlib\Message;
 
 class Module extends AbstractModule

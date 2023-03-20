@@ -2,10 +2,9 @@
 
 namespace ImageServer\Job;
 
-use Omeka\Entity\Media;
+use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Job\AbstractJob;
 use Omeka\Stdlib\Message;
-use Omeka\Api\Representation\MediaRepresentation;
 
 class BulkTileInfo extends AbstractJob
 {

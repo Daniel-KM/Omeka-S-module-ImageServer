@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 namespace ImageServer\Service\File\Thumbnailer;
 
 use ImageServer\File\Thumbnailer\Vips;

@@ -124,13 +124,14 @@ class Imagick extends AbstractImager
             return null;
         }
 
-        list(
+        [
             $sourceX,
             $sourceY,
             $sourceWidth,
             $sourceHeight,
             $destinationWidth,
-            $destinationHeight) = $extraction;
+            $destinationHeight,
+        ] = $extraction;
 
         // The background is normally useless, but it's costless.
         $imagick->setBackgroundColor('black');

@@ -2,7 +2,6 @@
 
 namespace ImageServer\Form\View\Helper;
 
-
 use Laminas\Form\ElementInterface;
 use Laminas\Form\View\Helper\AbstractHelper;
 

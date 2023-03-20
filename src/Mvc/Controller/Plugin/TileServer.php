@@ -386,7 +386,7 @@ class TileServer extends AbstractPlugin
     protected function getWidthAndHeight(string $filepath): array
     {
         if (file_exists($filepath)) {
-            list($width, $height) = getimagesize($filepath);
+            [$width, $height] = getimagesize($filepath);
             return [
                 'width' => $width,
                 'height' => $height,

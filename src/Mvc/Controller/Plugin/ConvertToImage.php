@@ -46,7 +46,7 @@ class ConvertToImage extends AbstractPlugin
             return false;
         }
 
-        list($width, $height) = array_values($this->imageSize->__invoke($source));
+        [$width, $height] = array_values($this->imageSize->__invoke($source));
         if (!$width || !$height) {
             return false;
         }

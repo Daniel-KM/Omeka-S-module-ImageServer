@@ -121,13 +121,14 @@ class GD extends AbstractImager
             return null;
         }
 
-        list(
+        [
             $sourceX,
             $sourceY,
             $sourceWidth,
             $sourceHeight,
             $destinationWidth,
-            $destinationHeight) = $extraction;
+            $destinationHeight,
+        ] = $extraction;
 
         $destinationGD = imagecreatetruecolor($destinationWidth, $destinationHeight);
         // The background is normally useless, but it's costless.

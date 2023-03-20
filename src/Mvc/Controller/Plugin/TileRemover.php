@@ -40,7 +40,7 @@ class TileRemover extends AbstractPlugin
      * @param \Omeka\Entity\Media $media
      * @param array|string $formats
      */
-    public function __invoke(Media $media, array $formats = [])
+    public function __invoke(Media $media, array $formats = []): void
     {
         if (empty($this->tileDir)) {
             return;

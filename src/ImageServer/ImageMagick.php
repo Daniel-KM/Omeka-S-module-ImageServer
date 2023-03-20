@@ -153,7 +153,7 @@ class ImageMagick extends AbstractImager
 
         // Get width and height if missing.
         if (empty($args['source']['width']) || empty($args['source']['height'])) {
-            list($args['source']['width'], $args['source']['height']) = getimagesize($image);
+            [$args['source']['width'], $args['source']['height']] = getimagesize($image);
         }
 
         // Region + Size.
@@ -163,13 +163,13 @@ class ImageMagick extends AbstractImager
             return null;
         }
 
-        list(
+        [
             $sourceX,
             $sourceY,
             $sourceWidth,
             $sourceHeight,
             $destinationWidth,
-            $destinationHeight) = $extraction;
+            $destinationHeight] = $extraction;
 
         $params = [];
         // The background is normally useless, but it's costless.

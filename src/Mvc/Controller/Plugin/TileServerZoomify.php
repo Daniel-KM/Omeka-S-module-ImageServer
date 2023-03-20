@@ -90,7 +90,7 @@ class TileServerZoomify extends TileServer
             . DIRECTORY_SEPARATOR . $tileInfo['media_path']
             . DIRECTORY_SEPARATOR . $relativePath;
 
-        list($tileWidth, $tileHeight) = array_values($this->getWidthAndHeight($imagePath));
+        [$tileWidth, $tileHeight] = array_values($this->getWidthAndHeight($imagePath));
 
         // TODO To be checked.
         if ($tileInfo['overlap']) {
