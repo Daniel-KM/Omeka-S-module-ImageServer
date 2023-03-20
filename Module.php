@@ -524,7 +524,7 @@ SQL;
         static $processingMedia = [];
 
         if (strtok((string) $media->getMediaType(), '/') !== 'image'
-            || empty($processingMedia[$media->getId()])
+            || !empty($processingMedia[$media->getId()])
         ) {
             return;
         }
