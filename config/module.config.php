@@ -114,11 +114,13 @@ return [
             'tileRemover' => Service\ControllerPlugin\TileRemoverFactory::class,
         ],
     ],
+    /*
     'media_ingesters' => [
         'factories' => [
             'tile' => Service\Media\Ingester\TileFactory::class,
         ],
     ],
+    */
     'media_renderers' => [
         'factories' => [
             'tile' => Service\Media\Renderer\TileFactory::class,
@@ -275,6 +277,7 @@ return [
         ],
     ],
     'archiverepertory' => [
+        // The key is "ingesters", even if "tile" is no more an ingester.
         'ingesters' => [
             'tile' => [
                 // This is the param "imageserver_image_tile_dir".
@@ -295,11 +298,13 @@ return [
             ],
         ],
     ],
+    /*
     'csv_import' => [
         'media_ingester_adapter' => [
             'tile' => MediaIngesterAdapter\TileMediaIngesterAdapter::class,
         ],
     ],
+    */
     'imageserver' => [
         'config' => [
             // Use the same name than the module Iiif Server for simplicity.

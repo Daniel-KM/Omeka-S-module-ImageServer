@@ -283,6 +283,7 @@ SQL;
         $skipLength = mb_strlen($baseDir) + 1;
         $tileDir = $baseDir . '/' . $services->get('Omeka\Settings')->get('imageserver_image_tile_dir');
 
+        // The key is "ingesters", even if "tile" is no more an ingester.
         $suffixes = $config['archiverepertory']['ingesters']['tile']['extension'];
         $rmdir = [];
         $rmfile = [];
