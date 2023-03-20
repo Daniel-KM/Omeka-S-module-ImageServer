@@ -58,7 +58,6 @@ class ConfigFormFactory implements FactoryInterface
 
         $form = new ConfigForm(null, $options ?? []);
         return $form
-            ->setTranslator($services->get('MvcTranslator'))
             ->setImageServer($imageServer())
             ->setImagers($imagers);
     }

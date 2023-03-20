@@ -11,10 +11,8 @@ use Laminas\I18n\Translator\TranslatorAwareInterface;
 use Laminas\I18n\Translator\TranslatorAwareTrait;
 use Omeka\Form\Element as OmekaElement;
 
-class ConfigForm extends Form implements TranslatorAwareInterface
+class ConfigForm extends Form
 {
-    use TranslatorAwareTrait;
-
     /**
      * @var array
      */
@@ -292,8 +290,8 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'type' => Element\Select::class,
                 'options' => [
                     'label' => 'Image processor', // @translate
-                    'info' => $this->translate('Vips is the quickest in all cases, then GD is a little faster than ImageMagick, but ImageMagick manages more formats.') // @translate
-                        . ' ' . $this->translate('Nevertheless, the performance depends on your installation and your server.'), // @translate
+                    'info' => 'Vips is the quickest in all cases, then GD is a little faster than ImageMagick, but ImageMagick manages more formats.
+Nevertheless, the performance depends on your installation and your server.', // @translate
                     'value_options' => $this->getImagers(),
                 ],
                 'attributes' => [
@@ -306,10 +304,10 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Max dynamic size for images', // @translate
-                    'info' => $this->translate('Set the maximum size in bytes for the dynamic processing of images.') // @translate
-                        . ' ' . $this->translate('Beyond this limit, the plugin will require a tiled image.') // @translate
-                        . ' ' . $this->translate('Let empty to allow processing of any image.') // @translate
-                        . ' ' . $this->translate('With vips, this option is bypassed.'), // @translate
+                    'info' => 'Set the maximum size in bytes for the dynamic processing of images.
+Beyond this limit, the plugin will require a tiled image.
+Let empty to allow processing of any image.
+With vips, this option is bypassed.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'imageserver-image-max-size',
@@ -320,10 +318,10 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Tiling type', // @translate
-                    'info' => $this->translate('If vips is available, the recommended processor strategy is "Tiled tiff". If jpeg2000 is available, use "Jpeg 2000". Else, use Deepzoom or Zoomify.') // @translate
-                        . ' ' . $this->translate('Deep Zoom Image is a free proprietary format from Microsoft largely supported.') // @translate
-                        . ' ' . $this->translate('Zoomify is an old format that was largely supported by proprietary softwares and free viewers.') // @translate
-                        . ' ' . $this->translate('All formats are served as native by default, but may be served as IIIF too when a viewer request it.'), // @translate
+                    'info' => 'If vips is available, the recommended processor strategy is "Tiled tiff". If jpeg2000 is available, use "Jpeg 2000". Else, use Deepzoom or Zoomify.
+Deep Zoom Image is a free proprietary format from Microsoft largely supported.
+Zoomify is an old format that was largely supported by proprietary softwares and free viewers.
+All formats are served as native by default, but may be served as IIIF too when a viewer request it.', // @translate
                     'documentation' => 'https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer#image-server',
                     'value_options' => [
                         'deepzoom' => [
@@ -511,12 +509,6 @@ To save the height and the width of all images and derivatives allows to speed u
                 'required' => false,
             ])
         ;
-    }
-
-    protected function translate($args): string
-    {
-        $translator = $this->getTranslator();
-        return $translator->translate($args);
     }
 
     /**
