@@ -277,14 +277,18 @@ abstract class AbstractImager implements LoggerAwareInterface
             return false;
         }
 
+        // The image should be readable, whether local path or external url.
+        // For external url, normally php just pings the source, so there is no
+        // double download.
+        if (!is_readable($source)) {
+            return false;
+        }
+
         try {
             // A check is added if the file is local: the source can be a local file
             // or an external one (Amazon S3…).
             switch (get_class($this->store)) {
                 case \Omeka\File\Store\Local::class:
-                    if (!is_readable($source)) {
-                        return false;
-                    }
                     $image = $source;
                     break;
 
