@@ -91,7 +91,7 @@ systemctl restart php7.4-fpm
 
 ### CORS (Cross-Origin Resource Sharing)
 
-To be able to share manifests and contents with other Image servers, the server
+To be able to share manifests and contents with other IIIF servers, the server
 should allow CORS. The header is automatically set for manifests, but you may
 have to allow access for files via the config of the server.
 
@@ -108,11 +108,9 @@ Then, you have to add the following rules, adapted to your needs, to the file
 ```
 # CORS access for some files.
 <IfModule mod_headers.c>
-    <FilesMatch "\.json$">
-        Header add Access-Control-Allow-Origin "*"
-        Header add Access-Control-Allow-Headers "origin, x-requested-with, content-type"
-        Header add Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    </FilesMatch>
+    Header setIfEmpty Access-Control-Allow-Origin "*"
+    Header setIfEmpty Access-Control-Allow-Headers "origin, x-requested-with, content-type"
+    Header setIfEmpty Access-Control-Allow-Methods "GET, POST"
 </IfModule>
 ```
 
