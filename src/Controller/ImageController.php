@@ -101,7 +101,12 @@ class ImageController extends AbstractActionController
             ), \Laminas\Http\Response::STATUS_CODE_404);
         }
 
+        /**
+         * @var \Laminas\Http\PhpEnvironment\Response $response
+         * @var \Laminas\Http\Headers $headers
+         */
         $response = $this->getResponse();
+        $headers = $response->getHeaders();
 
         // Check if the original file is an image.
         if (strpos($media->mediaType(), 'image/') !== 0) {
@@ -123,8 +128,7 @@ class ImageController extends AbstractActionController
             $viewHelpers = $this->viewHelpers();
             $assetUrl = $viewHelpers->get('assetUrl');
             $fileUrl = $assetUrl('img/locked-file.png', 'AccessResource', true, true, true);
-
-            $response->getHeaders()
+            $headers
                 ->addHeaderLine('Content-Transfer-Encoding: binary')
                 // ->addHeaderLine(sprintf('Content-Length: %s', $filesize))
                 ->addHeaderLine('Content-Type', 'image/png');
@@ -248,9 +252,12 @@ class ImageController extends AbstractActionController
 
         // Redirect to the url when an existing file is available.
         if ($imageUrl) {
-            $response->getHeaders()
-                // Header for CORS, required for access of IIIF.
-                ->addHeaderLine('Access-Control-Allow-Origin', '*')
+            // Header for CORS, required for access of IIIF.
+            if ($this->settings()->get('iiifserver_manifest_append_cors_headers')) {
+                $headers
+                    ->addHeaderLine('Access-Control-Allow-Origin', '*');
+            }
+            $headers
                 // Recommanded by feature "profileLinkHeader".
                 ->addHeaderLine('Link', version_compare($this->requestedApiVersion, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
@@ -273,9 +280,12 @@ class ImageController extends AbstractActionController
                 ), \Laminas\Http\Response::STATUS_CODE_500);
             }
 
-            $response->getHeaders()
-                // Header for CORS, required for access of IIIF.
-                ->addHeaderLine('Access-Control-Allow-Origin', '*')
+            // Header for CORS, required for access of IIIF.
+            if ($this->settings()->get('iiifserver_manifest_append_cors_headers')) {
+                $headers
+                    ->addHeaderLine('Access-Control-Allow-Origin', '*');
+            }
+            $headers
                 // Recommanded by feature "profileLinkHeader".
                 ->addHeaderLine('Link', version_compare($this->requestedApiVersion, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
