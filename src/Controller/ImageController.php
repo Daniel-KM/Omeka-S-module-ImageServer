@@ -250,7 +250,7 @@ class ImageController extends AbstractActionController
         if ($imageUrl) {
             $response->getHeaders()
                 // Header for CORS, required for access of IIIF.
-                ->addHeaderLine('access-control-allow-origin', '*')
+                ->addHeaderLine('Access-Control-Allow-Origin', '*')
                 // Recommanded by feature "profileLinkHeader".
                 ->addHeaderLine('Link', version_compare($this->requestedApiVersion, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
@@ -275,7 +275,7 @@ class ImageController extends AbstractActionController
 
             $response->getHeaders()
                 // Header for CORS, required for access of IIIF.
-                ->addHeaderLine('access-control-allow-origin', '*')
+                ->addHeaderLine('Access-Control-Allow-Origin', '*')
                 // Recommanded by feature "profileLinkHeader".
                 ->addHeaderLine('Link', version_compare($this->requestedApiVersion, '3', '<')
                     ? '<http://iiif.io/api/image/2/level2.json>;rel="profile"'
