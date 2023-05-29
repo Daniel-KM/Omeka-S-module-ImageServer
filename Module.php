@@ -494,6 +494,7 @@ SQL;
             'update_renderer' => false,
         ];
 
+        /** @var \Omeka\Job\Dispatcher $dispatcher */
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         $services->get('Omeka\Settings')->get('imageserver_tile_manual', false)
             ? $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params)
