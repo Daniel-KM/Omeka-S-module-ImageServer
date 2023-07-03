@@ -81,7 +81,12 @@ class BulkSizer extends AbstractJob
 
                 /** @var \Omeka\Api\Representation\MediaRepresentation $media */
                 foreach ($item->media() as $media) {
-                    if (strtok((string) $media->mediaType(), '/') === 'image') {
+                    if (strtok((string) $media->mediaType(), '/') === 'image'
+                        // For ingester bulk_upload, wait that the process is
+                        // finished, else the thumbnails won't be available and
+                        // the size of derivative will be the fallback ones.
+                        && $media->ingester() !== 'bulk_upload'
+                    ) {
                         ++$this->totalImages;
                         $this->prepareSize($media);
                     }

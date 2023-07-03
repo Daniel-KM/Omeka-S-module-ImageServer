@@ -526,6 +526,11 @@ SQL;
 
         if (strtok((string) $media->getMediaType(), '/') !== 'image'
             || !empty($processingMedia[$media->getId()])
+            // For ingester bulk_upload, wait that the process is finished, else
+            // the thumbnails won't be available and the size of derivative will
+            // be the fallback ones.
+            // Anyway, the process is now launched from the job bulk upload.
+            || $media->getIngester() === 'bulk_upload'
         ) {
             return;
         }

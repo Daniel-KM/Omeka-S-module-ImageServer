@@ -89,6 +89,10 @@ class BulkTiler extends AbstractJob
                 foreach ($item->media() as $media) {
                     if ($media->hasOriginal()
                         && strtok((string) $media->mediaType(), '/') === 'image'
+                        // For ingester bulk_upload, wait that the process is
+                        // finished, else the thumbnails won't be available and
+                        // the size of derivative will be the fallback ones.
+                        && $media->ingester() !== 'bulk_upload'
                     ) {
                         ++$this->totalImages;
                         $this->prepareTile($media);
