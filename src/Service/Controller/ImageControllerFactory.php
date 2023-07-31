@@ -15,7 +15,7 @@ class ImageControllerFactory implements FactoryInterface
         $plugins = $services->get('ControllerPluginManager');
         return new ImageController(
             $basePath,
-            $plugins->has('isForbiddenFile') ? $plugins->get('isForbiddenFile') : null
+            $plugins->has('isAllowedMediaContent') ? $plugins->get('isAllowedMediaContent') : null
         );
     }
 }

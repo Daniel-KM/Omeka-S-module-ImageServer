@@ -30,7 +30,7 @@
 
 namespace ImageServer\Controller;
 
-use AccessResource\Mvc\Controller\Plugin\IsForbiddenFile;
+use Access\Mvc\Controller\Plugin\IsAllowedMediaContent;
 use IiifServer\Controller\IiifServerControllerTrait;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -50,9 +50,9 @@ class ImageController extends AbstractActionController
     use IiifServerControllerTrait;
 
     /**
-     * @var \AccessResource\Mvc\Controller\Plugin\IsForbiddenFile
+     * @var \Access\Mvc\Controller\Plugin\IsAllowedMediaContent
      */
-    protected $isForbiddenFile;
+    protected $isAllowedMediaContent;
 
     /**
      * @var string
@@ -81,14 +81,20 @@ class ImageController extends AbstractActionController
 
     public function __construct(
         ?string $basePath,
-        ?IsForbiddenFile $isForbiddenFile
+        ?IsAllowedMediaContent $isAllowedMediaContent
     ) {
         $this->basePath = $basePath;
-        $this->isForbiddenFile = $isForbiddenFile;
+        $this->isAllowedMediaContent = $isAllowedMediaContent;
     }
 
     /**
      * Returns sized image for the current file.
+     *
+     * @see \Access\Controller\AccessFileController::sendFile()
+     * @see \DerivativeMedia\Controller\IndexController::sendFile()
+     * @see \Statistics\Controller\DownloadController::sendFile()
+     * and
+     * @see \ImageServer\Controller\ImageController::fetchAction()
      */
     public function fetchAction()
     {
@@ -118,16 +124,16 @@ class ImageController extends AbstractActionController
 
         $this->requestedVersionMedia();
 
-        // Compatibility with module AccessResource: rights should be checked
-        // for the file, not only for the media
-        if ($this->isForbiddenFile
+        // Compatibility with module Access: rights should be checked for the
+        // file, not only for the media.
+        if ($this->isAllowedMediaContent
             && !$this->settings()->get('iiifserver_access_resource_skip')
-            && $this->isForbiddenFile->__invoke($media)
+            && !$this->isAllowedMediaContent->__invoke($media)
         ) {
             // Manage custom asset file from the theme.
             $viewHelpers = $this->viewHelpers();
             $assetUrl = $viewHelpers->get('assetUrl');
-            $fileUrl = $assetUrl('img/locked-file.png', 'AccessResource', true, true, true);
+            $fileUrl = $assetUrl('img/locked-file.png', 'Access', true, true, true);
             $headers
                 ->addHeaderLine('Content-Transfer-Encoding: binary')
                 // ->addHeaderLine(sprintf('Content-Length: %s', $filesize))
