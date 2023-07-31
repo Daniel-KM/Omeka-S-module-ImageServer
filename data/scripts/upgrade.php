@@ -50,8 +50,8 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
     $settings->set('imageserver_imager', $settings->get('imageserver_image_creator') ?: 'Auto');
     $settings->delete('imageserver_image_creator');
 
-    $urlHelper = $services->get('ViewHelperManager')->get('url');
-    $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
+    $urlPlugin = $services->get('ControllerPluginManager')->get('url');
+    $top = rtrim($urlPlugin->fromRoute('top', [], ['force_canonical' => true]), '/') . '/';
     $settings->set('imageserver_base_url', $top);
 
     $settings->set('imageserver_auto_tile', false);
@@ -71,18 +71,17 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
     $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
     $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $args);
 
-    $urlHelper = $services->get('ControllerPluginManager')->get('url');
     $message = new Message(
         'Storing tile info for images in background (%1$sjob #%2$d%3$s, %4$slogs%3$s). This process will take a while.', // @translate
         sprintf('<a href="%s">',
-            htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+            htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
         ),
         $job->getId(),
         '</a>',
         sprintf('<a href="%s">',
             htmlspecialchars($this->isModuleActive('Log')
-                ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
+                ? $urlPlugin->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                : $urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
             )
         )
     );

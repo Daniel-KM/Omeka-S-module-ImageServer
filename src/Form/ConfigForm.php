@@ -7,8 +7,6 @@ use ImageServer\ImageServer\ImageServer;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
-use Laminas\I18n\Translator\TranslatorAwareInterface;
-use Laminas\I18n\Translator\TranslatorAwareTrait;
 use Omeka\Form\Element as OmekaElement;
 
 class ConfigForm extends Form
@@ -366,6 +364,7 @@ All formats are served as native by default, but may be served as IIIF too when 
         ;
 
         $bulkFieldset = $this->get('imageserver_bulk_prepare');
+        // TODO Remove Element Note.
         $bulkFieldset
             ->add([
                 'name' => 'note',

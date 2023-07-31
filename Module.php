@@ -240,8 +240,8 @@ SQL;
             return false;
         }
 
-        $urlHelper = $services->get('ViewHelperManager')->get('url');
-        $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
+        $urlPlugin = $services->get('ViewHelperManager')->get('url');
+        $top = rtrim($urlPlugin('top', [], ['force_canonical' => true]), '/') . '/';
         $settings->set('imageserver_base_url', $top);
 
         // Form is already validated in parent.
@@ -263,7 +263,7 @@ SQL;
 
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
-        $urlHelper = $plugins->get('url');
+        $urlPlugin = $plugins->get('url');
 
         $query = [];
         parse_str($params['query'], $query);
@@ -291,14 +291,14 @@ SQL;
         $message = new Message(
             'Creating tiles and/or dimensions for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
             sprintf('<a href="%s">',
-                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
             ),
             $job->getId(),
             '</a>',
             sprintf('<a href="%s">',
                 htmlspecialchars($this->isModuleActive('Log')
-                    ? $urlHelper->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                    : $urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
+                    ? $urlPlugin->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                    : $urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
                 )
             )
         );
