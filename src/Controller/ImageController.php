@@ -293,8 +293,14 @@ class ImageController extends AbstractActionController
                 )
                 ->addHeaderLine('Content-Type', $transform['format']['feature']);
 
+            // Fix deprecated warning in \Laminas\Http\PhpEnvironment\Response::sendHeaders() (l. 113).
+            $errorReporting = error_reporting();
+            error_reporting($errorReporting & ~E_DEPRECATED);
+
             // Send headers separately to handle large files.
             $response->sendHeaders();
+
+            error_reporting($errorReporting);
 
             // TODO Use Laminas stream response.
 
