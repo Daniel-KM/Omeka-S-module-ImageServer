@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2020-2023 Daniel Berthereau
+ * Copyright 2020-2024 Daniel Berthereau
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software. You can use, modify and/or
@@ -87,7 +87,7 @@ class Tile extends AbstractType
     {
         return empty($this->tilingInfo)
             ? null
-            : $this->tilingInfo['height'] ?? null;
+            : ($this->tilingInfo['height'] ?? null);
     }
 
     public function scaleFactors(): ?array
@@ -102,7 +102,7 @@ class Tile extends AbstractType
         return !empty($this->tilingInfo);
     }
 
-    protected function prepareTilingInfo(): AbstractType
+    protected function prepareTilingInfo(): self
     {
         if (empty($this->options['tilingData'])) {
             return null;

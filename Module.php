@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2015-2023 Daniel Berthereau
+ * Copyright 2015-2024 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -169,12 +169,6 @@ SQL;
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Module',
-            'view.details',
-            [$this, 'warnUninstall']
-        );
-
         // There are no event "api.create.xxx" for media.
         // Save dimensions before and create tiles after.
         $sharedEventManager->attach(
@@ -218,6 +212,12 @@ SQL;
             \Omeka\Form\SiteSettingsForm::class,
             'form.add_elements',
             [$this, 'handleSiteSettings']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Module',
+            'view.details',
+            [$this, 'warnUninstall']
         );
     }
 
@@ -325,6 +325,7 @@ SQL;
     /**
      * Same in Iiif server and Image server.
      *
+     * @see \IiifServer\Module::normalizeMediaApiSettings()
      * @see \ImageServer\Module::normalizeMediaApiSettings()
      */
     protected function normalizeMediaApiSettings(array $params): void
