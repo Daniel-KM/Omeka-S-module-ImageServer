@@ -41,6 +41,10 @@ It supports Amazon S3 backend throught the module [Amazon S3].
 Installation
 ------------
 
+See general end user documentation for [installing a module].
+
+This module requires the module [Common], that should be installed first.
+
 PHP should be installed with the extension `exif` in order to get the size of
 images. This is the case for all major distributions and providers.
 
@@ -431,6 +435,7 @@ support the [Deep Zoom Image] tile format.
 [Mirador]: https://gitlab.com/Daniel-KM/Omeka-S-module-Mirador
 [Diva]: https://gitlab.com/Daniel-KM/Omeka-S-module-Diva
 [Amazon S3]: https://gitlab.com/Daniel-KM/Omeka-S-module-AmazonS3
+[Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
 [performance reasons]: https://github.com/libvips/libvips/wiki/Speed-and-memory-use
 [vips]: https://libvips.github.io/libvips
 [ImageMagick]: https://www.imagemagick.org
