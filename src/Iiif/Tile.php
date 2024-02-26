@@ -57,7 +57,7 @@ class Tile extends AbstractType
     /**
      * @var array
      */
-    private $tilingInfo;
+    protected $tilingInfo;
 
     public function setResource(AbstractResourceEntityRepresentation $resource): self
     {

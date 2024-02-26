@@ -2,11 +2,11 @@
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
+use Common\Stdlib\PsrMessage;
 use DanielKm\Deepzoom\DeepzoomFactory;
 use DanielKm\Zoomify\ZoomifyFactory;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Service\Exception\InvalidArgumentException;
-use Omeka\Stdlib\Message;
 
 class TileBuilder extends AbstractPlugin
 {
@@ -74,9 +74,9 @@ class TileBuilder extends AbstractPlugin
         }
 
         if (!is_file($source) || !is_readable($source)) {
-            throw new InvalidArgumentException((string) new Message(
-                'Source file "%s" is not readable.', // @translate
-                $source
+            throw new InvalidArgumentException((string) new PsrMessage(
+                'Source file "{file}" is not readable.', // @translate
+                ['file' => $source]
             ));
         }
 
@@ -128,9 +128,9 @@ class TileBuilder extends AbstractPlugin
                 $result['result'] = $this->convertToImage->__invoke($source, $result['tile_file'], $params);
                 return $result;
             default:
-                throw new InvalidArgumentException((string) new Message(
-                    'The type of tiling "%s" is not supported by the tile builder.', // @translate
-                    $tileType
+                throw new InvalidArgumentException((string) new PsrMessage(
+                    'The type of tiling "{type}" is not supported by the tile builder.', // @translate
+                    ['type' => $tileType]
                 ));
         }
 

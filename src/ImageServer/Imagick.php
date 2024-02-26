@@ -284,8 +284,10 @@ class Imagick extends AbstractImager
                     break;
             }
         } catch (\Exception $e) {
-            $message = new Message('Imagick failed to open the file \"%1$s\". Details:\n%2$s', $source, $e->getMessage()); // @translate
-            $this->getLogger()->err($message);
+            $this->getLogger()->err(
+                "Imagick failed to open the file \"{file}\". Details:\n{message}", // @translate
+                ['file' => $source, 'message' => $e->getMessage()]
+            );
             return false;
         }
 

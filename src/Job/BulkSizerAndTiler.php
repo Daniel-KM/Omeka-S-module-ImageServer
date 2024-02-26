@@ -4,7 +4,6 @@ namespace ImageServer\Job;
 
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Job\AbstractJob;
-use Omeka\Stdlib\Message;
 
 class BulkSizerAndTiler extends AbstractJob
 {
@@ -43,9 +42,9 @@ class BulkSizerAndTiler extends AbstractJob
 
         $tasks = array_intersect($this->getArg('tasks', ['size', 'tile']), ['size', 'tile', 'tile_info']);
         if (empty($tasks)) {
-            $this->logger->warn(new Message(
+            $this->logger->warn(
                 'The job ended: no tasks (tile or size) defined.' // @translate
-            ));
+            );
             return;
         }
 
@@ -54,9 +53,9 @@ class BulkSizerAndTiler extends AbstractJob
         $response = $api->search('items', $query);
         $this->totalToProcess = $response->getTotalResults();
         if (empty($this->totalToProcess)) {
-            $this->logger->warn(new Message(
+            $this->logger->warn(
                 'No item selected. You may check your query.' // @translate
-            ));
+            );
             return;
         }
 
@@ -71,10 +70,10 @@ class BulkSizerAndTiler extends AbstractJob
             $this->tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
         }
 
-        $this->logger->info(new Message(
-            'Starting bulk tiling or sizing for %d items.', // @translate
-            $this->totalToProcess
-        ));
+        $this->logger->info(
+            'Starting bulk tiling or sizing for {total} items.', // @translate
+            ['total' => $this->totalToProcess]
+        );
 
         $offset = 0;
         $this->totalImages = 0;
@@ -93,10 +92,10 @@ class BulkSizerAndTiler extends AbstractJob
 
             foreach ($items as $key => $item) {
                 if ($this->shouldStop()) {
-                    $this->logger->warn(new Message(
-                        'The job "Bulk Tiler and Sizer" was stopped: %1$d/%2$d resources processed.', // @translate
-                        $offset + $key, $this->totalToProcess
-                    ));
+                    $this->logger->warn(
+                        'The job "Bulk Tiler and Sizer" was stopped: {count}/{total} resources processed.', // @translate
+                        ['count' => $offset + $key, 'total' => $this->totalToProcess]
+                    );
                     break 2;
                 }
 
@@ -150,15 +149,17 @@ class BulkSizerAndTiler extends AbstractJob
             $offset += self::SQL_LIMIT;
         }
 
-        $this->logger->notice(new Message(
-            'End of bulk tiling/sizing: %1$d/%2$d items processed, %3$d files processed, %4$d errors, %5$d skipped on a total of %6$d images.', // @translate
-            $this->totalProcessed,
-            $this->totalToProcess,
-            $this->totalSucceed,
-            $this->totalFailed,
-            $this->totalSkipped,
-            $this->totalImages
-        ));
+        $this->logger->notice(
+           'End of bulk sizing: {count}/{total} items processed, {total_succeed} files sized, {total_failed} errors, {total_skipped} skipped on a total of {total_images} images.', // @translate
+            [
+                'count' => $this->totalProcessed,
+                'total' => $this->totalToProcess,
+                'total_succeed' => $this->totalSucceed,
+                'total_failed' => $this->totalFailed,
+                'total_skipped' => $this->totalSkipped,
+                'total_images' => $this->totalImages,
+            ]
+        );
     }
 
     /**
@@ -169,10 +170,10 @@ class BulkSizerAndTiler extends AbstractJob
      */
     protected function prepareTileInfo(MediaRepresentation $media): void
     {
-        $this->logger->info(new Message(
-            'Media #%d: Store tile info', // @translate
-            $media->id()
-        ));
+        $this->logger->info(
+            'Media #{media_id}: Store tile info', // @translate
+            ['media_id' => $media->id()]
+        );
 
         $mediaData = $media->mediaData();
         if (is_null($mediaData)) {

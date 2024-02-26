@@ -3,7 +3,6 @@
 namespace ImageServer\Job;
 
 use Omeka\Job\AbstractJob;
-use Omeka\Stdlib\Message;
 
 class MediaSizer extends AbstractJob
 {
@@ -21,9 +20,9 @@ class MediaSizer extends AbstractJob
         $response = $api->search('media', $query);
         $totalToProcess = $response->getTotalResults();
         if (empty($totalToProcess)) {
-            $this->logger->warn(new Message(
+            $this->logger->warn(
                 'No media selected. You may check your query.' // @translate
-            ));
+            );
             return;
         }
 

@@ -31,12 +31,12 @@
 namespace ImageServer\Controller;
 
 use Access\Mvc\Controller\Plugin\IsAllowedMediaContent;
+use Common\Stdlib\PsrMessage;
 use IiifServer\Controller\IiifServerControllerTrait;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\Stdlib\Message;
 
 /**
  * The Image controller class.
@@ -101,9 +101,9 @@ class ImageController extends AbstractActionController
         /** @var \Omeka\Api\Representation\MediaRepresentation $media */
         $media = $this->fetchResource('media');
         if (!$media) {
-            return $this->viewError(new Message(
-                'Media "%s" not found.', // @translate
-                $this->params('id')
+            return $this->viewError(new PsrMessage(
+                'Media "{media_id}" not found.', // @translate
+                ['media_id' => $this->params('id')]
             ), \Laminas\Http\Response::STATUS_CODE_404);
         }
 
@@ -116,9 +116,9 @@ class ImageController extends AbstractActionController
 
         // Check if the original file is an image.
         if (strpos($media->mediaType(), 'image/') !== 0) {
-            return $this->viewError(new Message(
-                'The media "%d" is not an image', // @translate
-                $media->id()
+            return $this->viewError(new PsrMessage(
+                'The media "{media_id}" is not an image', // @translate
+                ['media_id' => $media->id()]
             ), \Laminas\Http\Response::STATUS_CODE_501);
         }
 
@@ -145,7 +145,7 @@ class ImageController extends AbstractActionController
 
         // Check, clean and optimize and fill values according to the request.
         $this->_view = new ViewModel;
-        $transform = $this->_cleanRequest($media);
+        $transform = $this->cleanRequest($media);
         if (empty($transform)) {
             // The message is set in view.
             $response->setStatusCode(400);
@@ -176,7 +176,7 @@ class ImageController extends AbstractActionController
         // A transformation is needed.
         else {
             // Quick check if an Omeka derivative is appropriate.
-            $pretiled = $this->_useOmekaDerivative($media, $transform);
+            $pretiled = $this->useOmekaDerivative($media, $transform);
             if ($pretiled) {
                 // Check if a light transformation is needed.
                 if ($transform['size']['feature'] != 'max'
@@ -206,7 +206,7 @@ class ImageController extends AbstractActionController
             // Check if another image can be used.
             else {
                 // Check if the image is pre-tiled.
-                $pretiled = $this->_usePreTiled($media, $transform);
+                $pretiled = $this->usePreTiled($media, $transform);
                 if ($pretiled) {
                     // Warning: Currently, the tile server does not manage
                     // regions or special size, so it is possible to process the
@@ -246,7 +246,7 @@ class ImageController extends AbstractActionController
                     if ($imager !== 'Vips') {
                         $maxFileSize = $settings->get('imageserver_image_max_size');
                         if (!empty($maxFileSize) && $media->size() > $maxFileSize) {
-                            return $this->viewError(new Message(
+                            return $this->viewError(new PsrMessage(
                                 'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.' // @translate
                             ), \Laminas\Http\Response::STATUS_CODE_500);
                         }
@@ -281,7 +281,7 @@ class ImageController extends AbstractActionController
             $filesize = filesize($imagePath);
             if (empty($filesize)) {
                 @unlink($imagePath);
-                return $this->viewError(new Message(
+                return $this->viewError(new PsrMessage(
                     'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is not found or empty.' // @translate
                 ), \Laminas\Http\Response::STATUS_CODE_500);
             }
@@ -382,7 +382,7 @@ class ImageController extends AbstractActionController
 
         // No result.
         else {
-            return $this->viewError(new Message(
+            return $this->viewError(new PsrMessage(
                 'The Image server encountered an unexpected error that prevented it from fulfilling the request: the resulting file is empty or not found.' // @translate
             ), \Laminas\Http\Response::STATUS_CODE_500);
         }
@@ -397,14 +397,14 @@ class ImageController extends AbstractActionController
      * @param MediaRepresentation $media
      * @return array|null Array of cleaned requested image, else null.
      */
-    protected function _cleanRequest(MediaRepresentation $media): ?array
+    protected function cleanRequest(MediaRepresentation $media): ?array
     {
         $transform = [];
 
         $transform['version'] = $this->requestedApiVersion;
 
         $transform['source']['type'] = 'original';
-        $transform['source']['filepath'] = $this->_getImagePath($media, 'original');
+        $transform['source']['filepath'] = $this->getImagePath($media, 'original');
         $transform['source']['media_type'] = $media->mediaType();
 
         $imageSize = $this->imageSize($media, 'original');
@@ -463,10 +463,10 @@ class ImageController extends AbstractActionController
         elseif (strpos($region, 'pct:') === 0) {
             $regionValues = explode(',', substr($region, 4));
             if (count($regionValues) !== 4) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), // @translate
-                    $region
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the region "{region}" is incorrect.', // @translate
+                    ['region' => $region]
+                ))->setTranslator($this->translator()));
                 return null;
             }
             $regionValues = array_map('floatval', $regionValues);
@@ -494,10 +494,10 @@ class ImageController extends AbstractActionController
                 $y = $sourceHeight * $regionY / 100;
                 // Don't return x or y greater than source.
                 if ($x > $sourceWidth || $y > $sourceHeight) {
-                    $this->_view->setVariable('message', sprintf(
-                        $this->translate('The Image server cannot fulfill the request: the region "%s" is  outside the source.'), // @translate
-                        $region
-                    ));
+                    $this->_view->setVariable('message', (new PsrMessage(
+                        'The Image server cannot fulfill the request: the region "{region}" is  outside the source.', // @translate
+                        ['region' => $region]
+                    ))->setTranslator($this->translator()));
                     return null;
                 }
                 $width = ($regionX + $regionWidth) <= 100
@@ -527,10 +527,10 @@ class ImageController extends AbstractActionController
         else {
             $regionValues = explode(',', $region);
             if (count($regionValues) != 4) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the region "%s" is incorrect.'), // @translate
-                    $region
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the region "{region}" is incorrect.', // @translate
+                    ['region' => $region]
+                ))->setTranslator($this->translator()));
                 return null;
             }
             $regionValues = array_map('intval', $regionValues);
@@ -554,10 +554,10 @@ class ImageController extends AbstractActionController
                 $regionX = $regionValues[0];
                 $regionY = $regionValues[1];
                 if ($regionX > $sourceWidth || $regionY > $sourceHeight) {
-                    $this->_view->setVariable('message', sprintf(
-                        $this->translate('The Image server cannot fulfill the request: the region "%s" is  outside the source.'), // @translate
-                        $region
-                    ));
+                    $this->_view->setVariable('message', (new PsrMessage(
+                        'The Image server cannot fulfill the request: the region "{region}" is  outside the source.', // @translate
+                        ['region' => $region]
+                    ))->setTranslator($this->translator()));
                     return null;
                 }
                 $regionWidth = $regionValues[2];
@@ -593,10 +593,10 @@ class ImageController extends AbstractActionController
             || $transform['region']['width'] <= 0
             || $transform['region']['height'] <= 0
         ) {
-            $this->_view->setVariable('message', sprintf(
-                $this->translate('The Image server cannot fulfill the request: the region"%s" is invalid.'), // @translate
+            $this->_view->setVariable('message', (new PsrMessage(
+                'The Image server cannot fulfill the request: the region "{region}" is invalid.', // @translate
                 $region
-            ));
+            ))->setTranslator($this->translator()));
             return null;
         }
 
@@ -610,11 +610,10 @@ class ImageController extends AbstractActionController
         $upscale = mb_substr($size, 0, 1) === '^';
         $versionIsGreaterOrEqual3 = version_compare($this->requestedApiVersion, '3', '>=');
         if ($upscale && !$versionIsGreaterOrEqual3) {
-            $this->_view->setVariable('message', sprintf(
-                $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect for API version %s.'), // @translate
-                $size,
-                $this->requestedApiVersion
-            ));
+            $this->_view->setVariable('message', (new PsrMessage(
+                'The Image server cannot fulfill the request: the size "{size}" is incorrect for API version {version}.', // @translate
+                ['size' => $size, 'version' => $this->requestedApiVersion]
+            ))->setTranslator($this->translator()));
             return null;
         }
 
@@ -622,10 +621,10 @@ class ImageController extends AbstractActionController
         elseif ($size === 'full') {
             // This value is not allowed in version 3.
             if ($versionIsGreaterOrEqual3) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
-                    $size
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the size "{size}" is incorrect.', // @translate
+                    ['size' => $size]
+                ))->setTranslator($this->translator()));
                 return null;
             }
             $transform['size'] = [
@@ -660,10 +659,10 @@ class ImageController extends AbstractActionController
         elseif (strpos($size, 'pct:') === 0 || strpos($size, '^pct:') === 0) {
             $sizePercentage = floatval(substr($size, $upscale ? 5 : 4));
             if (empty($sizePercentage)) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
-                    $size
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the size "{size}" is incorrect.', // @translate
+                    ['size' => $size]
+                ))->setTranslator($this->translator()));
                 return null;
             }
             // A quick check to avoid a possible transformation.
@@ -694,10 +693,10 @@ class ImageController extends AbstractActionController
             $destinationWidth = (int) substr($size, $upscale ? 2 : 1, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) || empty($destinationHeight)) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
-                    $size
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the size "{size}" is incorrect.', // @translate
+                    ['size' => $size]
+                ))->setTranslator($this->translator()));
                 return null;
             }
 
@@ -745,10 +744,10 @@ class ImageController extends AbstractActionController
             $destinationWidth = (int) substr($size, $upscale ? 1 : 0, $pos);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) && empty($destinationHeight)) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is incorrect.'), // @translate
-                    $size
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the size "%s" is incorrect.', // @translate
+                    ['size' => $size]
+                ))->setTranslator($this->translator()));
                 return null;
             }
 
@@ -758,7 +757,7 @@ class ImageController extends AbstractActionController
                 if ($transform['region']['feature'] == 'full') {
                     $availableTypes = ['square', 'medium', 'large', 'original'];
                     foreach ($availableTypes as $imageType) {
-                        $filepath = $this->_getImagePath($media, $imageType);
+                        $filepath = $this->getImagePath($media, $imageType);
                         if ($filepath) {
                             $imageSize = $this->imageSize($media, $imageType);
                             if ($destinationWidth == $imageSize['width'] && $destinationHeight == $imageSize['height']) {
@@ -818,10 +817,10 @@ class ImageController extends AbstractActionController
 
             // Not supported.
             else {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the size "%s" is not supported.'), // @translate
-                    $size
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the size "{size}" is not supported.', // @translate
+                    ['size' => $size]
+                ))->setTranslator($this->translator()));
                 return null;
             }
         }
@@ -830,10 +829,10 @@ class ImageController extends AbstractActionController
         if ($transform['size']['width'] <= 0
             || $transform['size']['height'] <= 0
         ) {
-            $this->_view->setVariable('message', sprintf(
-                $this->translate('The Image server cannot fulfill the request: the size "%s" is invalid.'), // @translate
-                $size
-            ));
+            $this->_view->setVariable('message', (new PsrMessage(
+                'The Image server cannot fulfill the request: the size "{size}" is invalid.', // @translate
+                ['size' => $size]
+            ))->setTranslator($this->translator()));
             return null;
         }
 
@@ -841,12 +840,10 @@ class ImageController extends AbstractActionController
         if (!$upscale && $versionIsGreaterOrEqual3
             && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
         ) {
-            $this->_view->setVariable('message', sprintf(
-                $this->translate('The Image server cannot fulfill the request: the region "%1$s" or size "%2$s" is incorrect for api version %3$s.'), // @translate
-                $region,
-                $size,
-                $this->requestedApiVersion
-            ));
+            $this->_view->setVariable('message', (new PsrMessage(
+                'The Image server cannot fulfill the request: the region "{region}" or size "{size}" is incorrect for api version {version}.', // @translate
+                ['region' => $region, 'size' => $size, 'version' =>$this->requestedApiVersion]
+            ))->setTranslator($this->translator()));
             return null;
         }
 
@@ -900,10 +897,10 @@ class ImageController extends AbstractActionController
             /** @var \ImageServer\ImageServer\AbstractImager $imager */
             $imager = $this->imageServer()->getImager();
             if (!$imager->checkExtension($format)) {
-                $this->_view->setVariable('message', sprintf(
-                    $this->translate('The Image server cannot fulfill the request: the format "%s" is not supported.'), // @translate
-                    $format
-                ));
+                $this->_view->setVariable('message', (new PsrMessage(
+                    'The Image server cannot fulfill the request: the format "{format}" is not supported.', // @translate
+                    ['format' => $format]
+                ))->setTranslator($this->translator()));
                 return null;
             }
             $transform['format']['feature'] = $imager->getMediaTypeFromExtension($format);
@@ -926,7 +923,7 @@ class ImageController extends AbstractActionController
      * @return array|null Associative array with the file path, the derivative
      * type, the width and the height. Null if none.
      */
-    protected function _useOmekaDerivative(MediaRepresentation $media, array $transform): ?array
+    protected function useOmekaDerivative(MediaRepresentation $media, array $transform): ?array
     {
         // Some requirements to get tiles.
         if ($transform['region']['feature'] != 'full') {
@@ -997,7 +994,7 @@ class ImageController extends AbstractActionController
         }
 
         if ($useDerivativePath) {
-            $derivativePath = $this->_getImagePath($media, $derivativeType);
+            $derivativePath = $this->getImagePath($media, $derivativeType);
 
             return [
                 'filepath' => $derivativePath,
@@ -1021,7 +1018,7 @@ class ImageController extends AbstractActionController
      * @return array|null Associative array with the file path, the derivative
      * type, the width and the height. Null if none.
      */
-    protected function _usePreTiled(MediaRepresentation $media, array $transform): ?array
+    protected function usePreTiled(MediaRepresentation $media, array $transform): ?array
     {
         $tileInfo = $this->tileMediaInfo($media);
         return $tileInfo
@@ -1029,7 +1026,7 @@ class ImageController extends AbstractActionController
             : null;
     }
 
-    protected function _mediaPath(MediaRepresentation $media, string $imageType = 'original'): string
+    protected function mediaPath(MediaRepresentation $media, string $imageType = 'original'): string
     {
         $storagePath = $imageType == 'original'
             ? $this->getStoragePath($imageType, $media->filename())
@@ -1050,10 +1047,10 @@ class ImageController extends AbstractActionController
      * @param string $imageType
      * @return string|null Null if not exists.
      */
-    protected function _getImagePath(MediaRepresentation $media, string $imageType = 'original'): ?string
+    protected function getImagePath(MediaRepresentation $media, string $imageType = 'original'): ?string
     {
         return strpos($media->mediaType(), 'image/') === 0
-            ? $this->_mediaPath($media, $imageType)
+            ? $this->mediaPath($media, $imageType)
             : null;
     }
 }

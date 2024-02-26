@@ -34,7 +34,6 @@ use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
-use Omeka\Stdlib\Message;
 
 /**
  * Abstract  to manage strategies used to create an image.
@@ -310,9 +309,10 @@ abstract class AbstractImager implements LoggerAwareInterface
                     break;
             }
         } catch (\Exception $e) {
-            $message = new Message('Image Server failed to open the file "%1$s". Details:
-%2$s', $source, $e->getMessage()); // @translate
-            $this->getLogger()->err($message);
+            $this->getLogger()->err(
+                "Image Server failed to open the file \"{file}\". Details:\n{message}", // @translate
+                ['file' => $source, 'message' => $e->getMessage()]
+            );
             return false;
         }
 
@@ -345,8 +345,10 @@ abstract class AbstractImager implements LoggerAwareInterface
         $destination = $this->args['destination']['filepath'];
         if (file_exists($destination)) {
             if (!is_writeable($destination)) {
-                $message = new Message('Unable to save the file "%s".', $destination); // @translate
-                $this->getLogger()->err($message);
+                $this->getLogger()->err(
+                    'Unable to save the file in the directory "{dir}".', // @translate
+                    ['dir' => $destination]
+                );
                 return null;
             }
             @unlink($destination);
@@ -356,8 +358,10 @@ abstract class AbstractImager implements LoggerAwareInterface
         $dir = dirname($destination);
         if (file_exists($dir)) {
             if (!is_writeable($dir)) {
-                $message = new Message('Unable to save the file "%s": directory is not writeable.', $destination); // @translate
-                $this->getLogger()->err($message);
+                $this->getLogger()->err(
+                    'Unable to save the file "{dir}": directory is not writeable.', // @translate
+                    ['dir' => $destination]
+                );
                 return null;
             }
             return $destination;

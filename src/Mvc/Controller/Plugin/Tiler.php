@@ -6,7 +6,6 @@ use Doctrine\ORM\EntityManager;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Laminas\Mvc\Controller\PluginManager as ControllerPlugins;
 use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\Stdlib\Message;
 
 class Tiler extends AbstractPlugin
 {
@@ -81,12 +80,10 @@ class Tiler extends AbstractPlugin
         }
 
         if ($isMissingFile) {
-            $message = new Message(
-                'Media #%1$d: The file "%2$s" is missing.', // @translate
-                $media->id(),
-                $media->filename()
+            $this->controllerPlugins->get('logger')->__invoke()->err(
+                'Media #{media_id}: The file "{filename}" is missing.', // @translate
+                ['media_id' => $media->id(), 'file' => $media->filename()]
             );
-            $this->controllerPlugins->get('logger')->__invoke()->err($message);
             return null;
         }
 
@@ -113,12 +110,10 @@ class Tiler extends AbstractPlugin
         try {
             $result = $tileBuilder($sourcePath, $tileDir, $this->params);
         } catch (\Exception $e) {
-            $message = new Message(
-                'Media #%1$d: The tiler failed: %2$s', // @translate
-                $media->id(),
-                $e
+            $this->controllerPlugins->get('logger')->__invoke()->err(
+                'Media #{media_id}: The tiler failed: {exception}', // @translate
+                ['media_id' => $media->id(), 'exception' => $e]
             );
-            $this->controllerPlugins->get('logger')->__invoke()->err($message);
             return null;
         }
 

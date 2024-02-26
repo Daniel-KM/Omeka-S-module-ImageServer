@@ -32,7 +32,6 @@ namespace ImageServer\ImageServer;
 
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
-use Omeka\Stdlib\Message;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
@@ -332,8 +331,10 @@ class GD extends AbstractImager
                     break;
             }
         } catch (\Exception $e) {
-            $message = new Message('GD failed to open the file \"%1$s\". Details:\n%2$s', $source, $e->getMessage()); // @translate
-            $this->getLogger()->err($message);
+            $this->getLogger()->err(
+                'GD failed to open the file \"{file}\". Details:\n{message}', // @translate
+                ['file' => $source, 'message' => $e->getMessage()]
+            );
             return false;
         }
 

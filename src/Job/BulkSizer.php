@@ -3,7 +3,6 @@
 namespace ImageServer\Job;
 
 use Omeka\Job\AbstractJob;
-use Omeka\Stdlib\Message;
 
 class BulkSizer extends AbstractJob
 {
@@ -42,18 +41,18 @@ class BulkSizer extends AbstractJob
         $response = $api->search('items', $query);
         $this->totalToProcess = $response->getTotalResults();
         if (empty($this->totalToProcess)) {
-            $this->logger->warn(new Message(
+            $this->logger->warn(
                 'No item selected. You may check your query.' // @translate
-            ));
+            );
             return;
         }
 
         $this->prepareSizer();
 
-        $this->logger->info(new Message(
-            'Starting bulk sizing for %1$d items (%2$s media).', // @translate
-            $this->totalToProcess, $this->filter
-        ));
+        $this->logger->info(
+            'Starting bulk sizing for {total} items ({filter} media).', // @translate
+            ['total' => $this->totalToProcess, 'filter' => $this->filter]
+        );
 
         $offset = 0;
         $this->totalImages = 0;
@@ -72,10 +71,10 @@ class BulkSizer extends AbstractJob
 
             foreach ($items as $key => $item) {
                 if ($this->shouldStop()) {
-                    $this->logger->warn(new Message(
-                        'The job "Bulk Sizer" was stopped: %1$d/%2$d resources processed.', // @translate
-                        $offset + $key, $this->totalToProcess
-                    ));
+                    $this->logger->warn(
+                        'The job "Bulk Sizer" was stopped: {count}/{total} resources processed.', // @translate
+                        ['count' => $offset + $key, 'total' => $this->totalToProcess]
+                    );
                     break 2;
                 }
 
@@ -101,14 +100,16 @@ class BulkSizer extends AbstractJob
             $offset += self::SQL_LIMIT;
         }
 
-        $this->logger->notice(new Message(
-            'End of bulk sizing: %1$d/%2$d items processed, %3$d files sized, %4$d errors, %5$d skipped on a total of %6$d images.', // @translate
-            $this->totalProcessed,
-            $this->totalToProcess,
-            $this->totalSucceed,
-            $this->totalFailed,
-            $this->totalSkipped,
-            $this->totalImages
-        ));
+        $this->logger->notice(
+            'End of bulk sizing: {count}/{total} items processed, {total_succeed} files sized, {total_failed} errors, {total_skipped} skipped on a total of {total_images} images.', // @translate
+            [
+                'count' => $this->totalProcessed,
+                'total' => $this->totalToProcess,
+                'total_succeed' => $this->totalSucceed,
+                'total_failed' => $this->totalFailed,
+                'total_skipped' => $this->totalSkipped,
+                'total_images' => $this->totalImages,
+            ]
+        );
     }
 }

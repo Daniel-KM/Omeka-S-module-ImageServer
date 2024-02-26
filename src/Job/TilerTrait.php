@@ -88,20 +88,19 @@ trait TilerTrait
             return;
         }
 
-        $this->logger->info(new Message(
-            'Media #%d: Start tiling (%s)', // @translate
-            $media->id(),
-            $this->tileType
-        ));
+        $this->logger->info(
+            'Media #{media_id}: Start tiling ({type})', // @translate
+            ['media_id' => $media->id(), 'type' => $this->tileType]
+        );
 
         $result = $this->tiler->__invoke($media, $this->removeDestination);
 
         if ($result && !empty($result['result'])) {
             if (!empty($result['skipped'])) {
-                $this->logger->info(new Message(
-                    'Media #%d: Skipped because already tiled.', // @translate
-                    $media->id()
-                ));
+                $this->logger->info(
+                    'Media #{media_id}: Skipped because already tiled.', // @translate
+                    ['media_id' => $media->id()]
+                );
                 ++$this->totalSkipped;
             } else {
                 $renderer = $media->renderer();
@@ -112,24 +111,22 @@ trait TilerTrait
                     $this->entityManager->persist($mediaEntity);
                     $this->entityManager->flush();
                     unset($mediaEntity);
-                    $this->logger->info(new Message(
-                        'Media #%1$d: Renderer "%2$s" updated to "%3$s".', // @translate
-                        $media->id(),
-                        $renderer,
-                        $this->updateRenderer
-                    ));
+                    $this->logger->info(
+                        'Media #{media_id}: Renderer "{renderer}" updated to "{renderer_new}".', // @translate
+                        ['media_id' => $media->id(), 'renderer' => $renderer, 'renderer_new' => $this->updateRenderer]
+                    );
                 }
-                $this->logger->info(new Message(
-                    'Media #%d: End tiling', // @translate
-                    $media->id()
-                ));
+                $this->logger->info(
+                    'Media #{media_id}: End tiling', // @translate
+                    ['media_id' => $media->id()]
+                );
                 ++$this->totalSucceed;
             }
         } else {
-            $this->logger->err(new Message(
-                'Media #%d: Error during tiling', // @translate
-                $media->id()
-            ));
+            $this->logger->err(
+                'Media #{media_id}: Error during tiling', // @translate
+                ['media_id' => $media->id()]
+            );
             ++$this->totalFailed;
         }
     }

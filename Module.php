@@ -30,27 +30,34 @@
 
 namespace ImageServer;
 
-if (!class_exists(\Generic\AbstractModule::class)) {
-    require file_exists(dirname(__DIR__) . '/Generic/AbstractModule.php')
-        ? dirname(__DIR__) . '/Generic/AbstractModule.php'
-        : __DIR__ . '/src/Generic/AbstractModule.php';
+if (!class_exists(\Common\TraitModule::class)) {
+    require_once dirname(__DIR__) . '/Common/TraitModule.php';
 }
 
-use Generic\AbstractModule;
+use Common\Stdlib\PsrMessage;
+use Common\TraitModule;
 use ImageServer\Form\ConfigForm;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\ModuleManager\ModuleManager;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
-use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Entity\Media;
+use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
-use Omeka\Stdlib\Message;
 
+/**
+ * Image Server
+ *
+ * @copyright Daniel Berthereau, 2015-2024
+ * @copyright Biblibre, 2016-2017
+ * @license http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
+ */
 class Module extends AbstractModule
 {
+    use TraitModule;
+
     const NAMESPACE = __NAMESPACE__;
 
     protected $dependencies = [
@@ -76,10 +83,52 @@ class Module extends AbstractModule
             );
     }
 
-    protected function postInstall(): void
+    protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
-        $this->createTilesMainDir($services);
+        $plugins = $services->get('ControllerPluginManager');
+        $translate = $plugins->get('translate');
+
+        if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.54')) {
+            $message = new \Omeka\Stdlib\Message(
+                $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+                'Common', '3.4.54'
+            );
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        }
+
+        $config = $services->get('Config');
+        $basePath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+
+        // The local store "files" may be hard-coded.
+        $moduleConfig = include __DIR__ . '/config/module.config.php';
+        $defaultSettings = $moduleConfig['imageserver']['config'];
+        $tileDir = $defaultSettings['imageserver_image_tile_dir'];
+        $tileDir = trim(str_replace('\\', '/', $tileDir), '/');
+        if (empty($tileDir)) {
+            throw new ModuleCannotInstallException((string) new PsrMessage(
+                'The tile dir is not defined.' // @translate
+            ));
+        }
+
+        if (!$this->checkDestinationDir($basePath . '/' . $tileDir)) {
+            $message = new PsrMessage(
+                'The directory "{directory}" is not writeable.', // @translate
+                ['directory' => $basePath . '/' . $tileDir]
+            );
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        }
+
+        $messenger = $plugins->get('messenger');
+        $messenger->addSuccess(new PsrMessage(
+            'The tiles will be saved in the directory "{dir}".', // @translate
+            ['dir' => $basePath . '/' . $tileDir]
+        ));
+
+        @copy(
+            $basePath . '/' . 'index.html',
+            $basePath . '/' . $tileDir . '/' . 'index.html'
+        );
     }
 
     protected function postUninstall(): void
@@ -101,19 +150,21 @@ SQL;
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
             $messenger = $services->get('ControllerPluginManager')->get('messenger');
-            $messenger->addWarning('The tile dir is not defined and was not removed.'); // @translate
+            $messenger->addWarning(new PsrMessage(
+                'The tile dir is not defined and was not removed.' // @translate
+            ));
         } else {
             $tileDir = $basePath . '/' . $tileDir;
             // A security check.
             $removable = $tileDir == realpath($tileDir);
             if ($removable) {
-                $this->rrmdir($tileDir);
+                $this->rmdir($tileDir);
             } else {
                 $messenger = $services->get('ControllerPluginManager')->get('messenger');
-                $messenger->addWarning(
-                    'The tile dir "%s" is not a real path and was not removed.', // @translate
-                    $tileDir
-                );
+                $messenger->addWarning(new PsrMessage(
+                    'The tile dir "{dir}" is not a real path and was not removed.', // @translate
+                    ['dir' => $tileDir]
+                ));
             }
         }
     }
@@ -132,14 +183,19 @@ SQL;
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $settings->get('imageserver_image_tile_dir');
         if (empty($tileDir)) {
-            $message = new Message('The tile dir is not defined and won’t be removed.'); // @translate
+            $message = new PsrMessage(
+                'The tile dir is not defined and won’t be removed.' // @translate
+            );
         } else {
             $tileDir = $basePath . '/' . $tileDir;
             $removable = $tileDir == realpath($tileDir);
             if ($removable) {
-                $message = 'All tiles will be removed!'; // @translate
+                $message = new PsrMessage('All tiles will be removed!'); // @translate
             } else {
-                $message = new Message('The tile dir "%d" is not a real path and cannot be removed.', $tileDir); // @translate
+                $message = new PsrMessage(
+                    'The tile dir "{dir}" is not a real path and cannot be removed.',  // @translate
+                    ['dir' => $tileDir]
+                );
             }
         }
 
@@ -152,14 +208,14 @@ SQL;
         $html .= '</li></ul>';
         if ($removable) {
             $html .= '<p>';
-            $html .= new Message(
-                'To keep the tiles, rename the dir "%s" before and after uninstall.', // @translate
-                $tileDir
+            $html .= new PsrMessage(
+                'To keep the tiles, rename the dir "{dir}" before and after uninstall.', // @translate
+                ['dir' => $tileDir]
             );
             $html .= '</p>';
         }
         $html .= '<p>';
-        $html .= new Message(
+        $html .= new PsrMessage(
             'All media rendered as "tile" will be rendered as "file".' // @translate
         );
         $html .= '</p>';
@@ -224,7 +280,7 @@ SQL;
     public function getConfigForm(PhpRenderer $renderer)
     {
         $this->checkAutoTiling();
-        return parent::getConfigForm($renderer);
+        return $this->getConfigFormAuto($renderer);
     }
 
     public function handleConfigForm(AbstractController $controller)
@@ -236,7 +292,7 @@ SQL;
         $form = $services->get('FormElementManager')->get(ConfigForm::class);
         $params = $controller->getRequest()->getPost();
 
-        if (!parent::handleConfigForm($controller)) {
+        if (!$this->handleConfigFormAuto($controller)) {
             return false;
         }
 
@@ -288,19 +344,21 @@ SQL;
             return true;
         }
 
-        $message = new Message(
-            'Creating tiles and/or dimensions for images attached to specified items, in background (%1$sjob #%2$d%3$s, %4$slogs%3$s).', // @translate
-            sprintf('<a href="%s">',
-                htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
-            ),
-            $job->getId(),
-            '</a>',
-            sprintf('<a href="%s">',
-                htmlspecialchars($this->isModuleActive('Log')
-                    ? $urlPlugin->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                    : $urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
-                )
-            )
+        $message = new PsrMessage(
+            'Creating tiles and/or dimensions for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+            [
+                'link' => sprintf('<a href="%s">',
+                    htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                ),
+                'job_id' => $job->getId(),
+                'link_end' => '</a>',
+                'link_log' => sprintf('<a href="%s">',
+                    htmlspecialchars($this->isModuleActive('Log')
+                        ? $urlPlugin->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
+                        : $urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
+                    )
+                ),
+            ]
         );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
@@ -315,8 +373,8 @@ SQL;
             return true;
         }
         $messenger = $services->get('ControllerPluginManager')->get('messenger');
-        $message = new \Omeka\Stdlib\Message(
-            'The option "auto-tiling" is not set: it is recommended to enable it once all existing images have been tiled to avoid to tile new images manually.' // @translate
+        $message = new PsrMessage(
+            'The option "auto-tiling" is not set: unless you use an external image server sharing the original or a specific directory, it is recommended to enable it once all existing images have been tiled to avoid to tile new images manually.' // @translate
         );
         $messenger->addWarning($message);
         return false;
@@ -370,58 +428,6 @@ SQL;
             }
         }
         $settings->set('iiifserver_media_api_default_supported_version', $defaultSupportedVersion);
-    }
-
-    protected function createTilesMainDir(ServiceLocatorInterface $services): void
-    {
-        // The local store "files" may be hard-coded.
-        $config = include __DIR__ . '/config/module.config.php';
-        $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
-        $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $tileDir = $defaultSettings['imageserver_image_tile_dir'];
-        if (empty($tileDir)) {
-            throw new ModuleCannotInstallException((string) new Message(
-                'The tile dir is not defined.', // @translate
-                $tileDir
-            ));
-        }
-
-        $dir = $basePath . '/' . $tileDir;
-
-        // Check if the directory exists in the archive.
-        if (file_exists($dir)) {
-            if (!is_dir($dir)) {
-                throw new ModuleCannotInstallException((string) new Message(
-                    'The directory "%s" cannot be created: a file exists.', // @translate
-                    $dir
-                ));
-            }
-            if (!is_writeable($dir)) {
-                throw new ModuleCannotInstallException((string) new Message(
-                    'The directory "%s" is not writeable.', // @translate
-                    $dir
-                ));
-            }
-        } else {
-            $result = mkdir($dir, 0755, true);
-            if (!$result) {
-                throw new ModuleCannotInstallException((string) new Message(
-                    'The directory "%s" cannot be created.', // @translate
-                    $dir
-                ));
-            }
-        }
-
-        $messenger = $services->get('ControllerPluginManager')->get('messenger');
-        $messenger->addSuccess(new Message(
-            'The tiles will be saved in the directory "%s".', // @translate
-            $dir
-        ));
-
-        @copy(
-            $basePath . '/' . 'index.html',
-            $dir . '/' . 'index.html'
-        );
     }
 
     public function handleBeforeSaveMedia(Event $event): void
@@ -594,39 +600,5 @@ SQL;
         $tileRemover = $services->get('ControllerPluginManager')->get('tileRemover');
         $media = $event->getTarget();
         $tileRemover($media);
-    }
-
-    /**
-     * Removes directories recursively.
-     *
-     * @param string $dir Directory name.
-     * @return bool
-     */
-    private function rrmdir($dir)
-    {
-        if (!file_exists($dir)
-            || !is_dir($dir)
-            || !is_readable($dir)
-            || !is_writeable($dir)
-        ) {
-            return false;
-        }
-
-        $scandir = scandir($dir);
-        if (!is_array($scandir)) {
-            return false;
-        }
-
-        $files = array_diff($scandir, ['.', '..']);
-        foreach ($files as $file) {
-            $path = $dir . '/' . $file;
-            if (is_dir($path)) {
-                $this->rrmdir($path);
-            } else {
-                unlink($path);
-            }
-        }
-
-        return @rmdir($dir);
     }
 }

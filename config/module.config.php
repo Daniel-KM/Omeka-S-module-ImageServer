@@ -84,7 +84,6 @@ return [
     'form_elements' => [
         'invokables' => [
             Form\Element\Note::class => Form\Element\Note::class,
-            Form\Element\OptionalRadio::class => Form\Element\OptionalRadio::class,
             Form\SettingsFieldset::class => Form\SettingsFieldset::class,
             Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
         ],

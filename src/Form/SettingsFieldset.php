@@ -2,7 +2,7 @@
 
 namespace ImageServer\Form;
 
-use ImageServer\Form\Element\OptionalRadio;
+use Common\Form\Element as CommonElement;
 use Laminas\Form\Fieldset;
 
 class SettingsFieldset extends Fieldset
@@ -23,7 +23,7 @@ class SettingsFieldset extends Fieldset
             ->setOption('element_groups', $this->elementGroups)
             ->add([
                 'name' => 'imageserver_default_thumbnail_type',
-                'type' => OptionalRadio::class,
+                'type' => CommonElement\OptionalRadio::class,
                 'options' => [
                     'element_group' => 'image_server',
                     'label' => 'Default display of images', // @translate
@@ -40,7 +40,7 @@ class SettingsFieldset extends Fieldset
             ])
             ->add([
                 'name' => 'imageserver_tile_fallback',
-                'type' => OptionalRadio::class,
+                'type' => CommonElement\OptionalRadio::class,
                 'options' => [
                     'element_group' => 'image_server',
                     'label' => 'Fallback when there is no tile', // @translate
