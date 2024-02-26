@@ -29,7 +29,10 @@
 
 namespace ImageServer\Iiif;
 
+use Common\Stdlib\PsrMessage;
 use IiifServer\Iiif\AbstractType;
+use IiifServer\Iiif\Exception\RuntimeException;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 
 /**
@@ -39,7 +42,7 @@ class Tile extends AbstractType
 {
     protected $type = 'Tile';
 
-    protected $keys = [
+    protected $propertyRequirements = [
         'type' => self::OPTIONAL,
         'width' => self::REQUIRED,
         'height' => self::OPTIONAL,
@@ -54,18 +57,24 @@ class Tile extends AbstractType
     /**
      * @var array
      */
-    protected $options;
-
-    /**
-     * @var array
-     */
     private $tilingInfo;
 
-    public function __construct(MediaRepresentation $resource, array $options = null)
+    public function setResource(AbstractResourceEntityRepresentation $resource): self
     {
-        $this->resource = $resource;
-        $this->options = $options ?: [];
-        $this->prepareTilingInfo();
+        parent::setResource($resource);
+
+        if (!$resource instanceof MediaRepresentation) {
+            $message = new PsrMessage(
+                'Resource #{resource_id}: A media is required to build a Tile.', // @translate
+                ['resource_id' => $resource->id()]
+            );
+            $this->logger->err($message->getMessage(), $message->getContext());
+            throw new RuntimeException((string) $message);
+        }
+
+        $this
+            ->prepareTilingInfo();
+        return $this;
     }
 
     public function isImage(): bool
@@ -123,6 +132,7 @@ class Tile extends AbstractType
             return null;
         }
 
+        // TODO Replace property by internal array.
         $this->tilingInfo = [];
         $this->tilingInfo['width'] = $tileSize;
         $this->tilingInfo['scaleFactors'] = $scaleFactors;
