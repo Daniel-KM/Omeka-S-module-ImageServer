@@ -165,7 +165,10 @@ class Tile implements IngesterInterface
         $data = $request->getContent();
         $uri = new HttpUri($data['ingest_url']);
         if (!($uri->isValid() && $uri->isAbsolute())) {
-            $errorStore->addError('ingest_url', 'Invalid ingest URL'); // @translate
+            $errorStore->addError('ingest_url', sprintf(
+                'Invalid ingest URL %s', // @translate
+                $data['ingest_url']
+            ));
             return;
         }
 
