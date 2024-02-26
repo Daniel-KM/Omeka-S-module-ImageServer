@@ -7,177 +7,49 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-02-13 00:00+0000\n"
-"PO-Revision-Date: 2023-02-13 00:00+0000\n"
+"POT-Creation-Date: 2024-02-26 00:00+0000"
+"MI+ZONE\n"
+"PO-Revision-Date: \n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.2.2\n"
 
-#: data/scripts/upgrade.php:39 Module.php:88
+#: data/scripts/upgrade.php:29
+#, php-format
+msgid "The module %1$s should be upgraded to version %2$s or later."
+msgstr "Le module %1$s doit être mis à niveau à la version %2$s ou supérieure."
+
+#: data/scripts/upgrade.php:46 data/scripts/upgrade.php:106
+#: data/scripts/upgrade.php:159
 #, php-format
 msgid "This module requires the module \"%s\", version %s or above."
 msgstr "Ce module requiert le module \"%s\", version \"%s\" ou supérieur."
 
-#: Module.php:98
-msgid ""
-"You should run \"composer install\" from the root of the module, or install "
-"a release with the dependencies."
-msgstr ""
-
-#: Module.php:99
-msgid "See module’s installation documentation."
-msgstr "Consulter la documentation d’installation du module."
-
-#: Module.php:111
-msgid ""
-"This version requires Archive Repertory 3.15.4 or greater (used for some 3D "
-"views)."
-msgstr ""
-"Cette version requiert le module Archive Repertory 3.15.4 ou supérieur (pour "
-"les modèles 3D)."
-
-#: src/Controller/ImageController.php:419
-#: src/Controller/ImageController.php:450
-#, php-format
-msgid ""
-"The Image server cannot fulfill the request: the region \"%s\" is incorrect."
-msgstr ""
-
-#: src/Controller/ImageController.php:483
-#, php-format
-msgid ""
-"The Image server cannot fulfill the request: the size \"%s\" is incorrect "
-"for API version %s."
-msgstr ""
-
-#: src/Controller/ImageController.php:491
-#: src/Controller/ImageController.php:507
-#: src/Controller/ImageController.php:538
-#: src/Controller/ImageController.php:575
-#, php-format
-msgid ""
-"The Image server cannot fulfill the request: the size \"%s\" is incorrect."
-msgstr ""
-
-#: src/Controller/ImageController.php:516
-#: src/Controller/ImageController.php:552
-#: src/Controller/ImageController.php:582
-#, php-format
-msgid ""
-"The Image server cannot fulfill the request: the size \"%s\" is incorrect "
-"for api version %s."
-msgstr ""
-
-#: src/Controller/ImageController.php:636
-#: src/Controller/ImageController.php:644
-#, php-format
-msgid ""
-"The Image server cannot fulfill the request: the size \"%s\" is not "
-"supported."
-msgstr ""
-
-#: src/Controller/ImageController.php:698
-#, php-format
-msgid ""
-"The Image server cannot fulfill the request: the format \"%s\" is not "
-"supported."
-msgstr ""
-
-#: src/Form/ConfigForm.php:171
-msgid ""
-"Vips is the quickest in all cases, then GD is a little faster than "
-"ImageMagick, but ImageMagick manages more formats."
-msgstr ""
-
-#: src/Form/ConfigForm.php:172
-msgid ""
-"Nevertheless, the performance depends on your installation and your server."
-msgstr ""
-
-#: src/Form/ConfigForm.php:185
-msgid "Set the maximum size in bytes for the dynamic processing of images."
-msgstr ""
-
-#: src/Form/ConfigForm.php:186
-msgid "Beyond this limit, the plugin will require a tiled image."
-msgstr ""
-
-#: src/Form/ConfigForm.php:187
-msgid "Let empty to allow processing of any image."
-msgstr ""
-
-#: src/Form/ConfigForm.php:188
-msgid "With vips, this option is bypassed."
-msgstr ""
-
-#: src/Form/ConfigForm.php:199
-msgid ""
-"If vips is available, the recommended processor strategy is \"Tiled tiff\". "
-"If jpeg2000 is available, use \"Jpeg 2000\". Else, use Deepzoom or Zoomify."
-msgstr ""
-
-#: src/Form/ConfigForm.php:200
-msgid ""
-"Deep Zoom Image is a free proprietary format from Microsoft largely "
-"supported."
-msgstr ""
-
-#: src/Form/ConfigForm.php:201
-msgid ""
-"Zoomify is an old format that was largely supported by proprietary softwares "
-"and free viewers."
-msgstr ""
-
-#: src/Form/ConfigForm.php:202
-msgid ""
-"All formats are served as native by default, but may be served as IIIF too "
-"when a viewer request it."
-msgstr ""
-
-#: src/Generic/AbstractModule.php:66
-#, php-format
-msgid "This module requires the module \"%s\"."
-msgstr "Ce module requiert le module \"%s\"."
-
-#: src/Generic/AbstractModule.php:73
-#, php-format
-msgid "This module requires modules \"%s\"."
-msgstr "Ce module requiert les modules \"%s\"."
-
-#: src/Generic/AbstractModule.php:80
-msgid "This module has resources that connot be installed."
-msgstr "Ce module a des ressources qui ne peuvent pas être installées."
-
-#: src/Generic/AbstractModule.php:707
-#, php-format
-msgid ""
-"The module \"%s\" was automatically deactivated because the dependencies are "
-"unavailable."
-msgstr ""
-"Le module \"%s\" a été automatiquement désactivé car ses dépendances ne sont "
-"plus disponibles."
-
-#: src/Job/Tiler.php:341
+#: src/Job/Tiler.php:342
 #, php-format
 msgid "Error directory non writable: \"%s\"."
 msgstr "Erreur dossier fermé en écriture : \"%s\"."
 
-#: src/Job/Tiler.php:344
+#: src/Job/Tiler.php:345
 #, php-format
 msgid "Failed to create folder \"%s\": a file with the same name exists…"
 msgstr ""
 "Impossible de créer le dossier \"%s\" : un fichier existe avec le même nom…"
 
-#: src/Job/Tiler.php:349
+#: src/Job/Tiler.php:350
 #, php-format
 msgid "Error making directory: \"%s\"."
 msgstr "Erreur lors de la création du dossier : \"%s\"."
 
-#: data/scripts/upgrade.php:47
+#: src/Media/FileRenderer/ThumbnailRenderer.php:105
+msgid "OpenSeadragon is not available unless JavaScript is enabled."
+msgstr "OpenSeadragon est disponible seulement si JavaScript est activé."
+
+#: data/scripts/upgrade.php:53
 msgid ""
 "Now, all images can be automatically converted into tiles and an option in "
 "settings and site settings allows to specify the default display.\n"
@@ -192,273 +64,675 @@ msgstr ""
 "La conversion du rendu de \"tile\" au \"file\" standard peut être réalisé "
 "via une tâche dans le formulaire de configuration."
 
-#: data/scripts/upgrade.php:79
+#: data/scripts/upgrade.php:84
 #, php-format
 msgid ""
-"Storing tile info for images in background (%1$sjob #%2$d%3$s, %4$slogs"
-"%3$s). This process will take a while."
+"Storing tile info for images in background (%1$sjob #%2$d%3$s, "
+"%4$slogs%3$s). This process will take a while."
 msgstr ""
 
-#: Module.php:142
-msgid "The tile dir is not defined and was not removed."
-msgstr ""
-
-#: Module.php:152
-#, php-format
-msgid "The tile dir \"%s\" is not a real path and was not removed."
-msgstr ""
-
-#: Module.php:173
-msgid "The tile dir is not defined and won’t be removed."
-msgstr ""
-
-#: Module.php:178
-msgid "All tiles will be removed!"
-msgstr ""
-
-#: Module.php:180
-#, php-format
-msgid "The tile dir \"%d\" is not a real path and cannot be removed."
-msgstr ""
-
-#: Module.php:187
-msgid "WARNING"
-msgstr "ATTENTION"
-
-#: Module.php:194
-#, php-format
-msgid "To keep the tiles, rename the dir \"%s\" before and after uninstall."
-msgstr ""
-
-#: Module.php:201
-msgid "All media rendered as \"tile\" will be rendered as \"file\"."
-msgstr ""
-
-#: Module.php:307
-#, php-format
+#: data/scripts/upgrade.php:121
 msgid ""
-"Creating tiles and/or dimensions for images attached to specified items, in "
-"background (%1$sjob #%2$d%3$s, %4$slogs%3$s)."
+"The routes to the image server have been renamed from \"iiif-img/\" and "
+"\"ixif-media/\" to the more standard \"iiif/\"."
 msgstr ""
 
-#: Module.php:334 src/Service/Media/Renderer/TileFactory.php:21
+#: data/scripts/upgrade.php:125
+msgid "Check the config of the module."
+msgstr ""
+
+#: Module.php:94 src/Service/ControllerPlugin/TileRemoverFactory.php:20
 #: src/Service/ControllerPlugin/TilerFactory.php:19
-#: src/Service/ControllerPlugin/TileRemoverFactory.php:20
 #: src/Service/ControllerPlugin/TileInfoFactory.php:17
+#: src/Service/Media/Renderer/TileFactory.php:21
 msgid "The tile dir is not defined."
 msgstr ""
 
-#: Module.php:345
-#, php-format
-msgid "The directory \"%s\" cannot be created: a file exists."
+#: Module.php:100
+msgid "The directory \"{directory}\" is not writeable."
+msgstr "Le dossier « {directory} » n’est pas accessible en écriture."
+
+#: Module.php:108
+msgid "The tiles will be saved in the directory \"{dir}\"."
 msgstr ""
 
-#: Module.php:351
-#, php-format
-msgid "The directory \"%s\" is not writeable."
-msgstr "Le dossier « %s » ne permet pas l’écriture."
-
-#: Module.php:359
-#, php-format
-msgid "The directory \"%s\" cannot be created."
+#: Module.php:138
+msgid "The tile dir is not defined and was not removed."
 msgstr ""
 
-#: Module.php:367
-#, php-format
-msgid "The tiles will be saved in the directory \"%s\"."
+#: Module.php:149
+msgid "The tile dir \"{dir}\" is not a real path and was not removed."
 msgstr ""
+
+#: Module.php:171
+msgid "The tile dir is not defined and won’t be removed."
+msgstr ""
+
+#: Module.php:177
+msgid "All tiles will be removed!"
+msgstr "Toutes les tuiles seront supprimées !"
+
+#: Module.php:180
+msgid "The tile dir \"{dir}\" is not a real path and cannot be removed."
+msgstr ""
+
+#: Module.php:189
+msgid "WARNING"
+msgstr "ATTENTION"
+
+#: Module.php:196
+msgid "To keep the tiles, rename the dir \"{dir}\" before and after uninstall."
+msgstr ""
+
+#: Module.php:203
+msgid "All media rendered as \"tile\" will be rendered as \"file\"."
+msgstr ""
+
+#: Module.php:332
+msgid ""
+"Creating tiles and/or dimensions for images attached to specified items, in "
+"background ({link}job #{job_id}{link_end}, {link_log}logs{link_end})."
+msgstr ""
+
+#: Module.php:361
+msgid ""
+"The option \"auto-tiling\" is not set: it is recommended to enable it once "
+"all existing images have been tiled to avoid to tile new images manually."
+msgstr ""
+
+#: src/Mvc/Controller/Plugin/Tiler.php:84
+msgid "Media #{media_id}: The file \"{filename}\" is missing."
+msgstr "Média #{media_id} : le fichier original \"{filename}\" n’existe pas."
+
+#: src/Mvc/Controller/Plugin/Tiler.php:114
+msgid "Media #{media_id}: The tiler failed: {exception}"
+msgstr ""
+
+#: src/Mvc/Controller/Plugin/TileInfo.php:235
+#: src/Mvc/Controller/Plugin/TileInfo.php:309
+msgid "Php extension php-xml is not installed"
+msgstr ""
+
+#: src/Mvc/Controller/Plugin/TileBuilder.php:73
+msgid "Source is empty."
+msgstr "La source est vide."
+
+#: src/Mvc/Controller/Plugin/TileBuilder.php:78
+msgid "Source file \"{file}\" is not readable."
+msgstr "Le fichier source « {file} » n’est pas accessible en lecture."
+
+#: src/Mvc/Controller/Plugin/TileBuilder.php:84
+msgid "Destination is empty."
+msgstr ""
+
+#: src/Mvc/Controller/Plugin/TileBuilder.php:132
+msgid "The type of tiling \"{type}\" is not supported by the tile builder."
+msgstr ""
+
+#: src/Job/MediaSizerAndTiler.php:25 src/Job/MediaSizer.php:24
+#: src/Job/MediaTiler.php:31
+msgid "No media selected. You may check your query."
+msgstr ""
+
+#: src/Job/MediaSizerAndTiler.php:33 src/Job/BulkSizerAndTiler.php:46
+msgid "The job ended: no tasks (tile or size) defined."
+msgstr ""
+
+#: src/Job/TilerTrait.php:92
+msgid "Media #{media_id}: Start tiling ({type})"
+msgstr ""
+
+#: src/Job/TilerTrait.php:101
+msgid "Media #{media_id}: Skipped because already tiled."
+msgstr ""
+
+#: src/Job/TilerTrait.php:115
+msgid ""
+"Media #{media_id}: Renderer \"{renderer}\" updated to \"{renderer_new}\"."
+msgstr ""
+
+#: src/Job/TilerTrait.php:120
+msgid "Media #{media_id}: End tiling"
+msgstr ""
+
+#: src/Job/TilerTrait.php:127
+msgid "Media #{media_id}: Error during tiling"
+msgstr ""
+
+#: src/Job/BulkTileInfo.php:83 src/Job/BulkSizer.php:45
+#: src/Job/BulkTiler.php:51 src/Job/BulkSizerAndTiler.php:57
+msgid "No item selected. You may check your query."
+msgstr ""
+
+#: src/Job/BulkTileInfo.php:89
+msgid "Starting bulk tile info for {total} items."
+msgstr ""
+
+#: src/Job/BulkTileInfo.php:111
+msgid ""
+"The job \"Bulk Tile Info\" was stopped: {count}/{total} resources processed."
+msgstr ""
+
+#: src/Job/BulkTileInfo.php:144
+msgid ""
+"End of bulk prepare tile info: {count}/{total} items processed, "
+"{total_succeed} files sized, {total_failed} errors, {total_skipped} skipped "
+"on a total of {total_images} images."
+msgstr ""
+
+#: src/Job/Tiler.php:45
+msgid "The media to tile cannot be identified."
+msgstr ""
+
+#: src/Job/Tiler.php:76
+msgid "The media file to tile cannot be found."
+msgstr ""
+
+#: src/Job/Tiler.php:227
+msgid "An error occurred during the tiling of media #{media_id}."
+msgstr ""
+
+#: src/Job/BulkSizer.php:53
+msgid "Starting bulk sizing for {total} items ({filter} media)."
+msgstr ""
+
+#: src/Job/BulkSizer.php:75
+msgid ""
+"The job \"Bulk Sizer\" was stopped: {count}/{total} resources processed."
+msgstr ""
+
+#: src/Job/BulkSizer.php:104 src/Job/BulkSizerAndTiler.php:153
+msgid ""
+"End of bulk sizing: {count}/{total} items processed, {total_succeed} files "
+"sized, {total_failed} errors, {total_skipped} skipped on a total of "
+"{total_images} images."
+msgstr ""
+
+#: src/Job/BulkTiler.php:59
+#, php-format
+msgid "Starting bulk tiling for %d items."
+msgstr ""
+
+#: src/Job/BulkTiler.php:81
+msgid ""
+"The job \"Bulk Tiler\" was stopped: {count}/{total} resources processed."
+msgstr ""
+
+#: src/Job/BulkTiler.php:111
+msgid ""
+"End of bulk tiling: {count}/{total} items processed, {total_succeed} files "
+"tiled, {total_failed} errors, {total_skipped} skipped on a total of "
+"{total_images} images."
+msgstr ""
+
+#: src/Job/BulkSizerAndTiler.php:74
+msgid "Starting bulk tiling or sizing for {total} items."
+msgstr ""
+
+#: src/Job/BulkSizerAndTiler.php:96
+msgid ""
+"The job \"Bulk Tiler and Sizer\" was stopped: {count}/{total} resources "
+"processed."
+msgstr ""
+
+#: src/Job/BulkSizerAndTiler.php:174
+msgid "Media #{media_id}: Store tile info"
+msgstr ""
+
+#: src/Job/SizerTrait.php:97
+msgid "Media #{media_id}: Sizing"
+msgstr "Média #{media_id} : Dimensions"
+
+#: src/Job/SizerTrait.php:119
+msgid "Media #{media_id}: Error getting dimensions for types \"{types}\"."
+msgstr ""
+"Média #{media_id} : erreur lors de l’obtention des dimensions pour les types "
+"\"{types}\"."
 
 #: src/Form/SettingsFieldset.php:13
 msgid "Image Server"
-msgstr ""
+msgstr "Serveur d’images"
 
-#: src/Form/SettingsFieldset.php:22
+#: src/Form/SettingsFieldset.php:16 src/Form/ConfigForm.php:39
+msgid "Image server"
+msgstr "Serveur d’images"
+
+#: src/Form/SettingsFieldset.php:29
 msgid "Default display of images"
 msgstr ""
 
-#: src/Form/SettingsFieldset.php:23 src/Form/SettingsFieldset.php:39
+#: src/Form/SettingsFieldset.php:30 src/Form/SettingsFieldset.php:47
 msgid ""
 "To use the original file is not recommended when files are bigger than 1-10 "
 "MB."
 msgstr ""
 
-#: src/Form/SettingsFieldset.php:25 src/Form/ConfigForm.php:307
+#: src/Form/SettingsFieldset.php:32 src/Form/ConfigForm.php:428
 msgid "Tile"
 msgstr "Tuile"
 
-#: src/Form/SettingsFieldset.php:26
+#: src/Form/SettingsFieldset.php:33
 msgid "Large"
 msgstr "Large"
 
-#: src/Form/SettingsFieldset.php:38
+#: src/Form/SettingsFieldset.php:46
 msgid "Fallback when there is no tile"
 msgstr ""
 
-#: src/Form/SettingsFieldset.php:41
+#: src/Form/SettingsFieldset.php:49
 msgid "Tile with large thumbnail"
-msgstr ""
+msgstr "Tuile avec vignette large"
 
-#: src/Form/SettingsFieldset.php:42
+#: src/Form/SettingsFieldset.php:50
 msgid "Large thumbnail"
-msgstr ""
+msgstr "Vignette large"
 
-#: src/Form/SettingsFieldset.php:43
+#: src/Form/SettingsFieldset.php:51
 msgid "Tile with original file"
+msgstr "Tuile avec fichier original"
+
+#: src/Form/ConfigForm.php:55
+msgid "Default IIIF image api version"
+msgstr "Version api IIIF Image par défaut"
+
+#: src/Form/ConfigForm.php:56
+msgid ""
+"Set the version of the iiif info.json to provide. The image server should "
+"support it."
 msgstr ""
+"Indiquer la version iiif à fournir pour info.json. Le serveur d’images doit "
+"la supporter."
 
-#: src/Form/ConfigForm.php:40
-msgid "Iiif info"
-msgstr ""
+#: src/Form/ConfigForm.php:58
+msgid "No image server"
+msgstr "Pas de serveur d’images"
 
-#: src/Form/ConfigForm.php:50
-msgid "Default IIIF api version (info)"
-msgstr ""
+#: src/Form/ConfigForm.php:59
+msgid "Image Api 1"
+msgstr "Image Api 1"
 
-#: src/Form/ConfigForm.php:51
-msgid "Set the version of the manifest to provide."
-msgstr ""
+#: src/Form/ConfigForm.php:60
+msgid "Image Api 2"
+msgstr "Image Api 2"
 
-#: src/Form/ConfigForm.php:53
-msgid "2"
-msgstr "2"
+#: src/Form/ConfigForm.php:61
+msgid "Image Api 3"
+msgstr "Image Api 3"
 
-#: src/Form/ConfigForm.php:54
-msgid "3"
-msgstr "3"
+#: src/Form/ConfigForm.php:74
+msgid "Supported IIIF image api versions and max compliance level"
+msgstr "Versions gérées par l’api IIIF image et niveau de conformité maximum"
 
-#: src/Form/ConfigForm.php:66
+#: src/Form/ConfigForm.php:76
+msgid "Image Api 1 level 0"
+msgstr "Image Api 1 niveau 0"
+
+#: src/Form/ConfigForm.php:77
+msgid "Image Api 1 level 1"
+msgstr "Image Api 1 niveau 1"
+
+#: src/Form/ConfigForm.php:78
+msgid "Image Api 1 level 2"
+msgstr "Image Api 1 niveau 2"
+
+#: src/Form/ConfigForm.php:79
+msgid "Image Api 2 level 0"
+msgstr "Image Api 2 niveau 0"
+
+#: src/Form/ConfigForm.php:80
+msgid "Image Api 2 level 1"
+msgstr "Image Api 2 niveau 1"
+
+#: src/Form/ConfigForm.php:81
+msgid "Image Api 2 level 2"
+msgstr "Image Api 2 niveau 2"
+
+#: src/Form/ConfigForm.php:82
+msgid "Image Api 3 level 0"
+msgstr "Image Api 3 niveau 0"
+
+#: src/Form/ConfigForm.php:83
+msgid "Image Api 3 level 1"
+msgstr "Image Api 3 niveau 1"
+
+#: src/Form/ConfigForm.php:84
+msgid "Image Api 3 level 2"
+msgstr "Image Api 3 niveau 2"
+
+#: src/Form/ConfigForm.php:96
 msgid ""
 "Append the version to the url (to be set inside module.config.php currently)"
 msgstr ""
 "Ajouter la version à l’url (à définir dans le fichier module.config.php)"
 
-#: src/Form/ConfigForm.php:67
+#: src/Form/ConfigForm.php:97
 msgid ""
-"If set, the version will be appended to the url of the server: \"iiif-"
-"img/3\"."
+"If set, the version will be appended to the url of the server: \"iiif/3\"."
+msgstr "Si coché, la version sera ajoutée à l’url du serveur : « iiif/3 »."
+
+#: src/Form/ConfigForm.php:122
+msgid "Media identifier"
+msgstr "Identifiant du média"
+
+#: src/Form/ConfigForm.php:123
+msgid ""
+"Using the full filename allows to use an image server like Cantaloupe "
+"sharing the Omeka original files directory."
+msgstr ""
+"Utiliser le nom de fichier complet permet d’utiliser un serveur d’images tel "
+"que Cantaloupe en partageant le dossier des fichiers originaux d’Omeka."
+
+#: src/Form/ConfigForm.php:126
+msgid "Media id"
+msgstr "Id du média"
+
+#: src/Form/ConfigForm.php:127
+msgid "Filename"
+msgstr "Nom de fichier"
+
+#: src/Form/ConfigForm.php:128
+msgid "Filename with extension"
+msgstr "Nom de fichier avec extension"
+
+#: src/Form/ConfigForm.php:141
+msgid "Content of media info.json"
 msgstr ""
 
-#: src/Form/ConfigForm.php:70
-msgid "imageserver_info_version_append"
-msgstr ""
-
-#: src/Form/ConfigForm.php:92
+#: src/Form/ConfigForm.php:149
 msgid "Rights (license)"
 msgstr "Droits (licence)"
 
-#: src/Form/ConfigForm.php:94
+#: src/Form/ConfigForm.php:151
 msgid "No mention"
 msgstr "Pas de mention"
 
-#: src/Form/ConfigForm.php:95
+#: src/Form/ConfigForm.php:152
 msgid "Specified text below (only for iiif 2.0)"
 msgstr "Texte indiqué ci-dessous (seulement pour iiif 2.0)"
 
-#: src/Form/ConfigForm.php:96
+#: src/Form/ConfigForm.php:153
 msgid "Specified license url below"
 msgstr ""
 
-#: src/Form/ConfigForm.php:97
+#: src/Form/ConfigForm.php:154
 msgid "Specified property below"
 msgstr "Propriété indiquée ci-dessous"
 
-#: src/Form/ConfigForm.php:98
+#: src/Form/ConfigForm.php:155
 msgid "Property if any, else specified license text (only for iiif 2.0)"
 msgstr ""
 "Propriété si présente, sinon le texte de la licence (seulement pour iiif "
 "v2.0)"
 
-#: src/Form/ConfigForm.php:99
+#: src/Form/ConfigForm.php:156
 msgid "Property if any, else specified license"
 msgstr "Propriété si présente, sinon la licence indiquée"
 
-#: src/Form/ConfigForm.php:100
+#: src/Form/ConfigForm.php:157
 msgid "Url specified by the iiif server for the item"
 msgstr ""
 
-#: src/Form/ConfigForm.php:101
+#: src/Form/ConfigForm.php:158
 msgid "Item rights url if any, else specified license"
 msgstr ""
 
-#: src/Form/ConfigForm.php:113
+#: src/Form/ConfigForm.php:170
 msgid "Property to use for rights (license)"
 msgstr ""
 
-#: src/Form/ConfigForm.php:120
+#: src/Form/ConfigForm.php:177
 msgid "Select a media property…"
-msgstr ""
+msgstr "Choisir une propriété du média…"
 
-#: src/Form/ConfigForm.php:127
-msgid "Url of the license of the media"
-msgstr ""
+#: src/Form/ConfigForm.php:184
+msgid "Uri of the license or rights"
+msgstr "Uri de la licence ou des droits"
 
-#: src/Form/ConfigForm.php:128
+#: src/Form/ConfigForm.php:186
+msgid "Uri below"
+msgstr "Uri ci-dessous"
+
+#: src/Form/ConfigForm.php:189
+msgid "Creative Commons 0"
+msgstr "Creative Commons 0"
+
+#: src/Form/ConfigForm.php:191
+msgid "Creative Commons CC0 Universal Public Domain Dedication"
+msgstr "Creative Commons CC0 Placé dans le domaine public"
+
+#: src/Form/ConfigForm.php:196
+msgid "Creative Commons 3.0 International"
+msgstr "Creative Commons 3.0 International"
+
+#: src/Form/ConfigForm.php:198
+msgid "Creative Commons Attribution 3.0 International"
+msgstr "Creative Commons Attribution 3.0 International"
+
+#: src/Form/ConfigForm.php:199
+msgid "Creative Commons Attribution-ShareAlike 3.0 International"
+msgstr ""
+"Creative Commons Attribution - Partage dans les mêmes conditions 3.0 "
+"International"
+
+#: src/Form/ConfigForm.php:200
+msgid "Creative Commons Attribution-NonCommercial 3.0 International"
+msgstr ""
+"Creative Commons Attribution - Pas d’utilisation commerciale 3.0 "
+"International"
+
+#: src/Form/ConfigForm.php:201
+msgid "Creative Commons Attribution-NonCommercial-ShareAlike 3.0 International"
+msgstr ""
+"Creative Commons Attribution - Pas d’utilisation commerciale - Partage dans "
+"les mêmes conditions 3.0 International"
+
+#: src/Form/ConfigForm.php:202
 msgid ""
-"The license for the media must be an url from https://creativecommons.org or "
-"https://rightsstatements.org."
+"Creative Commons Attribution-NonCommercial-NoDerivatives 3.0 International"
+msgstr ""
+"Creative Commons Attribution - Pas d’utilisation commerciale - Pas de "
+"modification 3.0 International"
+
+#: src/Form/ConfigForm.php:203
+msgid "Creative Commons Attribution-NoDerivatives 3.0 International"
+msgstr "Creative Commons Attribution - Pas de modification 3.0 International"
+
+#: src/Form/ConfigForm.php:208
+msgid "Creative Commons 4.0 International"
+msgstr "Creative Commons 4.0 International"
+
+#: src/Form/ConfigForm.php:210
+msgid "Creative Commons Attribution 4.0 International"
+msgstr "Creative Commons Attribution 4.0 International"
+
+#: src/Form/ConfigForm.php:211
+msgid "Creative Commons Attribution-ShareAlike 4.0 International"
+msgstr ""
+"Creative Commons Attribution - Partage dans les mêmes conditions 4.0 "
+"International"
+
+#: src/Form/ConfigForm.php:212
+msgid "Creative Commons Attribution-NonCommercial 4.0 International"
+msgstr ""
+"Creative Commons Attribution - Pas d’utilisation commerciale 4.0 "
+"International"
+
+#: src/Form/ConfigForm.php:213
+msgid "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International"
+msgstr ""
+"Creative Commons Attribution - Pas d’utilisation commerciale - Partage dans "
+"les mêmes conditions 4.0 International"
+
+#: src/Form/ConfigForm.php:214
+msgid ""
+"Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International"
+msgstr ""
+"Creative Commons Attribution - Pas d’utilisation commerciale - Pas de "
+"modification 4.0 International"
+
+#: src/Form/ConfigForm.php:215
+msgid "Creative Commons Attribution-NoDerivatives 4.0 International"
+msgstr "Creative Commons Attribution - Pas de modification 4.0 International"
+
+#: src/Form/ConfigForm.php:220
+msgid "Rigths Statements"
+msgstr "Déclaration des droits"
+
+#: src/Form/ConfigForm.php:222
+msgid "In Copyright"
+msgstr "Protégé par le droit d’auteur"
+
+#: src/Form/ConfigForm.php:223
+msgid "In Copyright - Rights-holder(s) Unlocatable or Unidentifiable"
+msgstr ""
+"Protégé par le droit d’auteur - Titulaire(s) des droits impossible(s) à "
+"localiser ou à identifier"
+
+#: src/Form/ConfigForm.php:224
+msgid "In Copyright - Non-Commercial Use Permitted"
+msgstr "Protégé par le droit d’auteur - Utilisation non commerciale autorisée"
+
+#: src/Form/ConfigForm.php:225
+msgid "In Copyright - Educational Use Permitted"
+msgstr ""
+"Protégé par le droit d’auteur - Utilisation à des fins pédagogiques autorisée"
+
+#: src/Form/ConfigForm.php:226
+msgid "In Copyright - EU Orphan Work"
+msgstr "Protégé par le droit d’auteur - Œuvre orpheline de l’UE"
+
+#: src/Form/ConfigForm.php:227
+msgid "No Copyright - Other Known Legal Restrictions"
+msgstr ""
+"Absence de protection par le droit d’auteur - Autres restrictions juridiques "
+"connues"
+
+#: src/Form/ConfigForm.php:228
+msgid "No Copyright - Contractual Restrictions"
+msgstr ""
+"Absence de protection par le droit d’auteur - Restrictions contractuelles"
+
+#: src/Form/ConfigForm.php:229
+msgid "No Copyright - Non-Commercial Use Only"
+msgstr ""
+"Absence de protection par le droit d’auteur - Utilisation à des fins "
+"uniquement non commerciales"
+
+#: src/Form/ConfigForm.php:230
+msgid "No Copyright - United States"
+msgstr "Absence de protection par le droit d’auteur - États-Unis"
+
+#: src/Form/ConfigForm.php:231
+msgid "No Known Copyright"
+msgstr "Absence de protection connue par le droit d’auteur"
+
+#: src/Form/ConfigForm.php:232
+msgid "Copyright Undetermined"
+msgstr "Droit d’auteur indéterminé"
+
+#: src/Form/ConfigForm.php:233
+msgid "Copyright Not Evaluated"
+msgstr "Droit d’auteur non évalué"
+
+#: src/Form/ConfigForm.php:247
+msgid "Uri of the rights/license of the media when unselected above"
 msgstr ""
 
-#: src/Form/ConfigForm.php:138
+#: src/Form/ConfigForm.php:248
+msgid ""
+"For IIIF v3, the license of the item must be an url from https://"
+"creativecommons.org or https://rightsstatements.org."
+msgstr ""
+"Pour IIIF v3, la licence du contenu doit être une url de https://"
+"creativecommons.org ou https://rightsstatements.org."
+
+#: src/Form/ConfigForm.php:258
 msgid "Default license text (only for iiif 2.0)"
 msgstr "Licence par défaut (seulement pour IIIF v2.0)"
 
-#: src/Form/ConfigForm.php:149
-msgid "Image server"
+#: src/Form/ConfigForm.php:269
+msgid "Tiling service"
+msgstr "Service de tuilage"
+
+#: src/Form/ConfigForm.php:279
+msgid "Tile images manually and not automatically on save"
 msgstr ""
 
-#: src/Form/ConfigForm.php:159
+#: src/Form/ConfigForm.php:280
 msgid ""
-"Tile images automatically when saved (important: enable it only when all "
-"existing images are already tiled)"
+"If unset, to run the task below will be required to create tiles. It is "
+"recommended to set automatic tiling once all existing items are tiled to "
+"avoid to overload the server. So bulk tile all items first below."
 msgstr ""
 
-#: src/Form/ConfigForm.php:160
-msgid ""
-"If set, any action on items will create tiles if they are not present, so it "
-"can overload the server. So bulk tile all items first below."
-msgstr ""
-
-#: src/Form/ConfigForm.php:170
+#: src/Form/ConfigForm.php:290
 msgid "Image processor"
 msgstr ""
 
-#: src/Form/ConfigForm.php:184
+#: src/Form/ConfigForm.php:291
+msgid ""
+"Vips is the quickest in all cases, then GD is a little faster than "
+"ImageMagick, but ImageMagick manages more formats.\n"
+"Nevertheless, the performance depends on your installation and your server."
+msgstr ""
+
+#: src/Form/ConfigForm.php:304
 msgid "Max dynamic size for images"
 msgstr ""
 
-#: src/Form/ConfigForm.php:198
+#: src/Form/ConfigForm.php:305
+msgid ""
+"Set the maximum size in bytes for the dynamic processing of images.\n"
+"Beyond this limit, the plugin will require a tiled image.\n"
+"Let empty to allow processing of any image.\n"
+"With vips, this option is bypassed."
+msgstr ""
+
+#: src/Form/ConfigForm.php:318
 msgid "Tiling type"
 msgstr "Type de tuilage"
 
-#: src/Form/ConfigForm.php:207
+#: src/Form/ConfigForm.php:319
+msgid ""
+"If vips is available, the recommended processor strategy is \"Tiled tiff\". "
+"If jpeg2000 is available, use \"Jpeg 2000\". Else, use Deepzoom or Zoomify.\n"
+"Deep Zoom Image is a free proprietary format from Microsoft largely "
+"supported.\n"
+"Zoomify is an old format that was largely supported by proprietary softwares "
+"and free viewers.\n"
+"All formats are served as native by default, but may be served as IIIF too "
+"when a viewer request it."
+msgstr ""
+
+#: src/Form/ConfigForm.php:327
 msgid "Deep Zoom Image"
 msgstr ""
 
-#: src/Form/ConfigForm.php:211
+#: src/Form/ConfigForm.php:331
 msgid "Zoomify"
-msgstr ""
+msgstr "Zoomify"
 
-#: src/Form/ConfigForm.php:216
+#: src/Form/ConfigForm.php:336
 msgid "Jpeg 2000"
-msgstr ""
+msgstr "Jpeg 2000"
 
-#: src/Form/ConfigForm.php:217
+#: src/Form/ConfigForm.php:337
 msgid "Jpeg 2000 (not supported)"
-msgstr ""
+msgstr "Jpeg 2000 (non géré)"
 
-#: src/Form/ConfigForm.php:223
+#: src/Form/ConfigForm.php:343
 msgid "Tiled tiff"
-msgstr ""
+msgstr "Tiff pyramidal"
 
-#: src/Form/ConfigForm.php:224
+#: src/Form/ConfigForm.php:344
 msgid "Tiled tiff (not supported)"
-msgstr ""
+msgstr "Tiff pyramidal (non géré)"
 
-#: src/Form/ConfigForm.php:238
+#: src/Form/ConfigForm.php:358
 msgid "Bulk prepare tiles and sizes"
 msgstr ""
 
-#: src/Form/ConfigForm.php:252
+#: src/Form/ConfigForm.php:373
 msgid ""
 "This process builds tiles and and saves dimensions of existing files via a "
 "background job.\n"
@@ -466,106 +740,294 @@ msgid ""
 "speed up creation of the iiif \"info.json\" of medias."
 msgstr ""
 
-#: src/Form/ConfigForm.php:261
+#: src/Form/ConfigForm.php:382
 msgid ""
 "This query will be used to select all items whose attached images will be "
 "prepared in the background."
 msgstr ""
 
-#: src/Form/ConfigForm.php:272
+#: src/Form/ConfigForm.php:393
 msgid "Tasks"
 msgstr "Tâches"
 
-#: src/Form/ConfigForm.php:274
+#: src/Form/ConfigForm.php:395
 msgid "Tiling"
 msgstr "Tuilage"
 
-#: src/Form/ConfigForm.php:275
+#: src/Form/ConfigForm.php:396
 msgid "Sizing"
 msgstr "Taille"
 
-#: src/Form/ConfigForm.php:287
+#: src/Form/ConfigForm.php:408
 msgid "Limit process to prepare tiles"
 msgstr ""
 
-#: src/Form/ConfigForm.php:289 src/Form/ConfigForm.php:305
-#: src/Form/ConfigForm.php:321
+#: src/Form/ConfigForm.php:410 src/Form/ConfigForm.php:426
+#: src/Form/ConfigForm.php:442
 msgid "Keep existing"
-msgstr ""
+msgstr "Conserver les fichiers existants"
 
-#: src/Form/ConfigForm.php:290
+#: src/Form/ConfigForm.php:411
 msgid "Remove existing tiles for the specified format"
 msgstr ""
 
-#: src/Form/ConfigForm.php:291
+#: src/Form/ConfigForm.php:412
 msgid "Remove all existing tiles"
 msgstr ""
 
-#: src/Form/ConfigForm.php:303
+#: src/Form/ConfigForm.php:424
 msgid "Renderer"
 msgstr "Rendu"
 
-#: src/Form/ConfigForm.php:319
+#: src/Form/ConfigForm.php:440
 msgid "Limit process to get sizes"
 msgstr ""
 
-#: src/Form/ConfigForm.php:322
+#: src/Form/ConfigForm.php:443
 msgid "Only already sized"
-msgstr ""
+msgstr "Seulement les images déjà dimensionnées"
 
-#: src/Form/ConfigForm.php:335
+#: src/Form/ConfigForm.php:456
 msgid "Run in background"
 msgstr "Lancer en arrière-plan"
 
-#: src/Form/ConfigForm.php:339
+#: src/Form/ConfigForm.php:460
 msgid "Process"
 msgstr "Traitement"
 
-#: src/Controller/MediaController.php:94 src/Controller/ImageController.php:113
-msgid ""
-"The Image server cannot fulfill the request: the arguments are incorrect."
-msgstr ""
-"Le serveur d’images ne peut pas répondre à la requête : les arguments sont "
-"incorrects."
-
-#: src/Controller/MediaController.php:141
-msgid ""
-"The IXIF server encountered an unexpected error that prevented it from "
-"fulfilling the request: the requested format is not supported."
-msgstr ""
-"Le serveur IXIF a rencontré une erreur qui l’a empêché de répondre : le "
-"format demandé n’est pas géré."
-
-#: src/Controller/MediaController.php:154
-msgid ""
-"The IXIF server encountered an unexpected error that prevented it from "
-"fulfilling the request: the resulting file is not found."
-msgstr ""
-"Le serveur IXIF a rencontré une erreur qui l’a empêché de répondre : le "
-"fichier final n’a pas été trouvé."
-
-#: src/Controller/ImageController.php:158
+#: src/Form/Element/Note.php:114
 #, php-format
-msgid "The media \"%d\" is not an image"
+msgid ""
+"Argument \"wrap\" of method %1$s must be a null or alphanumeric string, "
+"received unstringable object \"%2$s\"."
+msgstr ""
+"L’argument « wrap » de la méthode %1$s doit être nul ou une chaîne "
+"alphanumérique et non l’objet « %2$s »."
+
+#: src/Form/Element/Note.php:121 src/Form/Element/Note.php:133
+#, php-format
+msgid ""
+"Argument \"wrap\" of method %1$s must be a null or alphanumeric string, "
+"received \"%2$s\"."
+msgstr ""
+"L’argument « wrap » de la méthode %1$s doit être nul ou une chaîne "
+"alphanumérique et non « %2$s »."
+
+#: src/ImageServer/AbstractImager.php:313
+msgid ""
+"Image Server failed to open the file \"{file}\". Details:\n"
+"{message}"
 msgstr ""
 
-#: src/Controller/ImageController.php:269
+#: src/ImageServer/AbstractImager.php:349
+msgid "Unable to save the file in the directory \"{dir}\"."
+msgstr ""
+
+#: src/ImageServer/AbstractImager.php:362
+msgid "Unable to save the file \"{dir}\": directory is not writeable."
+msgstr ""
+"Impossible d’enregistrer le fichier « {dir} » : le dossier ne permet pas "
+"l’écriture."
+
+#: src/ImageServer/Imagick.php:288
+msgid ""
+"Imagick failed to open the file \"{file}\". Details:\n"
+"{message}"
+msgstr ""
+
+#: src/ImageServer/GD.php:335
+msgid "GD failed to open the file \\\"{file}\\\". Details:\\n{message}"
+msgstr ""
+
+#: src/ImageServer/ImageServer.php:102
+msgid "The imager \"{class}\" is not supported."
+msgstr "L’imageur « {class} » n’est pas géré."
+
+#: src/Iiif/Tile.php:68
+msgid "Resource #{resource_id}: A media is required to build a Tile."
+msgstr ""
+
+#: src/Media/Renderer/Tile.php:60
+#, php-format
+msgid "No tile or no properties for media #%d."
+msgstr ""
+
+#: src/Media/Renderer/Tile.php:97
+#, php-format
+msgid "Invalid data for media #%d."
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:110
+msgid "Tiler"
+msgstr "Tuileur"
+
+#: src/Media/Ingester/Tile.php:143
+msgid "No url and no file was submitted for tiling"
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:169
+#, php-format
+msgid "Invalid ingest URL %s"
+msgstr "URL source %s incorrecte"
+
+#: src/Media/Ingester/Tile.php:207
+msgid "The local file should be in a configured directory"
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:226
+#, php-format
+msgid ""
+"Cannot sideload file \"%s\". File does not exist or does not have sufficient "
+"permissions"
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:268
+msgid "No tiling index was specified"
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:274
+msgid "No file uploaded for tiling for the specified index"
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:336
+msgid ""
+"Unable to create the temp dir \"tiletmp\", required to create tiles on "
+"Amazon S3. Check rights in the local directory files/."
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:344
+msgid ""
+"Unable to copy the file in the temp dir \"tiletmp\", required to create "
+"tiles on Amazon S3. Check rights in the local directory files/."
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:394
+msgid "Either a URL"
+msgstr "Soit une url"
+
+#: src/Media/Ingester/Tile.php:395
+msgid ""
+"A URL to the image. Prefix it with \"file://\" for a local file managed via "
+"module Sideload"
+msgstr ""
+
+#: src/Media/Ingester/Tile.php:404
+msgid "Or a file"
+msgstr "Soit un fichier"
+
+#: src/Media/Ingester/Tile.php:458
+#, php-format
+msgid ""
+"Error validating \"%s\". The file to tile should be an image, not \"%s\"."
+msgstr ""
+
+#: src/Controller/ImageController.php:105
+msgid "Media \"{media_id}\" not found."
+msgstr "Le média #{media_id} n’a pas été trouvé."
+
+#: src/Controller/ImageController.php:120
+msgid "The media \"{media_id}\" is not an image"
+msgstr ""
+
+#: src/Controller/ImageController.php:250
 msgid ""
 "The Image server encountered an unexpected error that prevented it from "
 "fulfilling the request: the file is not tiled for dynamic processing."
 msgstr ""
 
-#: src/Controller/ImageController.php:303
+#: src/Controller/ImageController.php:285
 msgid ""
 "The Image server encountered an unexpected error that prevented it from "
 "fulfilling the request: the resulting file is not found or empty."
 msgstr ""
 
-#: src/Controller/ImageController.php:325
+#: src/Controller/ImageController.php:386
 msgid ""
 "The Image server encountered an unexpected error that prevented it from "
 "fulfilling the request: the resulting file is empty or not found."
 msgstr ""
+
+#: src/Controller/ImageController.php:467
+#: src/Controller/ImageController.php:531
+msgid ""
+"The Image server cannot fulfill the request: the region \"{region}\" is "
+"incorrect."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la région "
+"« {region} » est incorrecte."
+
+#: src/Controller/ImageController.php:498
+#: src/Controller/ImageController.php:558
+msgid ""
+"The Image server cannot fulfill the request: the region \"{region}\" is  "
+"outside the source."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la région "
+"« {region} » est en dehors de la source."
+
+#: src/Controller/ImageController.php:597
+msgid ""
+"The Image server cannot fulfill the request: the region \"{region}\" is "
+"invalid."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la région "
+"« {region} » est invalide."
+
+#: src/Controller/ImageController.php:614
+msgid ""
+"The Image server cannot fulfill the request: the size \"{size}\" is "
+"incorrect for API version {version}."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la taille « {size} » "
+"est incorrecte pour la version api {version}."
+
+#: src/Controller/ImageController.php:625
+#: src/Controller/ImageController.php:663
+#: src/Controller/ImageController.php:697
+msgid ""
+"The Image server cannot fulfill the request: the size \"{size}\" is "
+"incorrect."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la taille « {size} » "
+"est incorrecte."
+
+#: src/Controller/ImageController.php:748
+#, php-format
+msgid ""
+"The Image server cannot fulfill the request: the size \"%s\" is incorrect."
+msgstr ""
+
+#: src/Controller/ImageController.php:821
+msgid ""
+"The Image server cannot fulfill the request: the size \"{size}\" is not "
+"supported."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la taille « {size} » "
+"n’est pas gérée."
+
+#: src/Controller/ImageController.php:833
+msgid ""
+"The Image server cannot fulfill the request: the size \"{size}\" is invalid."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la taille « {size} » "
+"est invalide."
+
+#: src/Controller/ImageController.php:844
+msgid ""
+"The Image server cannot fulfill the request: the region \"{region}\" or size "
+"\"{size}\" is incorrect for api version {version}."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : la région "
+"« {region} » ou la taille « {size} » est incorrecte pour la version api "
+"{version}."
+
+#: src/Controller/ImageController.php:901
+msgid ""
+"The Image server cannot fulfill the request: the format \"{format}\" is not "
+"supported."
+msgstr ""
+"Le serveur d’images ne peut pas répondre à la requête : le format "
+"« {format} » n’est pas supporté."
 
 #: src/Service/Form/ConfigFormFactory.php:21
 msgid "Automatic (Vips when possible, else GD, else Imagick, else ImageMagick)"
@@ -587,271 +1049,54 @@ msgstr ""
 msgid "ImageMagick (command line)"
 msgstr ""
 
-#: src/Media/Ingester/Tile.php:110
-msgid "Tiler"
-msgstr "Tuileur"
+#~ msgid "iiifserver_media_api_version_append"
+#~ msgstr "iiifserver_media_api_version_append"
 
-#: src/Media/Ingester/Tile.php:143
-msgid "No url and no file was submitted for tiling"
-msgstr ""
+#~ msgid "See module’s installation documentation."
+#~ msgstr "Consulter la documentation d’installation du module."
 
-#: src/Media/Ingester/Tile.php:168
-msgid "Invalid ingest URL"
-msgstr ""
+#~ msgid ""
+#~ "This version requires Archive Repertory 3.15.4 or greater (used for some "
+#~ "3D views)."
+#~ msgstr ""
+#~ "Cette version requiert le module Archive Repertory 3.15.4 ou supérieur "
+#~ "(pour les modèles 3D)."
 
-#: src/Media/Ingester/Tile.php:204
-msgid "The local file should be in a configured directory"
-msgstr ""
-
-#: src/Media/Ingester/Tile.php:223
 #, php-format
-msgid ""
-"Cannot sideload file \"%s\". File does not exist or does not have sufficient "
-"permissions"
-msgstr ""
+#~ msgid "This module requires the module \"%s\"."
+#~ msgstr "Ce module requiert le module \"%s\"."
 
-#: src/Media/Ingester/Tile.php:265
-msgid "No tiling index was specified"
-msgstr ""
-
-#: src/Media/Ingester/Tile.php:271
-msgid "No file uploaded for tiling for the specified index"
-msgstr ""
-
-#: src/Media/Ingester/Tile.php:333
-msgid ""
-"Unable to create the temp dir \"tiletmp\", required to create tiles on "
-"Amazon S3. Check rights in the local directory files/."
-msgstr ""
-
-#: src/Media/Ingester/Tile.php:341
-msgid ""
-"Unable to copy the file in the temp dir \"tiletmp\", required to create "
-"tiles on Amazon S3. Check rights in the local directory files/."
-msgstr ""
-
-#: src/Media/Ingester/Tile.php:391
-msgid "Either a URL"
-msgstr "Soit une url"
-
-#: src/Media/Ingester/Tile.php:392
-msgid ""
-"A URL to the image. Prefix it with \"file://\" for a local file managed via "
-"module Sideload"
-msgstr ""
-
-#: src/Media/Ingester/Tile.php:401
-msgid "Or a file"
-msgstr "Soit un fichier"
-
-#: src/Media/Ingester/Tile.php:455
 #, php-format
-msgid ""
-"Error validating \"%s\". The file to tile should be an image, not \"%s\"."
-msgstr ""
+#~ msgid "This module requires modules \"%s\"."
+#~ msgstr "Ce module requiert les modules \"%s\"."
 
-#: src/Media/Renderer/Tile.php:60
+#~ msgid "This module has resources that connot be installed."
+#~ msgstr "Ce module a des ressources qui ne peuvent pas être installées."
+
 #, php-format
-msgid "No tile or no properties for media #%d."
-msgstr ""
+#~ msgid ""
+#~ "The module \"%s\" was automatically deactivated because the dependencies "
+#~ "are unavailable."
+#~ msgstr ""
+#~ "Le module \"%s\" a été automatiquement désactivé car ses dépendances ne "
+#~ "sont plus disponibles."
 
-#: src/Media/Renderer/Tile.php:97
-#, php-format
-msgid "Invalid data for media #%d."
-msgstr ""
+#~ msgid "2"
+#~ msgstr "2"
 
-#: src/Job/BulkTiler.php:46 src/Job/BulkSizer.php:46
-#: src/Job/BulkTileInfo.php:85 src/Job/BulkSizerAndTiler.php:58
-msgid "No item selected. You may check your query."
-msgstr ""
+#~ msgid "3"
+#~ msgstr "3"
 
-#: src/Job/BulkTiler.php:54
-#, php-format
-msgid "Starting bulk tiling for %d items."
-msgstr ""
+#~ msgid ""
+#~ "The IXIF server encountered an unexpected error that prevented it from "
+#~ "fulfilling the request: the requested format is not supported."
+#~ msgstr ""
+#~ "Le serveur IXIF a rencontré une erreur qui l’a empêché de répondre : le "
+#~ "format demandé n’est pas géré."
 
-#: src/Job/BulkTiler.php:76
-#, php-format
-msgid "The job \"Bulk Tiler\" was stopped: %1$d/%2$d resources processed."
-msgstr ""
-
-#: src/Job/BulkTiler.php:102
-#, php-format
-msgid ""
-"End of bulk tiling: %1$d/%2$d items processed, %3$d files tiled, %4$d "
-"errors, %5$d skipped on a total of %6$d images."
-msgstr ""
-
-#: src/Job/MediaSizerAndTiler.php:26 src/Job/MediaTiler.php:32
-#: src/Job/MediaSizer.php:25
-msgid "No media selected. You may check your query."
-msgstr ""
-
-#: src/Job/MediaSizerAndTiler.php:34 src/Job/BulkSizerAndTiler.php:47
-msgid "The job ended: no tasks (tile or size) defined."
-msgstr ""
-
-#: src/Job/BulkSizer.php:54
-#, php-format
-msgid "Starting bulk sizing for %1$d items (%2$s media)."
-msgstr ""
-
-#: src/Job/BulkSizer.php:76
-#, php-format
-msgid "The job \"Bulk Sizer\" was stopped: %1$d/%2$d resources processed."
-msgstr ""
-
-#: src/Job/BulkSizer.php:100
-#, php-format
-msgid ""
-"End of bulk sizing: %1$d/%2$d items processed, %3$d files tiled, %4$d "
-"errors, %5$d skipped on a total of %6$d images."
-msgstr ""
-
-#: src/Job/BulkTileInfo.php:91
-#, php-format
-msgid "Starting bulk tile info for %d items."
-msgstr ""
-
-#: src/Job/BulkTileInfo.php:113
-#, php-format
-msgid "The job \"Bulk Tile Info\" was stopped: %1$d/%2$d resources processed."
-msgstr ""
-
-#: src/Job/BulkTileInfo.php:141
-#, php-format
-msgid ""
-"End of bulk prepare tile info: %1$d/%2$d items processed, %3$d files "
-"processed, %4$d errors, %5$d skipped on a total of %6$d images."
-msgstr ""
-
-#: src/Job/Tiler.php:45
-msgid "The media to tile cannot be identified."
-msgstr ""
-
-#: src/Job/Tiler.php:76
-msgid "The media file to tile cannot be found."
-msgstr ""
-
-#: src/Job/Tiler.php:227
-#, php-format
-msgid "An error occurred during the tiling of media #%d."
-msgstr ""
-
-#: src/Job/SizerTrait.php:93
-#, php-format
-msgid "Media #%d: Sizing"
-msgstr ""
-
-#: src/Job/SizerTrait.php:115
-#, php-format
-msgid "Media #%1$d: Error getting dimensions for types \"%2$s\"."
-msgstr ""
-
-#: src/Job/BulkSizerAndTiler.php:75
-#, php-format
-msgid "Starting bulk tiling or sizing for %d items."
-msgstr ""
-
-#: src/Job/BulkSizerAndTiler.php:97
-#, php-format
-msgid ""
-"The job \"Bulk Tiler and Sizer\" was stopped: %1$d/%2$d resources processed."
-msgstr ""
-
-#: src/Job/BulkSizerAndTiler.php:149
-#, php-format
-msgid ""
-"End of bulk tiling/sizing: %1$d/%2$d items processed, %3$d files processed, "
-"%4$d errors, %5$d skipped on a total of %6$d images."
-msgstr ""
-
-#: src/Job/BulkSizerAndTiler.php:168
-#, php-format
-msgid "Media #%d: Store tile info"
-msgstr ""
-
-#: src/Job/TilerTrait.php:88
-#, php-format
-msgid "Media #%d: Start tiling (%s)"
-msgstr ""
-
-#: src/Job/TilerTrait.php:98
-#, php-format
-msgid "Media #%d: Skipped because already tiled."
-msgstr ""
-
-#: src/Job/TilerTrait.php:112
-#, php-format
-msgid "Media #%1$d: Renderer \"%2$s\" updated to \"%3$s\"."
-msgstr ""
-
-#: src/Job/TilerTrait.php:119
-#, php-format
-msgid "Media #%d: End tiling"
-msgstr ""
-
-#: src/Job/TilerTrait.php:126
-#, php-format
-msgid "Media #%d: Error during tiling"
-msgstr ""
-
-#: src/ImageServer/ImageServer.php:102
-#, php-format
-msgid "The imager \"%s\" is not supported."
-msgstr ""
-
-#: src/ImageServer/GD.php:334
-#, php-format
-msgid "GD failed to open the file \\\"%s\\\". Details:\\n%s"
-msgstr ""
-
-#: src/ImageServer/AbstractImager.php:296
-#, php-format
-msgid ""
-"Image Server failed to open the file \"%s\". Details:\n"
-"%s"
-msgstr ""
-
-#: src/ImageServer/AbstractImager.php:331
-#, php-format
-msgid "Unable to save the file \"%s\"."
-msgstr ""
-
-#: src/ImageServer/AbstractImager.php:342
-#, php-format
-msgid "Unable to save the file \"%s\": directory is not writeable."
-msgstr ""
-
-#: src/ImageServer/Imagick.php:286
-#, php-format
-msgid "Imagick failed to open the file \\\"%s\\\". Details:\\n%s"
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/TileBuilder.php:73
-msgid "Source is empty."
-msgstr "La source est vide"
-
-#: src/Mvc/Controller/Plugin/TileBuilder.php:78
-#, php-format
-msgid "Source file \"%s\" is not readable."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/TileBuilder.php:84
-msgid "Destination is empty."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/TileBuilder.php:132
-#, php-format
-msgid "The type of tiling \"%s\" is not supported by the tile builder."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/Tiler.php:85
-#, php-format
-msgid "Media #%1$d: The file \"%2$s\" is missing."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/Tiler.php:117
-#, php-format
-msgid "Media #%1$d: The tiler failed: %2$s"
-msgstr ""
+#~ msgid ""
+#~ "The IXIF server encountered an unexpected error that prevented it from "
+#~ "fulfilling the request: the resulting file is not found."
+#~ msgstr ""
+#~ "Le serveur IXIF a rencontré une erreur qui l’a empêché de répondre : le "
+#~ "fichier final n’a pas été trouvé."
