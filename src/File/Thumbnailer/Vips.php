@@ -88,7 +88,7 @@ class Vips extends AbstractThumbnailer
             $loadOptions[] = 'dpi=150';
         }
         if (in_array($mediaType, $supportBackground)) {
-            $loadOptions[] = 'background=255 255 255';
+            $loadOptions[] = 'background=255 255 255 255';
         }
         if (count($loadOptions)) {
             $origPath .= '[' . implode(',', $loadOptions) . ']';
@@ -130,7 +130,7 @@ class Vips extends AbstractThumbnailer
 
         $tempFile = $this->tempFileFactory->build();
         $tempPath = $tempFile->getTempPath() . '.jpg';
-        $tempPathCommand = $tempPath . '[background=255 255 255,optimize-coding]';
+        $tempPathCommand = $tempPath . '[background=255 255 255 255,optimize-coding]';
         $tempFile->delete();
 
         $command = sprintf(
