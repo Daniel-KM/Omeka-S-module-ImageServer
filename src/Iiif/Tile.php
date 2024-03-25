@@ -61,14 +61,16 @@ class Tile extends AbstractType
 
     public function setResource(AbstractResourceEntityRepresentation $resource): self
     {
-        parent::setResource($resource);
+        $this->resource = $resource;
 
         if (!$resource instanceof MediaRepresentation) {
             $message = new PsrMessage(
                 'Resource #{resource_id}: A media is required to build a Tile.', // @translate
                 ['resource_id' => $resource->id()]
             );
-            $this->logger->err($message->getMessage(), $message->getContext());
+            $this->logger->err(
+                $message->getMessage(), $message->getContext()
+            );
             throw new RuntimeException((string) $message);
         }
 
