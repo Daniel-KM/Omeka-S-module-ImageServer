@@ -260,17 +260,18 @@ class TileServer extends AbstractPlugin
                     if ($isLastColumn) {
                         // Normal row. The last cell is an exception below.
                         if (!$isLastCell) {
-                            // Use row, because tiles are square.
+                            // Use row height as tile size, because tiles are square.
                             $count = (int) ceil(max($source['width'], $source['height']) / $region['height']);
-                            $cellX = $region['x'] / $region['width'];
+                            $cellX = $region['x'] / $region['height'];
                             $cellY = $region['y'] / $region['height'];
                         }
                     }
                     // Normal column and normal region.
                     else {
+                        // Use column width as tile size, because tiles are square
                         $count = (int) ceil(max($source['width'], $source['height']) / $region['width']);
                         $cellX = $region['x'] / $region['width'];
-                        $cellY = $region['y'] / $region['height'];
+                        $cellY = $region['y'] / $region['width'];
                     }
                     break;
 
