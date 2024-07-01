@@ -3,7 +3,6 @@
 namespace ImageServer\Job;
 
 use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\Stdlib\Message;
 
 trait TilerTrait
 {

@@ -842,7 +842,7 @@ class ImageController extends AbstractActionController
         ) {
             $this->_view->setVariable('message', (new PsrMessage(
                 'The Image server cannot fulfill the request: the region "{region}" or size "{size}" is incorrect for api version {version}.', // @translate
-                ['region' => $region, 'size' => $size, 'version' =>$this->requestedApiVersion]
+                ['region' => $region, 'size' => $size, 'version' => $this->requestedApiVersion]
             ))->setTranslator($this->translator()));
             return null;
         }

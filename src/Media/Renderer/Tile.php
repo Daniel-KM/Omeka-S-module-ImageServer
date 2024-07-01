@@ -2,11 +2,11 @@
 
 namespace ImageServer\Media\Renderer;
 
+use Common\Stdlib\PsrMessage;
 use ImageServer\Mvc\Controller\Plugin\TileMediaInfo;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Media\Renderer\RendererInterface;
-use Omeka\Stdlib\Message;
 
 class Tile implements RendererInterface
 {
@@ -57,8 +57,10 @@ class Tile implements RendererInterface
 
         $tileInfo = $this->tileMediaInfo->__invoke($media);
         if (empty($tileInfo) || empty($tileInfo['tile_type'])) {
-            return new Message('No tile or no properties for media #%d.', // @translate
-                $media->id());
+            return new PsrMessage(
+                'No tile or no properties for media #{media_id}.', // @translate
+                ['media_id' => $media->id()]
+            );
         }
 
         $mode = !empty($options['mode']) ? $options['mode'] : 'native';
@@ -94,8 +96,10 @@ class Tile implements RendererInterface
         }
 
         if (empty($data)) {
-            return new Message('Invalid data for media #%d.', // @translate
-                $media->id());
+            return new PsrMessage(
+                'Invalid data for media #{media_id}.', // @translate
+                ['media_id' => $media->id()]
+            );
         }
 
         $data['prefixUrl'] = $view->assetUrl('vendor/openseadragon/images/', 'Omeka', false, false);

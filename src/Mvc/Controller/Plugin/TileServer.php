@@ -189,8 +189,8 @@ class TileServer extends AbstractPlugin
         $isLastCell = $isLastColumn && $isLastRow;
         $isSingleCell = $isFirstCell && $isLastCell;
 
-        $size['width'] = $size['width'] ?? $region['width'];
-        $size['height'] = $size['height'] ?? $region['height'];
+        $size['width'] ??= $region['width'];
+        $size['height'] ??= $region['height'];
 
         if ($isSingleCell) {
             // The whole image should be returned, so only check the biggest

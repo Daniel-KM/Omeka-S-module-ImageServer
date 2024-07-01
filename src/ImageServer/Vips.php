@@ -111,9 +111,7 @@ class Vips extends AbstractImager
         if ($result && preg_match_all('~^.*\(\.(?<extensions>.[.a-z, ]+)\).*$~m', $result, $matches, PREG_SET_ORDER, 0)) {
             $extensions = [];
             foreach ($matches as $match) {
-                $ext = array_map(function ($v) {
-                    return trim($v, ',.');
-                }, explode(' ', strtolower($match['extensions'])));
+                $ext = array_map(fn ($v) => trim($v, ',.'), explode(' ', strtolower($match['extensions'])));
                 $extensions = array_merge($extensions, $ext);
             }
             $this->supportedFormats = array_intersect($this->supportedFormats, $extensions);

@@ -77,7 +77,7 @@ return [
         ],
         'delegators' => [
             'Laminas\Form\View\Helper\FormElement' => [
-                Service\Delegator\FormElementDelegatorFactory::class,
+                __NAMESPACE__ => Service\Delegator\FormElementDelegatorFactory::class,
             ],
         ],
     ],

@@ -26,7 +26,7 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
             $tileFallback = (string) $setting('imageserver_tile_fallback', 'tile_large');
         }
 
-        $options['thumbnailType'] = $options['thumbnailType'] ?? $defaultThumbnailType;
+        $options['thumbnailType'] ??= $defaultThumbnailType;
         if ($options['thumbnailType'] === 'tile') {
             $result = $this->renderTile($view, $media, $options, $tileFallback);
             if ($result) {

@@ -32,7 +32,6 @@ namespace ImageServer\ImageServer;
 
 use Omeka\File\Store\StoreInterface;
 use Omeka\File\TempFileFactory;
-use Omeka\Stdlib\Message;
 
 /**
  * Helper to create an image from another one with IIIF arguments.
