@@ -7,8 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-26 00:00+0000"
-"MI+ZONE\n"
+"POT-Creation-Date: 2024-04-15 00:00+0000\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
@@ -765,7 +764,7 @@ msgstr ""
 #: src/Form/ConfigForm.php:410 src/Form/ConfigForm.php:426
 #: src/Form/ConfigForm.php:442
 msgid "Keep existing"
-msgstr "Conserver les fichiers existants"
+msgstr "Conserver la valeur existante"
 
 #: src/Form/ConfigForm.php:411
 msgid "Remove existing tiles for the specified format"
