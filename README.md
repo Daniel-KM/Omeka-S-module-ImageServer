@@ -177,18 +177,27 @@ tiff is supported natively by ImageMagick, but not efficiently for reading,
 because it cannot extract a small portion without reading the whole file. So it
 is recommended to use the separate library [libvips] for dynamic extraction.
 
+#### External image server Cantaloupe
+
+This module is not required if you use an external image server like Cantaloupe.
+Nevertheless, in that case, you can read some info about [integration of Cantaloupe with Omeka].
+
 
 Image Server
 ------------
 
-From version 3.6.3.1, tiles are created automatically for all new images, if
-option is set. It's not recommended to set it if the existing media doesn't have
-tiles yet, so you have to bulk size them first. The conversion of the renderer
-from "tile" to the standard "file" can be done with the job in the config form.
+From version 3.6.3.1, tiles are created automatically for all new images when
+the option is set to "auto". It's not recommended to set it if the existing
+media doesn't have tiles yet, so you have to bulk size them first. The
+conversion of the renderer from "tile" to the standard "file" can be done with
+the job in the config form.
 
 Furthermore, an option in settings and site settings allows to specify the
 default display: tile or large thumbnail. It can be selected directly in the
 theme too (thumbnail "tile").
+
+Of course, if you use an external server, you don't need to create static or
+dynamic tiles.
 
 ### Creation of static tiles
 
@@ -452,6 +461,7 @@ support the [Deep Zoom Image] tile format.
 [Zoomify]: http://www.zoomify.com/
 [jpeg 2000]: https://jpeg.org/jpeg2000
 [tiled pyramidal tiff]: https://en.wikipedia.org/wiki/TIFF
+[integration of Cantaloupe with Omeka]: https://gitlab.com/Daniel-KM/Omeka-S-module-AdvancedResourceTemplate/-/blob/master/cantaloupe.md
 [OpenLayers]: https://openlayers.org/
 [threejs]: https://threejs.org
 [Archive Repertory]: https://gitlab.com/Daniel-KM/Omeka-S-module-ArchiveRepertory
