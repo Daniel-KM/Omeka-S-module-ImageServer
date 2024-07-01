@@ -125,7 +125,7 @@ class Tile implements RendererInterface
 <div class="openseadragon" id="$fullId" style="height: 800px;"></div>
 <noscript>
     <p>{$noscript}</p>
-    <img src="{$media->thumbnailUrl('large')}" height="800px" />
+    <img loading="lazy" src="{$media->thumbnailUrl('large')}" height="800px" />
 </noscript>
 OUTPUT;
 
