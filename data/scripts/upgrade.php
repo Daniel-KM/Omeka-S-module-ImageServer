@@ -146,3 +146,20 @@ if (version_compare($oldVersion, '3.6.13', '<')) {
     $settings->set('imageserver_tile_manual', !$settings->get('imageserver_auto_tile'));
     $settings->delete('imageserver_auto_tile');
 }
+
+if (version_compare($oldVersion, '3.6.18', '<')) {
+    $isTileManual = $settings->get('imageserver_tile_manual');
+    $settings->set('imageserver_tile_mode', $isTileManual ? 'manual' : 'auto');
+    $settings->delete('imageserver_tile_manual');
+    if ($isTileManual) {
+        $message = new PsrMessage(
+            'A new option allows to set the tile mode "external". Check it if you use an external image server.' // @translate
+        );
+        $messenger->addWarning($message);
+    }
+
+    $message = new PsrMessage(
+        'A new task allows to clear tile metadata, that may be useful when an external server is used.' // @translate
+    );
+    $messenger->addSuccess($message);
+}
