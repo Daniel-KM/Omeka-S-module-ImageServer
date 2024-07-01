@@ -285,8 +285,6 @@ SQL;
 
     public function handleConfigForm(AbstractController $controller)
     {
-        $this->checkTilingMode();
-
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
         $form = $services->get('FormElementManager')->get(ConfigForm::class);
@@ -295,6 +293,8 @@ SQL;
         if (!$this->handleConfigFormAuto($controller)) {
             return false;
         }
+
+        $this->checkTilingMode();
 
         $urlPlugin = $services->get('ViewHelperManager')->get('url');
         $top = rtrim($urlPlugin('top', [], ['force_canonical' => true]), '/') . '/';
@@ -326,26 +326,56 @@ SQL;
         unset($query['submit']);
         $params['query'] = $query;
 
-        $params['remove_destination'] = $params['remove_destination'];
+        $params['remove_destination'] ??= 'skip';
         $params['update_renderer'] = empty($params['update_renderer']) ? false : $params['update_renderer'];
         $params['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
-        $params = array_intersect_key($params, ['query' => null, 'tasks' => null, 'remove_destination' => null, 'filter' => null, 'update_renderer' => null]);
+        $params = array_intersect_key($params, [
+            'query' => null,
+            'tasks' => null,
+            'remove_destination' => null,
+            'filter' => null,
+            'update_renderer' => null,
+        ]);
 
+        if (!$params['tasks']) {
+            $message = new PsrMessage(
+                'No task defined.' // @translate
+            );
+            $messenger->addError($message);
+            return false;
+        }
+
+        if (in_array('tile_clean', $params['tasks']) && count($params['tasks']) > 1) {
+            $message = new PsrMessage(
+                'The task to clean tiles should be run alone.' // @translate
+            );
+            $messenger->addError($message);
+            return false;
+        }
+
+        $message = null;
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        if (in_array('tile', $params['tasks']) && in_array('size', $params['tasks'])) {
+        if (in_array('tile_clean', $params['tasks'])) {
+            $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
+            $job = $dispatcher->dispatch(\ImageServer\Job\BulkTileClean::class, $params);
+            $message = 'Cleaning tiles and tile metadata attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
+        } elseif (in_array('tile', $params['tasks']) && in_array('size', $params['tasks'])) {
             $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
+            $message = 'Creating tiles and dimensions for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
         } elseif (in_array('size', $params['tasks'])) {
             $params = array_intersect_key($params, ['query' => null, 'filter' => null]);
             $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
+            $message = 'Creating dimensions for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
         } elseif (in_array('tile', $params['tasks'])) {
             $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
             $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
+            $message = 'Creating tiles for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
         } else {
             return true;
         }
 
         $message = new PsrMessage(
-            'Creating tiles and/or dimensions for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+            $message,
             [
                 'link' => sprintf('<a href="%s">',
                     htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
@@ -593,11 +623,10 @@ SQL;
 
     /**
      * Delete all tiles associated with a removed Media entity.
-     *
-     * @param Event $event
      */
     public function deleteMediaTiles(Event $event): void
     {
+        /** @var \ImageServer\Mvc\Controller\Plugin\TileRemover $tileRemover */
         $services = $this->getServiceLocator();
         $tileRemover = $services->get('ControllerPluginManager')->get('tileRemover');
         $media = $event->getTarget();

@@ -102,7 +102,7 @@ class Tiler extends AbstractPlugin
             /** @var \Omeka\Entity\Media $mediaEntity  */
             $mediaEntity = $this->entityManager->find(\Omeka\Entity\Media::class, $media->id());
             $this->controllerPlugins->get('tileRemover')->__invoke($mediaEntity);
-            $this->removeMediaTleData($media);
+            $this->removeMediaDataTile($media);
         }
         $this->params['destinationRemove'] = in_array($removeDestination, ['specific', 'all']);
 
@@ -122,7 +122,7 @@ class Tiler extends AbstractPlugin
         return $result;
     }
 
-    protected function removeMediaTleData(MediaRepresentation $media): void
+    protected function removeMediaDataTile(MediaRepresentation $media): void
     {
         /** @var \Omeka\Entity\Media $mediaEntity  */
         $mediaEntity = $this->entityManager->find(\Omeka\Entity\Media::class, $media->id());

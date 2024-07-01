@@ -277,7 +277,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_tile_mode',
                 'type' => Element\Radio::class,
                 'options' => [
-                    'label' => '', // @translate
+                    'label' => 'Tile processing mode', // @translate
                     'info' => 'If set manual, to run the task below will be required to create tiles. Unless in the case of an external server, it is recommended to set automatic tiling once all existing items are tiled to avoid to overload the server. So bulk tile all items first below.', // @translate
                     'value_options' => [
                         'auto' => 'Create tiles automatically on save (recommended without external server)', // @translate
@@ -356,7 +356,10 @@ All formats are served as native by default, but may be served as IIIF too when 
                     'id' => 'imageserver-image-tile-type',
                 ],
             ])
+        ;
 
+        // Tasks.
+        $this
             ->add([
                 'name' => 'imageserver_bulk_prepare',
                 'type' => Fieldset::class,
@@ -366,9 +369,7 @@ All formats are served as native by default, but may be served as IIIF too when 
                 'attributes' => [
                     'id' => 'imageserver_bulk_prepare',
                 ],
-            ])
-        ;
-
+            ]);
         $bulkFieldset = $this->get('imageserver_bulk_prepare');
         // TODO Remove Element Note.
         $bulkFieldset
@@ -400,6 +401,7 @@ To save the height and the width of all images and derivatives allows to speed u
                     'value_options' => [
                         'tile' => 'Tiling', // @translate
                         'size' => 'Sizing', // @translate
+                        'tile_clean' => 'Remove tiles and associated metadata', // @translate
                     ],
                 ],
                 'attributes' => [

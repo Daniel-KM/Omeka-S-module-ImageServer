@@ -37,6 +37,8 @@ class TileRemover extends AbstractPlugin
     /**
      * Remove all tiles for a media, for all formats by default.
      *
+     * This plugin does not remove media metadata for tiles.
+     *
      * @param \Omeka\Entity\Media $media
      * @param array|string $formats
      */
