@@ -274,14 +274,19 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
-                'name' => 'imageserver_tile_manual',
-                'type' => Element\Checkbox::class,
+                'name' => 'imageserver_tile_mode',
+                'type' => Element\Radio::class,
                 'options' => [
-                    'label' => 'Tile images manually and not automatically on save', // @translate
-                    'info' => 'If unset, to run the task below will be required to create tiles. It is recommended to set automatic tiling once all existing items are tiled to avoid to overload the server. So bulk tile all items first below.', // @translate
+                    'label' => '', // @translate
+                    'info' => 'If set manual, to run the task below will be required to create tiles. Unless in the case of an external server, it is recommended to set automatic tiling once all existing items are tiled to avoid to overload the server. So bulk tile all items first below.', // @translate
+                    'value_options' => [
+                        'auto' => 'Create tiles automatically on save (recommended without external server)', // @translate
+                        'manual' => 'Create tiles manually', // @translate
+                        'external' => 'Use an external image server', // @translate
+                    ],
                 ],
                 'attributes' => [
-                    'id' => 'imageserver_tile_manual',
+                    'id' => 'imageserver_tile_mode',
                 ],
             ])
             ->add([

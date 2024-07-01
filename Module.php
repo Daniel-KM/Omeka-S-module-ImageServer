@@ -279,13 +279,13 @@ SQL;
 
     public function getConfigForm(PhpRenderer $renderer)
     {
-        $this->checkAutoTiling();
+        $this->checkTilingMode();
         return $this->getConfigFormAuto($renderer);
     }
 
     public function handleConfigForm(AbstractController $controller)
     {
-        $this->checkAutoTiling();
+        $this->checkTilingMode();
 
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
@@ -365,11 +365,11 @@ SQL;
         return true;
     }
 
-    protected function checkAutoTiling(): bool
+    protected function checkTilingMode(): bool
     {
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
-        if (!$settings->get('imageserver_tile_manual')) {
+        if ($settings->get('imageserver_tile_mode') !== 'manual') {
             return true;
         }
         $messenger = $services->get('ControllerPluginManager')->get('messenger');
@@ -503,9 +503,11 @@ SQL;
 
         /** @var \Omeka\Job\Dispatcher $dispatcher */
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        $services->get('Omeka\Settings')->get('imageserver_tile_manual', false)
-            ? $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params)
-            : $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
+        // The tile mode may be "auto", "manual" or "external".
+        $tileMode = $services->get('Omeka\Settings')->get('imageserver_tile_mode', 'auto');
+        $tileMode === 'auto'
+            ? $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params)
+            : $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
     }
 
     public function handleAfterSaveMedia(Event $event): void
@@ -555,8 +557,8 @@ SQL;
         $mediaData = $media->getData() ?: [];
         $hasSize = !empty($mediaData['dimensions']['large']['width']);
         $hasTile = $tileMediaInfo($mediaRepr);
-        $autoTile = !$services->get('Omeka\Settings')->get('imageserver_tile_manual', false);
-        if ($hasSize && ($hasTile || !$autoTile)) {
+        $isTileModeAuto = $services->get('Omeka\Settings')->get('imageserver_tile_mode', 'auto') === 'auto';
+        if ($hasSize && ($hasTile || !$isTileModeAuto)) {
             return;
         }
 
