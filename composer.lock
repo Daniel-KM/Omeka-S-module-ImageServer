@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e0b9482745dcc8345344ea74e3e469df",
+    "content-hash": "1ca47a33b7fa3517216466d994507476",
     "packages": [
         {
             "name": "daniel-km/deepzoom",
@@ -148,5 +148,5 @@
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.2.0"
 }
