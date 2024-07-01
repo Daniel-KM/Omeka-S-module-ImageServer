@@ -310,7 +310,7 @@ return [
             // Except "iiifserver_media_api_url", that is hidden.
             // Hidden key.
             'iiifserver_media_api_url' => '',
-            'iiifserver_media_api_default_version' => '2',
+            'iiifserver_media_api_default_version' => '3',
             'iiifserver_media_api_supported_versions' => [
                 '2/2',
                 '3/2',
