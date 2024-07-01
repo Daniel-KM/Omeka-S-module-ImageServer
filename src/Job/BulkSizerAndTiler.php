@@ -145,6 +145,11 @@ class BulkSizerAndTiler extends AbstractJob
                 ++$this->totalProcessed;
             }
 
+            $this->logger->info(
+                '{count}/{total} items processed.', // @translate
+                ['count' => $this->totalProcessed, 'total' => $this->totalToProcess]
+            );
+
             $this->entityManager->clear();
             $offset += self::SQL_LIMIT;
         }

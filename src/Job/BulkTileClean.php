@@ -138,6 +138,11 @@ class BulkTileClean extends AbstractJob
                 ++$this->totalProcessed;
             }
 
+            $this->logger->info(
+                '{count}/{total} items processed.', // @translate
+                ['count' => $this->totalProcessed, 'total' => $this->totalToProcess]
+            );
+
             // Flush one time each loop.
             $this->entityManager->flush();
             $this->entityManager->clear();
