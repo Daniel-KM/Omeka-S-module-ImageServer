@@ -56,8 +56,8 @@ class BulkTiler extends AbstractJob
         $this->prepareTiler();
 
         $this->logger->info(
-            'Starting bulk tiling for %d items.', // @translate
-            $this->totalToProcess
+            'Starting bulk tiling for {total} items.', // @translate
+            ['total' => $this->totalToProcess]
         );
 
         $offset = 0;
