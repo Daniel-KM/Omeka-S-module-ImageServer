@@ -596,7 +596,7 @@ SQL;
         if (!$hasSize) {
             $tasks[] = 'size';
         }
-        if (!$hasTile && $autoTile) {
+        if (!$hasTile && $isTileModeAuto) {
             $tasks[] = 'tile';
         }
 
