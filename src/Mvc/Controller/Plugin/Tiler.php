@@ -82,7 +82,7 @@ class Tiler extends AbstractPlugin
         if ($isMissingFile) {
             $this->controllerPlugins->get('logger')->__invoke()->err(
                 'Media #{media_id}: The file "{filename}" is missing.', // @translate
-                ['media_id' => $media->id(), 'file' => $media->filename()]
+                ['media_id' => $media->id(), 'filename' => $media->filename()]
             );
             return null;
         }
