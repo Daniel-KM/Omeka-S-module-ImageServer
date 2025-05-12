@@ -20,6 +20,7 @@ $plugins = $services->get('ControllerPluginManager');
 $api = $plugins->get('api');
 $settings = $services->get('Omeka\Settings');
 $translate = $plugins->get('translate');
+$urlHelper = $services->get('ViewHelperManager')->get('url');
 $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
 $entityManager = $services->get('Omeka\EntityManager');
@@ -49,8 +50,7 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
     $settings->set('imageserver_imager', $settings->get('imageserver_image_creator') ?: 'Auto');
     $settings->delete('imageserver_image_creator');
 
-    $urlPlugin = $services->get('ControllerPluginManager')->get('url');
-    $top = rtrim($urlPlugin->fromRoute('top', [], ['force_canonical' => true]), '/') . '/';
+    $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
     $settings->set('imageserver_base_url', $top);
 
     $settings->set('imageserver_auto_tile', false);
@@ -74,16 +74,13 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
         'Storing tile info for images in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}). This process will take a while.', // @translate
         [
             'link' => sprintf('<a href="%s">',
-                htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
             ),
             'job_id' => $job->getId(),
             'link_end' => '</a>',
-            'link_log' => sprintf('<a href="%s">',
-                htmlspecialchars($this->isModuleActive('Log')
-                    ? $urlPlugin->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                    : $urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
-                )
-            ),
+            'link_log' => class_exists('Log\Module', false)
+                ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
+                : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
         ]
     );
     $message->setEscapeHtml(false);

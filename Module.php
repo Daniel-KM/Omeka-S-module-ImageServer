@@ -296,8 +296,8 @@ SQL;
 
         $this->checkTilingMode();
 
-        $urlPlugin = $services->get('ViewHelperManager')->get('url');
-        $top = rtrim($urlPlugin('top', [], ['force_canonical' => true]), '/') . '/';
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+        $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
         $settings->set('imageserver_base_url', $top);
 
         // Form is already validated in parent.
@@ -319,7 +319,6 @@ SQL;
 
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
-        $urlPlugin = $plugins->get('url');
 
         $query = [];
         parse_str($params['query'], $query);
@@ -378,16 +377,13 @@ SQL;
             $message,
             [
                 'link' => sprintf('<a href="%s">',
-                    htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                    htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
                 ),
                 'job_id' => $job->getId(),
                 'link_end' => '</a>',
-                'link_log' => sprintf('<a href="%s">',
-                    htmlspecialchars($this->isModuleActive('Log')
-                        ? $urlPlugin->fromRoute('admin/log', [], ['query' => ['job_id' => $job->getId()]])
-                        : $urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId(), 'action' => 'log'])
-                    )
-                ),
+                'link_log' => class_exists('Log\Module', false)
+                    ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
+                    : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
             ]
         );
         $message->setEscapeHtml(false);
