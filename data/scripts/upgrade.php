@@ -93,7 +93,7 @@ if (version_compare($oldVersion, '3.6.7.3', '<')) {
         $translator = $services->get('MvcTranslator');
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => $module, 'version' => $version]
+            ['module' => $module, 'version' => '3.6.5.3']
         );
         throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -132,7 +132,7 @@ if (version_compare($oldVersion, '3.6.10.3', '<')) {
             $translator = $services->get('MvcTranslator');
             $message = new PsrMessage(
                 'This module requires the module "{module}", version {version} or above.', // @translate
-                ['module' => $moduleName, 'version' => $version]
+                ['module' => $moduleData['name'], 'version' => $moduleData['version']]
             );
             throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message->setTranslator($translator));
         }

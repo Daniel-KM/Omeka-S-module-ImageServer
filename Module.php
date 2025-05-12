@@ -30,7 +30,7 @@
 
 namespace ImageServer;
 
-if (!class_exists(\Common\TraitModule::class)) {
+if (!class_exists('Common\TraitModule', false)) {
     require_once dirname(__DIR__) . '/Common/TraitModule.php';
 }
 
@@ -50,7 +50,7 @@ use Omeka\Module\Exception\ModuleCannotInstallException;
 /**
  * Image Server
  *
- * @copyright Daniel Berthereau, 2015-2024
+ * @copyright Daniel Berthereau, 2015-2025
  * @copyright Biblibre, 2016-2017
  * @license http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
  */
@@ -137,11 +137,11 @@ class Module extends AbstractModule
         $settings = $services->get('Omeka\Settings');
 
         // Convert all media renderer tiles into files.
-        $sql = <<<SQL
-UPDATE `media`
-SET `renderer` = "file"
-WHERE `renderer` = "tile";
-SQL;
+        $sql = <<<'SQL'
+            UPDATE `media`
+            SET `renderer` = "file"
+            WHERE `renderer` = "tile";
+            SQL;
         $connection = $services->get('Omeka\Connection');
         $connection->executeStatement($sql);
 
