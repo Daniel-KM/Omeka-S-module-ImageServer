@@ -542,7 +542,7 @@ msgid "Creative Commons Attribution-NoDerivatives 4.0 International"
 msgstr ""
 
 #: src/Form/ConfigForm.php:220
-msgid "Rigths Statements"
+msgid "Rights Statements"
 msgstr ""
 
 #: src/Form/ConfigForm.php:222
