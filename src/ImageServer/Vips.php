@@ -45,8 +45,8 @@ class Vips extends AbstractImager
     /**
      * List of managed IIIF media types.
      *
-     * Vips can read jpeg2000 (via ImageMagick), but not write, so it should
-     * used with imagemagick. Else use tiff.
+     * Since vips 8.12, jpeg2000 can be read and written natively when vips is
+     * compiled with OpenJPEG support.
      *
      * @var array
      */
@@ -108,7 +108,7 @@ class Vips extends AbstractImager
         $command = sprintf($this->vipsPath . ' -l | grep -i save', $this->vipsPath);
         $result = $this->cli->execute($command);
         $matches = [];
-        if ($result && preg_match_all('~^.*\(\.(?<extensions>.[.a-z, ]+)\).*$~m', $result, $matches, PREG_SET_ORDER, 0)) {
+        if ($result && preg_match_all('~^.*\(\.(?<extensions>.[.a-z0-9, ]+)\).*$~m', $result, $matches, PREG_SET_ORDER, 0)) {
             $extensions = [];
             foreach ($matches as $match) {
                 $ext = array_map(fn ($v) => trim($v, ',.'), explode(' ', strtolower($match['extensions'])));
