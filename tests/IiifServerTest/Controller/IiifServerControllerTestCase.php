@@ -2,9 +2,9 @@
 
 namespace ImageServerTest\Controller;
 
-use OmekaTestHelper\Controller\OmekaControllerTestCase;
+use CommonTest\AbstractHttpControllerTestCase;
 
-abstract class ImageServerControllerTestCase extends OmekaControllerTestCase
+abstract class ImageServerControllerTestCase extends AbstractHttpControllerTestCase
 {
     protected $item;
     protected $itemSet;
