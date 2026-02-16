@@ -162,7 +162,7 @@ WHERE `data` = '{"job":$jobId}'
     OR `data` LIKE '%"job":$jobId,%'
     OR `data` LIKE '%"job":$jobId}' LIMIT 1;
 SQL;
-        return $connection->fetchColumn($sql);
+        return $connection->fetchOne($sql);
     }
 
     /**
