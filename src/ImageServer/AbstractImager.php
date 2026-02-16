@@ -292,6 +292,9 @@ abstract class AbstractImager implements LoggerAwareInterface
                     break;
 
                 default:
+                    if (!is_readable($source)) {
+                        return false;
+                    }
                     // When the storage is external, the file is fetched before.
                     $tempFile = $this->tempFileFactory->build();
                     $tempPath = $tempFile->getTempPath();
