@@ -1,7 +1,32 @@
 {
-    "name": "daniel-km/image-server",
-    "description": "Provide an IIIF compliant simple image server to allow to process and share instantly images of any size, and audio/video.",
-    "type": "library",
+    "name": "daniel-km/omeka-s-module-image-server",
+    "type": "omeka-s-module",
+    "description": "Module for Omeka S: Simple and iiif compliant image server to process and share instantly images of any size in the desired formats.",
+    "keywords": [
+        "Omeka S",
+        "Omeka S module",
+        "iiif",
+        "image server",
+        "specification",
+        "standard",
+        "share"
+    ],
+    "license": "CECILL-2.1",
+    "homepage": "https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer",
+    "authors": [
+        {
+            "name": "Daniel Berthereau",
+            "email": "Daniel.packagist@Berthereau.net"
+        }
+    ],
+    "support": {
+        "issues": "https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues",
+        "forum": "https://forum.omeka.org/"
+    },
+    "_require (not set until Omeka S merges PR #2412)": {
+        "omeka/omeka-s": "^4.0",
+        "daniel-km/omeka-s-module-common": "*"
+    },
     "require": {
         "daniel-km/deepzoom": "^0.6.2",
         "daniel-km/zoomify": "^1.0"
@@ -9,11 +34,18 @@
     "provide": {
         "lsolesen/pel": "*"
     },
-    "license": "CECILL-2.1",
-    "authors": [
-        {
-            "name": "Daniel Berthereau",
-            "email": "Daniel.git@Berthereau.net"
+    "autoload": {
+        "psr-4": {
+            "ImageServer\\": "src/"
         }
-    ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ImageServerTest\\": "tests/ImageServerTest/"
+        }
+    },
+    "extra": {
+        "installer-name": "ImageServer",
+        "configurable": true
+    }
 }
