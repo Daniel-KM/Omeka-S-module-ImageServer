@@ -35,7 +35,7 @@ if (!isset($prefix)) {
 }
 if ($prefix) {
     $urlEncodedPrefix = rawurlencode($prefix);
-    $constraintPrefix = $prefix . '|' . $urlEncodedPrefix . '|' . str_replace('%3A', ':', $urlEncodedPrefix);
+    $constraintPrefix = $prefix . '|' . $urlEncodedPrefix . '|' . strtr($urlEncodedPrefix, ['%3A' => ':']);
     $prefix = '[:prefix]';
 } else {
     $constraintPrefix = '';

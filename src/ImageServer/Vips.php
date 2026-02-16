@@ -348,7 +348,7 @@ class Vips extends AbstractImager
                 '_input_' => escapeshellarg($image . '[0]'),
                 '_output_' => escapeshellarg($destination . $destParams),
             ];
-            $command = str_replace(array_keys($replace), array_values($replace), reset($chain));
+            $command = strtr(reset($chain), $replace);
         } else {
             $last = count($chain) - 1;
             foreach ($chain as $index => &$part) {
@@ -371,7 +371,7 @@ class Vips extends AbstractImager
                     $replace['_output_'] = escapeshellarg($destination . $destParams);
                     $removePrevPart = ' && rm ' . escapeshellarg($current);
                 }
-                $part = str_replace(array_keys($replace), array_values($replace), $part)
+                $part = strtr($part, $replace)
                     . $removePrevPart;
             }
             $command = implode(' && ', $chain);

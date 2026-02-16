@@ -104,7 +104,7 @@ class Module extends AbstractModule
         $moduleConfig = include __DIR__ . '/config/module.config.php';
         $defaultSettings = $moduleConfig['imageserver']['config'];
         $tileDir = $defaultSettings['imageserver_image_tile_dir'];
-        $tileDir = trim(str_replace('\\', '/', $tileDir), '/');
+        $tileDir = trim(strtr($tileDir, ['\\' => '/']), '/');
         if (empty($tileDir)) {
             throw new ModuleCannotInstallException((string) new PsrMessage(
                 'The tile dir is not defined.' // @translate
