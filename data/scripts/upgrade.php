@@ -74,7 +74,7 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
         'Storing tile info for images in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}). This process will take a while.', // @translate
         [
             'link' => sprintf('<a href="%s">',
-                htmlspecialchars($urlHelper->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
             ),
             'job_id' => $job->getId(),
             'link_end' => '</a>',
@@ -93,7 +93,7 @@ if (version_compare($oldVersion, '3.6.7.3', '<')) {
         $translator = $services->get('MvcTranslator');
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => $module, 'version' => '3.6.5.3']
+            ['module' => 'IiifServer', 'version' => '3.6.5.3']
         );
         throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -117,7 +117,7 @@ if (version_compare($oldVersion, '3.6.7.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.6.9.3', '<')) {
-    $this->checkAutoTiling();
+    $this->checkTilingMode();
 }
 
 if (version_compare($oldVersion, '3.6.10.3', '<')) {
@@ -127,7 +127,7 @@ if (version_compare($oldVersion, '3.6.10.3', '<')) {
     ];
     foreach ($modules as $moduleData) {
         if (($moduleData['required'] && !$this->isModuleVersionAtLeast($moduleData['name'], $moduleData['version']))
-            || (!$moduleData['required'] && $this->isModuleActive($module) && !$this->isModuleVersionAtLeast($moduleData['name'], $moduleData['version']))
+            || (!$moduleData['required'] && $this->isModuleActive($moduleData['name']) && !$this->isModuleVersionAtLeast($moduleData['name'], $moduleData['version']))
         ) {
             $translator = $services->get('MvcTranslator');
             $message = new PsrMessage(
