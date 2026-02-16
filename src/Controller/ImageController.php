@@ -321,8 +321,7 @@ class ImageController extends AbstractActionController
                     }
                 }
                 // Check valid range to avoid hack.
-                $hasRange = ($start < $filesize && $end < $filesize && $start < $end)
-                    && ($start > 0 || $end < ($filesize - 1));
+                $hasRange = $start >= 0 && $start <= $end && $end < $filesize;
             }
 
             if ($hasRange) {
