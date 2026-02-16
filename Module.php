@@ -475,7 +475,7 @@ class Module extends AbstractModule
             return;
         }
 
-        if (is_null($imageSize)) {
+        if ($imageSize === null) {
             $services = $this->getServiceLocator();
             $imageSize = $services->get('ControllerPluginManager')->get('imageSize');
             $imageTypes = array_keys($services->get('Config')['thumbnails']['types']);

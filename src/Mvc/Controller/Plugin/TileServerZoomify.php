@@ -79,7 +79,7 @@ class TileServerZoomify extends TileServer
             $transform['size'],
             false
         );
-        if (is_null($cellData)) {
+        if ($cellData === null) {
             return null;
         }
 
@@ -88,7 +88,7 @@ class TileServerZoomify extends TileServer
             'height' => $transform['source']['height'],
         ];
         $tileGroup = $this->getTileGroup($imageSize, $cellData);
-        if (is_null($tileGroup)) {
+        if ($tileGroup === null) {
             return null;
         }
 

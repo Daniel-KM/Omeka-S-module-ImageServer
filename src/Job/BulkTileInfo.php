@@ -161,7 +161,7 @@ class BulkTileInfo extends AbstractJob
     protected function prepareTileInfo(MediaRepresentation $media): void
     {
         $mediaData = $media->mediaData();
-        if (is_null($mediaData)) {
+        if ($mediaData === null) {
             $mediaData = ['tile' => []];
         } else {
             $mediaData['tile'] = [];

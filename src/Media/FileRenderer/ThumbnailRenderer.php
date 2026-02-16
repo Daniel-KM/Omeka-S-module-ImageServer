@@ -20,7 +20,7 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
             return parent::render($view, $media, $options);
         }
 
-        if (is_null($defaultThumbnailType)) {
+        if ($defaultThumbnailType === null) {
             $setting = $view->plugin($view->status()->isSiteRequest() ? 'siteSetting' : 'setting');
             $defaultThumbnailType = (string) $setting('imageserver_default_thumbnail_type', 'large');
             $tileFallback = (string) $setting('imageserver_tile_fallback', 'tile_large');
@@ -61,7 +61,7 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
         static $prefixUrl;
         static $noscript;
 
-        if (is_null($tileMediaInfo)) {
+        if ($tileMediaInfo === null) {
             $tileMediaInfo = $view->plugin('tileMediaInfo');
         }
 
@@ -99,7 +99,7 @@ class ThumbnailRenderer extends \Omeka\Media\FileRenderer\ThumbnailRenderer
         $tileSources = json_encode($tileSources, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         // Avoid to add the same script multiple times.
-        if (is_null($headScript)) {
+        if ($headScript === null) {
             $headScript = $view->headScript();
             $prefixUrl = $view->assetUrl('vendor/openseadragon/images/', 'Omeka', false, false);
             $noscript = $view->escapeHtml($view->translate('OpenSeadragon is not available unless JavaScript is enabled.')); // @translate

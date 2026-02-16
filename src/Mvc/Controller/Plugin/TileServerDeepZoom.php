@@ -79,7 +79,7 @@ class TileServerDeepZoom extends TileServer
             $transform['size'],
             true
         );
-        if (is_null($cellData)) {
+        if ($cellData === null) {
             return null;
         }
 

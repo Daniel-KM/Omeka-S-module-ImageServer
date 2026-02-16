@@ -69,7 +69,7 @@ class Note extends Element
      */
     public function setContent($content = null): self
     {
-        $this->content = $this->options['content'] = is_null($content) || (string) $content === ''
+        $this->content = $this->options['content'] = $content === null || (string) $content === ''
             ? null
             : (string) $content;
         return $this;
@@ -103,7 +103,7 @@ class Note extends Element
      */
     public function setWrap($wrap = 'div'): self
     {
-        if (is_null($wrap)) {
+        if ($wrap === null) {
             $this->wrap = $this->options['wrap'] = null;
             return self;
         }

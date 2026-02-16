@@ -168,7 +168,7 @@ class Vips extends AbstractImager
             return null;
         }
 
-        if (is_null($isOldVersion)) {
+        if ($isOldVersion === null) {
             $version = (string) $this->cli->execute($this->vipsPath . ' --version');
             $isOldVersion = version_compare($version, 'vips-8.10', '<');
         }

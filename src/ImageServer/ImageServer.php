@@ -136,7 +136,7 @@ class ImageServer implements LoggerAwareInterface
      */
     public function transform(array $args = null): ?string
     {
-        if (!is_null($args)) {
+        if ($args !== null) {
             $this->setArgs($args);
         }
         return $this->imager

@@ -46,7 +46,7 @@ class Vips extends AbstractThumbnailer
     public function setOptions(array $options): void
     {
         parent::setOptions($options);
-        if (is_null($this->vipsPath)) {
+        if ($this->vipsPath === null) {
             $this->setVipsPath($this->getOption('vips_dir'));
         }
     }
@@ -199,7 +199,7 @@ class Vips extends AbstractThumbnailer
     public function setVipsPath($vipsDir): self
     {
         $cli = $this->cli;
-        if (is_null($vipsDir)) {
+        if ($vipsDir === null) {
             $vipsPath = $cli->getCommandPath(self::VIPS_COMMAND);
             if (false === $vipsPath) {
                 throw new Exception\InvalidThumbnailerException('Vips error: cannot determine path to vips command.');
@@ -224,7 +224,7 @@ class Vips extends AbstractThumbnailer
 
     public function getIsOldVips(): bool
     {
-        if (is_null($this->isOldVips)) {
+        if ($this->isOldVips === null) {
             $version = (string) $this->cli->execute($this->vipsPath . ' --version');
             $this->setIsOldVips = version_compare($version, 'vips-8.6', '<');
         }

@@ -165,7 +165,7 @@ class BulkTileClean extends AbstractJob
     protected function removeMediaDataTile(Media $media): void
     {
         $mediaData = $media->getData();
-        if (is_null($mediaData) || !array_key_exists('tile', $mediaData)) {
+        if ($mediaData === null || !array_key_exists('tile', $mediaData)) {
             return;
         }
 

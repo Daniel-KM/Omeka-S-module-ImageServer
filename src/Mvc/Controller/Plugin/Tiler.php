@@ -142,7 +142,7 @@ class Tiler extends AbstractPlugin
         /** @var \Omeka\Entity\Media $mediaEntity  */
         $mediaEntity = $this->entityManager->find(\Omeka\Entity\Media::class, $media->id());
         $mediaData = $mediaEntity->getData();
-        if (is_null($mediaData)) {
+        if ($mediaData === null) {
             $mediaData = ['tile' => []];
         } elseif (empty($mediaData['tile'])) {
             $mediaData['tile'] = [];
