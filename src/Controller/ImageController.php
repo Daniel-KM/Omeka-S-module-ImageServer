@@ -259,7 +259,7 @@ class ImageController extends AbstractActionController
         // Redirect to the url when an existing file is available.
         if ($imageUrl) {
             // Header for CORS, required for access of IIIF.
-            if ($this->settings()->get('iiifserver_manifest_append_cors_headers')) {
+            if ($this->settings()->get('iiifserver_append_cors_headers')) {
                 $headers
                     ->addHeaderLine('Access-Control-Allow-Origin', '*');
             }
@@ -287,7 +287,7 @@ class ImageController extends AbstractActionController
             }
 
             // Header for CORS, required for access of IIIF.
-            if ($this->settings()->get('iiifserver_manifest_append_cors_headers')) {
+            if ($this->settings()->get('iiifserver_append_cors_headers')) {
                 $headers
                     ->addHeaderLine('Access-Control-Allow-Origin', '*');
             }
