@@ -837,7 +837,7 @@ class ImageController extends AbstractActionController
 
         // Check strict upscale of api v3.
         if (!$upscale && $versionIsGreaterOrEqual3
-            && ($destinationWidth > $transform['region']['width'] || $destinationHeight > $transform['region']['height'])
+            && ($transform['size']['width'] > $transform['region']['width'] || $transform['size']['height'] > $transform['region']['height'])
         ) {
             $this->_view->setVariable('message', (new PsrMessage(
                 'The Image server cannot fulfill the request: the region "{region}" or size "{size}" is incorrect for api version {version}.', // @translate
