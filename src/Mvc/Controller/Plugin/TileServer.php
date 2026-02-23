@@ -207,7 +207,7 @@ class TileServer extends AbstractPlugin
                 case 'sizeByWhListed':
                 case 'sizeByConfinedWh':
                     if ($size['width'] > $cellSize
-                        || ($source['height'] * $size['width'] * $source['width'] > $cellSize)
+                        || ($source['height'] * $size['width'] / $source['width'] > $cellSize)
                         || $size['height'] > $cellSize
                         || ($source['width'] * $size['height'] / $source['height'] > $cellSize)
                     ) {
@@ -226,7 +226,7 @@ class TileServer extends AbstractPlugin
 
                 case 'sizeByW':
                     if ($size['width'] > $cellSize
-                        || ($source['height'] * $size['width'] * $source['width'] > $cellSize)
+                        || ($source['height'] * $size['width'] / $source['width'] > $cellSize)
                     ) {
                         return null;
                     }
