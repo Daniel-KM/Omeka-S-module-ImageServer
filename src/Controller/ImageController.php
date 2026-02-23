@@ -700,8 +700,16 @@ class ImageController extends AbstractActionController
             }
 
             // A quick check to avoid a possible transformation.
-            if (($destinationWidth >= $transform['region']['width'] && $destinationHeight == $transform['region']['height'])
-                || ($destinationWidth == $transform['region']['width'] && $destinationHeight >= $transform['region']['height'])
+            // Without upscaling, any bounding box >= region means
+            // the full region fits: use max. With upscaling, require
+            // at least one dimension to match exactly (otherwise the
+            // upscaled best-fit would be larger than the region).
+            if ($destinationWidth >= $transform['region']['width']
+                && $destinationHeight >= $transform['region']['height']
+                && (!$upscale
+                    || $destinationWidth == $transform['region']['width']
+                    || $destinationHeight == $transform['region']['height']
+                )
             ) {
                 $transform['size'] = [
                     'feature' => 'max',
