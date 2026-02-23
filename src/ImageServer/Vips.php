@@ -257,7 +257,7 @@ class Vips extends AbstractImager
                 break;
 
             case 'rotationBy90s':
-                $chain[] = sprintf('%s rot _input_ _output_ d%d', $this->vipsPath, $args['rotation']['degrees']);
+                $chain[] = sprintf('%s rot _input_ _output_ d%d', $this->vipsPath, (int) $args['rotation']['degrees']);
                 break;
 
             case 'rotationArbitrary':
@@ -265,13 +265,13 @@ class Vips extends AbstractImager
                     $chain[] = sprintf(
                         '%s similarity _input_ _output_ --angle %s',
                         $this->vipsPath,
-                        $args['rotation']['degrees']
+                        escapeshellarg($args['rotation']['degrees'])
                     );
                 } else {
                     $chain[] = sprintf(
                         '%s rotate _input_ _output_ %s --background "0 0 0"',
                         $this->vipsPath,
-                        $args['rotation']['degrees']
+                        escapeshellarg($args['rotation']['degrees'])
                     );
                 }
                 break;

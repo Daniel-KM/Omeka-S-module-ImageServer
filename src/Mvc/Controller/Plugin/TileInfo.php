@@ -235,7 +235,7 @@ class TileInfo extends AbstractPlugin
             $this->logger->err('Php extension php-xml is not installed'); // @translate
             return null;
         }
-        $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
+        $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_PARSEHUGE);
         if (!$xml) {
             return null;
         }
@@ -309,7 +309,7 @@ class TileInfo extends AbstractPlugin
             $this->logger->err('Php extension php-xml is not installed'); // @translate
             return null;
         }
-        $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_PARSEHUGE);
+        $xml = @simplexml_load_file($path, 'SimpleXMLElement', LIBXML_PARSEHUGE);
         if (!$xml) {
             return null;
         }
