@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright 2015-2024 Daniel Berthereau
+ * Copyright 2015-2026 Daniel Berthereau
  * Copyright 2016-2017 BibLibre
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -31,7 +31,9 @@
 namespace ImageServer;
 
 if (!class_exists('Common\TraitModule', false)) {
-    require_once dirname(__DIR__) . '/Common/TraitModule.php';
+    require_once file_exists(dirname(__DIR__) . '/Common/src/TraitModule.php')
+        ? dirname(__DIR__) . '/Common/src/TraitModule.php'
+        : dirname(__DIR__) . '/Common/TraitModule.php';
 }
 
 use Common\Stdlib\PsrMessage;
@@ -136,13 +138,19 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
 
-        // Convert all media renderer tiles into files.
+        // Convert all media tile ingesters and renderers into upload/file.
+        $connection = $services->get('Omeka\Connection');
+        $sql = <<<'SQL'
+            UPDATE `media`
+            SET `ingester` = "upload"
+            WHERE `ingester` IN ("tile", "file");
+            SQL;
+        $connection->executeStatement($sql);
         $sql = <<<'SQL'
             UPDATE `media`
             SET `renderer` = "file"
             WHERE `renderer` = "tile";
             SQL;
-        $connection = $services->get('Omeka\Connection');
         $connection->executeStatement($sql);
 
         // Nuke all the tiles.

@@ -30,7 +30,8 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
         $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
         'Common', '3.4.80'
     );
-    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+    $messenger->addError($message);
+    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
 if (version_compare($oldVersion, '3.6.2', '<')) {
@@ -159,4 +160,24 @@ if (version_compare($oldVersion, '3.6.18', '<')) {
         'A new task allows to clear tile metadata, that may be useful when an external server is used.' // @translate
     );
     $messenger->addSuccess($message);
+}
+
+if (version_compare($oldVersion, '3.6.22', '<')) {
+    // The "tile" ingester was disabled in v3.6.13, but existing media were
+    // never converted. It has no impact once ingested, since only renderer is
+    // used. Nevertheless, convert remaining ingester to "upload" and renderer
+    // to "file".
+
+    $sql = <<<'SQL'
+        UPDATE `media`
+        SET `ingester` = "upload"
+        WHERE `ingester` IN ("tile", "file");
+        SQL;
+    $connection->executeStatement($sql);
+    $sql = <<<'SQL'
+        UPDATE `media`
+        SET `renderer` = "file"
+        WHERE `renderer` = "tile";
+        SQL;
+    $connection->executeStatement($sql);
 }
