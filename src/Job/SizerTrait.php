@@ -101,14 +101,16 @@ trait SizerTrait
         /** @var \Omeka\Entity\Media $mediaEntity */
         $mediaEntity = $this->mediaRepository->find($media->id());
 
-        // Reset dimensions to make the sizer working.
+        // Force re-reading dimensions from files, not from the cached
+        // representation data (the representation was loaded before the
+        // entity reset and still holds old values).
         // TODO In some cases, the original file is removed once the thumbnails are built.
         $mediaData['dimensions'] = [];
         $mediaEntity->setData($mediaData);
 
         $failedTypes = [];
         foreach ($this->imageTypes as $imageType) {
-            $result = $this->imageSize->__invoke($media, $imageType);
+            $result = $this->imageSize->__invoke($media, $imageType, true);
             if (!array_filter($result)) {
                 $failedTypes[] = $imageType;
             }
