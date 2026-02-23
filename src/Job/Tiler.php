@@ -58,7 +58,7 @@ class Tiler extends AbstractJob
 
         $basePath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
 
-        // Use a local sub-folder to create the tiles when Amazon s3 is used.
+        // Use a local sub-folder to create tiles when external storage is used.
         // TODO Update tilers in vendor/ to manage Amazon directly.
         $subfolder = $this->hasAmazonS3 ? '/tiletmp/' : '/original/';
         $this->sourcePath = $basePath . $subfolder . $this->media->filename();
@@ -83,14 +83,31 @@ class Tiler extends AbstractJob
     }
 
     /**
-     * Get media via the job id.
+     * Get media via the media id or, as a fallback, the job id.
      */
     protected function fetchMedia(): void
     {
+        // When dispatched with a mediaId (from api.create.post), the media is
+        // already in the database.
+        $mediaId = $this->getArg('mediaId');
+        if ($mediaId) {
+            $this->media = $this->getServiceLocator()
+                ->get('Omeka\ApiManager')
+                ->read('media', $mediaId)->getContent();
+            return;
+        }
+
+        // The following fix is normally useless now, since ingester tile is no
+        // more used.
+
+        // When dispatched during hydration (before media is committed), poll
+        // the database by job id in media data.
+
         // If no media, the event "api.create.post" may be not finished, so wait
         // 300 sec.
         // The issue can occur when there are multiple big files. In that case,
-        // it is recommenced to use the bulk tiler.
+        // it is recommended to use the bulk tiler.
+
         // TODO Integrate a queue in Omeka.
         $mediaId = $this->getMediaIdViaSql();
 
@@ -156,12 +173,12 @@ class Tiler extends AbstractJob
         $jobId = (int) $this->job->getId();
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
         $sql = <<<SQL
-SELECT `id`
-FROM `media`
-WHERE `data` = '{"job":$jobId}'
-    OR `data` LIKE '%"job":$jobId,%'
-    OR `data` LIKE '%"job":$jobId}' LIMIT 1;
-SQL;
+            SELECT `id`
+            FROM `media`
+            WHERE `data` = '{"job":$jobId}'
+                OR `data` LIKE '%"job":$jobId,%'
+                OR `data` LIKE '%"job":$jobId}' LIMIT 1;
+            SQL;
         return $connection->fetchOne($sql);
     }
 
@@ -172,7 +189,10 @@ SQL;
      */
     protected function endJob($result = null): void
     {
-        $mediaId = $this->getMediaIdViaSql();
+        $hasMediaId = (bool) $this->getArg('mediaId');
+        $mediaId = $hasMediaId
+            ? (int) $this->getArg('mediaId')
+            : (int) $this->getMediaIdViaSql();
 
         // Clean the tiles if the media was removed between upload and the end
         // of the tiling.
@@ -197,22 +217,43 @@ SQL;
 
         // Clean media data. They cannot be updated via api, so use a query.
         // TODO Use doctrine repository.
-        $jobId = (int) $this->job->getId();
-        $mediaId = (int) $mediaId;
-        $sql = <<<SQL
-UPDATE `media`
-SET
-`data` = CASE
-    WHEN `data` = '{"job":$jobId}' THEN NULL
-    WHEN `data` LIKE '%"job":$jobId,%' THEN REPLACE(`data`, '"job":$jobId,', '')
-    WHEN `data` LIKE '%"job":$jobId}%' THEN REPLACE(`data`, '"job":$jobId}', '')
-    ELSE `data`
-    END
-$storeOriginal
-WHERE `id` = $mediaId;
-SQL;
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
-        $connection->executeStatement($sql);
+        if ($hasMediaId) {
+            // New path: remove tileArgs from media data via json read/write.
+            $sql = "SELECT `data` FROM `media` WHERE `id` = $mediaId";
+            $data = $connection->fetchOne($sql);
+            if ($data) {
+                $data = json_decode($data, true);
+                unset($data['tileArgs']);
+                $newData = $data
+                    ? $connection->quote(json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))
+                    : 'NULL';
+            } else {
+                $newData = 'NULL';
+            }
+            $sql = <<<SQL
+                UPDATE `media`
+                SET `data` = $newData $storeOriginal
+                WHERE `id` = $mediaId;
+                SQL;
+            $connection->executeStatement($sql);
+        } else {
+            // Clean job key via LIKE/REPLACE pattern.
+            $jobId = (int) $this->job->getId();
+            $sql = <<<SQL
+                UPDATE `media`
+                SET
+                `data` = CASE
+                    WHEN `data` = '{"job":$jobId}' THEN NULL
+                    WHEN `data` LIKE '%"job":$jobId,%' THEN REPLACE(`data`, '"job":$jobId,', '')
+                    WHEN `data` LIKE '%"job":$jobId}%' THEN REPLACE(`data`, '"job":$jobId}', '')
+                    ELSE `data`
+                    END
+                $storeOriginal
+                WHERE `id` = $mediaId;
+                SQL;
+            $connection->executeStatement($sql);
+        }
 
         if ($this->hasAmazonS3) {
             if (file_exists($this->sourcePath)) {

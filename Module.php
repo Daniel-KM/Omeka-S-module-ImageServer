@@ -573,6 +573,19 @@ class Module extends AbstractModule
         $processingMedia[$media->getId()] = true;
 
         $services = $this->getServiceLocator();
+
+        // Handle media created via Tile ingester: dispatch Tiler job with the
+        // tile-specific args and the media ID, now that the media is committed
+        // to the database (fixes race condition).
+        $mediaData = $media->getData() ?: [];
+        $tileArgs = $mediaData['tileArgs'] ?? null;
+        if ($tileArgs) {
+            $tileArgs['mediaId'] = $media->getId();
+            $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+            $dispatcher->dispatch(\ImageServer\Job\Tiler::class, $tileArgs);
+            return;
+        }
+
         $mediaRepr = $services->get('Omeka\ApiAdapterManager')->get('media')->getRepresentation($media);
         /** @var \ImageServer\Mvc\Controller\Plugin\TileInfo $tileMediaInfo */
         $tileMediaInfo = $services->get('ControllerPluginManager')->get('tileMediaInfo');
@@ -580,7 +593,6 @@ class Module extends AbstractModule
         // A quick check to avoid a useless job.
         // Check is not done on original, because in some cases, the original
         // file is removed.
-        $mediaData = $media->getData() ?: [];
         $hasSize = !empty($mediaData['dimensions']['large']['width']);
         $hasTile = $tileMediaInfo($mediaRepr);
         $isTileModeAuto = $services->get('Omeka\Settings')->get('imageserver_tile_mode', 'auto') === 'auto';

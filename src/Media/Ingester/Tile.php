@@ -362,28 +362,18 @@ class Tile implements IngesterInterface
             $tempFile->delete();
         }
 
-        // Here, we have only a deleted temp file; there is no media id, maybe
-        // no item id, and the storage id and path may be changed by another
-        // process until the media is fully saved. So the job won’t know which
-        // file to process.
-        // So, the job id is saved temporarily in the data of the media and it
-        // will be removed during the job process. The args are kept for info.
-
-        $args = [];
-        $args['storageId'] = $media->getStorageId();
-        if ($this->hasAmazonS3) {
-            $args['storagePath'] = $mainPath;
-        } else {
-            $args['storagePath'] = $this->getStoragePath('original', $media->getFilename());
-        }
-
-        $args['storeOriginal'] = $storeOriginal;
-        $args['type'] = $type;
-
-        // TODO Move this job to create tiles inside an event api.create.post to avoid an issue with renaming?
-        $job = $this->dispatcher->dispatch(\ImageServer\Job\Tiler::class, $args);
-
-        $media->setData(['job' => $job->getId()]);
+        // Store tile args temporarily in the media data. The tiling job will be
+        // dispatched after the media is committed to the database by the event
+        // api.create.post in Module::afterSaveMedia(), fixing race condition
+        // where the job started before the media existed in database.
+        $media->setData([‘tileArgs’ => [
+            ‘storageId’ => $media->getStorageId(),
+            ‘storagePath’ => $this->hasAmazonS3
+                ? $mainPath
+                : $this->getStoragePath(‘original’, $media->getFilename()),
+            ‘storeOriginal’ => $storeOriginal,
+            ‘type’ => $type,
+        ]]);
     }
 
     public function form(PhpRenderer $view, array $options = [])
