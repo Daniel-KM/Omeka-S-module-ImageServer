@@ -794,7 +794,7 @@ class ImageController extends AbstractActionController
 
             // "w,": sizeByW (keep ratio).
             elseif ($destinationWidth && empty($destinationHeight)) {
-                $pctWidth = $transform['region']['width'] / $destinationWidth;
+                $pctWidth = $destinationWidth / $transform['region']['width'];
                 $transform['size'] = [
                     'feature' => 'sizeByW',
                     'upscale' => $upscale,
@@ -805,7 +805,7 @@ class ImageController extends AbstractActionController
 
             // ",h": sizeByH (keep ratio).
             elseif (empty($destinationWidth) && $destinationHeight) {
-                $pctHeight = $transform['region']['height'] / $destinationHeight;
+                $pctHeight = $destinationHeight / $transform['region']['height'];
                 $transform['size'] = [
                     'feature' => 'sizeByH',
                     'upscale' => $upscale,
