@@ -7,17 +7,18 @@ Image Server (module for Omeka S)
 
 
 [Image Server] is a module for [Omeka S] that integrates the [IIIF specifications]
-and a simple image server (similar to a basic [IIP Image]) to allow to process
-and share instantly images of any size and medias (pdf, audio, video, 3D…) in
-the desired formats. It works with the module [Iiif Server], that provides main
-manifests for items.
+and a full image server to allow to process and share instantly images of any
+size and medias (pdf, audio, video, 3D…) in the desired formats. It works with
+the module [Iiif Server], that provides main manifests for items. Rotation,
+zoom, inside search, etc. may be managed too. Dynamic lists of records may be
+created, for example for browse pages.
+
+So it can replace in Omeka any external image server like [Cantaloupe] or [IIP Image],
+in particular when using the quick image processor [vips] as backend.
 
 The full specifications of the [International Image Interoperability Framework]
 standard are supported (versions 2 and 3), so any widget that supports it can
 use it.
-
-Rotation, zoom, inside search, etc. may be managed too. Dynamic lists of records
-may be created, for example for browse pages.
 
 Images are automatically tiled to the [Deep Zoom], the [Zoomify], the [jpeg 2000]
 or the [tiled pyramidal tiff] format. Then they can be displayed directly in any
@@ -35,7 +36,11 @@ The IIIF manifests can be displayed with many viewers, the integrated [OpenSeadr
 the [Universal Viewer], the advanced [Mirador], or the ligher and themable [Diva],
 or any other IIIF compatible viewer.
 
-It supports Amazon S3 backend throught the module [Amazon S3].
+The module supports the local storage (file system) by default. For external
+storage, image serving works with any store whose `getUri()` returns a public
+url. However, tile creation and deletion require the [Amazon S3] module
+specifically, because they use methods (`hasFile()`, `deleteDir()`) not
+available in Omeka's `StoreInterface`.
 
 
 Installation
@@ -49,9 +54,9 @@ PHP should be installed with the extension `exif` in order to get the size of
 images. This is the case for all major distributions and providers.
 
 For [performance reasons], the recommended image processor is [vips] (command
-line tool), but the more common [ImageMagick] (command line `convert`), [GD] or
-[Imagick] (php extensions) are supported. Except vips, they are installed by
-default in most servers.
+line tool), but the more common [ImageMagick] (command line `magick` or legacy
+`convert`), [GD] or [Imagick] (php extensions) are supported. Except vips, they
+are installed by default in most servers.
 
 The module [Iiif Server] is currently required and should be installed first.
 
@@ -75,6 +80,15 @@ composer install --no-dev
 
 Then install it like any other Omeka module.
 
+* For test
+
+The module includes a comprehensive test suite with unit and functional tests.
+Run them from the root of Omeka:
+
+```sh
+vendor/bin/phpunit -c modules/ImageServer/phpunit.xml --testdox
+```
+
 ### http/2
 
 It is recommended to set the web server (usually Apache or Nginx) to serve files
@@ -82,7 +96,8 @@ with protocol `http/2`, that allows to send multiple files during the same tcp
 connection, so to serve multiple tiles more quickly.
 
 For Apache, you generally just need to enable the module and to replace
-incompatible modules with new versions, and to make php running via php-fpm:
+incompatible apache modules with new versions, and to make php running via
+php-fpm:
 
 ```sh
 a2dismod mpm_prefork
@@ -121,7 +136,7 @@ Then, you have to add the following rules, adapted to your needs, to the file
 It is recommended to use the main config of the server, for example  with the
 directive `<Directory>`.
 
-To fix Amazon cors issues, see the [aws documentation].
+To fix Amazon issues with cors, see the [aws documentation].
 
 ### Vips
 
@@ -143,44 +158,47 @@ tested.
 
 ### Tile formats
 
-Four format are proposed to create tiles: DeepZoom, Zoomify, Jpeg 2000 and
-pyramidal Tiff. The recommended format is DeepZoom. For Jpeg 2000 and pyramidal
-tiff, some other tools may be required.
+Four formats are proposed to create tiles: DeepZoom, Zoomify, Jpeg 2000 and
+pyramidal Tiff. If vips is available, the recommended format is tiled tiff. If
+jpeg 2000 is available, use it. Else, use DeepZoom or Zoomify. For Jpeg 2000 and
+pyramidal tiff, some other tools may be required.
 
 #### Jpeg 2000
 
-If you choose jpeg 2000 as the tile format, it should be available with ImageMagick.
-It is available by default since version 6.9.1.2-1 (2015, Debian/Ubuntu 2017).
-In some cases, you may need to install openjpeg tools:
+Jpeg 2000 is supported by ImageMagick (since version 6.9.1.2-1, 2015) and by
+vips (since version 8.12, when compiled with OpenJPEG support). In some cases,
+you may need to install openjpeg tools:
 
 ```sh
 sudo apt install libopenjp2-tools
 ```
 
-Or add a specific and maintained repository. See https://launchpad.net/~lyrasis/+archive/ubuntu/imagemagick-jp2.
+Check support with:
 
 ```sh
-sudo add-apt-repository ppa:lyrasis/imagemagick-jp2
-sudo apt-get update
-# Force install of the full stack, included libmagickcore-6.
-sudo apt install --reinstall libopenjp2-tools libopenjp2-7 imagemagick libmagickcore-6.q16-6
-# Check installed version.
-apt-cache policy imagemagick
-# Check support
-/usr/bin/convert --version
+# ImageMagick 7+
+magick identify -list format | grep JP2
+# or ImageMagick 6
+convert identify -list format | grep JP2
+# Vips
+vips jp2kload
 ```
 
 #### Tiled pyramidal tiff
 
-If you choose pyramidal tiff as the tile format, note that the Tiled pyramidal
-tiff is supported natively by ImageMagick, but not efficiently for reading,
-because it cannot extract a small portion without reading the whole file. So it
-is recommended to use the separate library [libvips] for dynamic extraction.
+Tiled pyramidal tiff is supported by ImageMagick, Imagick, GD and vips. However,
+only vips can efficiently extract a small region without reading the whole file,
+so it is recommended to use [vips] for dynamic extraction of tiled tiff.
 
 #### External image server Cantaloupe
 
-This module is not required if you use an external image server like Cantaloupe.
-Nevertheless, in that case, you can read some info about [integration of Cantaloupe with Omeka].
+This module is not required if you use an external image server like [Cantaloupe],
+since the module [Iiif Server] already provides image sizing via the job
+"Media Dimensions", and the external server handles all image processing
+(tiling, dynamic transformations, region extraction).
+
+If you want to use vips as the Omeka thumbnailer, it is recommended to use the
+module [Vips].
 
 
 Image Server
@@ -189,15 +207,15 @@ Image Server
 From version 3.6.3.1, tiles are created automatically for all new images when
 the option is set to "auto". It's not recommended to set it if the existing
 media doesn't have tiles yet, so you have to bulk size them first. The
-conversion of the renderer from "tile" to the standard "file" can be done with
-the job in the config form.
+conversion of the ingester and the renderer from the old "tile" to the standard
+"upload" and "file" is done automatically on upgrade.
 
 Furthermore, an option in settings and site settings allows to specify the
 default display: tile or large thumbnail. It can be selected directly in the
 theme too (thumbnail "tile").
 
 Of course, if you use an external server, you don't need to create static or
-dynamic tiles.
+dynamic tiles (and in that case you don't need this module anyway).
 
 ### Creation of static tiles
 
@@ -209,7 +227,7 @@ For big images that are not stored in a versatile format (jpeg 2000 or tiled
 tiff) and that cannot be processed dynamically quickly (for example with vips),
 it is recommended to pre-tile them to load and zoom them instantly. It can be
 done for any size of images. It may be recommended to manage at least the big
-images (more than 10 to 50 MB, according to your server and your public.
+images (more than 10 to 50 MB, according to your server and your public).
 
 Tiles can be created in four formats:
 
@@ -221,7 +239,7 @@ Tiles can be created in four formats:
   recommended for now.
 - Jpeg 2000 creates a single file that can be processed quickly with some image
   processor.
-- Tiled pyramidal tiff creates a single file too?
+- Tiled pyramidal tiff creates a single file too.
 
 All files created are stored in directory `files/tile` of Omeka and can be renamed
 with [Archive Repertory] too.
@@ -302,13 +320,26 @@ named number like in a library or a museum, isbn for books, or random id like
 with ark, noid, doi, etc. They can be displayed in the public url with the
 modules [Ark] and/or [Clean Url].
 
-### Amazon S3
+### External storage (Amazon S3 and others)
+
+Image serving (IIIF Image API) and sizing work with any store whose `getUri()`
+returns a publicly accessible URL, so any S3-compatible module (Amazon, MinIO,
+Wasabi, etc.) works for that part. However, tile creation and deletion currently
+require the [Amazon S3] module specifically, because the tiling pipeline calls
+`AmazonS3`-specific methods (`hasFile()`, `deleteDir()`) that are not part of
+Omeka's `StoreInterface`.
 
 Currently, only the public files are available: let the option "expiration" to "0".
 You should add CORS header `Access-Control-Allow-Origin` to make OpenSeadragon
 and other viewers working. See [aws documentation].
 
-### Vips as default thumbnailer
+### Vips as default thumbnailer (without module Vips)
+
+Note: the module [Vips] provides a more complete thumbnailer, with PHP library
+mode (faster) and CLI fallback, and sets itself automatically as the default
+thumbnailer. If you use the module [Vips], the manual configuration below is not
+needed. The thumbnailer provided by ImageServer (`ImageServer\File\Thumbnailer\Vips`)
+is a CLI-only alternative kept for installations without the module [Vips].
 
 If you installed vips, you can use it as a [default thumbnailer] for Omeka. The
 main interest to use Vips as thumbnailer is not only the performance, but the
@@ -351,19 +382,19 @@ TODO / Bugs
 - [ ] Support curl when allow_url_fopen and allow_url_include are forbidden.
 - [ ] Automatically manage pdf as a list of canvas and images (extract size and page number, then manage it by the image server)
 - [ ] Remove the specific choice of the processor and use the Omeka one (gd/imagemagick/imagick)
-- [ ] Adapt the info.json to the image processor.
+- [ ] Adapt the info.json to the image processor (don't list bitonal when using vips, etc.).
 - [ ] Add the canonical link header.
 - [x] Use the tiled images when available for arbitrary size request (ok for vips/tiled tiff).
-- [ ] Update vendor tilers to manage Amazon directly.
+- [ ] Update tiling pipeline to use `StoreInterface` instead of `AmazonS3`-specific methods, so any S3-compatible store can be used for tile creation/deletion.
 - [ ] Add a limit (width/height) for dynamic extraction (used with zoning and annotations).
-- [ ] Add a processor for [php-vips].
+- [ ] Add a processor for [php-vips] (currently cli-only, add support for the php extension/library).
 - [x] Use vips as Omeka thumbnailer.
-- [ ] Add auto as default type of tiles (so choose tiled tiff if vips is installed, etc.).
-- [ ] Use the library [OpenJpeg] ("libopenjp2-tools" on Debian, or "openjpeg" on Centos instead of ImageMagick for a [performance] reason: ImageMagick always open the file as a whole even when extracting a small part.
+- [ ] Add auto as default type of tiles and thumbnailer (so choose tiled tiff if vips is installed, and select thumbnailer according to input format, etc.).
+- [ ] For jpeg2000, use library [OpenJpeg] instead of ImageMagick or Vips: a dedicated decoder (`opj_decompress`/`kdu_expand`) getting internal tile directly is better for large jp2 (see [gitlab#7]).
+- [x] Skip the warning about missing `vips`/`convert` commands when an external image server (e.g. Cantaloupe) is configured, since local image processing tools are not needed in that case.
 - [ ] Fix bitonal with vips.
-- [ ] Fix save jp2 with vips/convert.
-- [ ] Add an auto choice for thumbnailer (and select it accordiing to input format) and tile type.
-- [ ] Check why zoomify and deepzoom arounds (or overlap) are different (deepzoom is more compliant with OpenSeadragon).
+- [ ] Fix save jp2 with vips (vips does not support jp2 output natively).
+- [x] Check why zoomify and deepzoom arounds (or overlap) are different (deepzoom is more compliant with OpenSeadragon). By design: DeepZoom uses 1px overlap, Zoomify uses 0.
 - [ ] Check why zoomify create bigger thumbnails.
 - [ ] Fix conversion of some iiif tiles for zoomify.
 
@@ -437,7 +468,8 @@ support the [Deep Zoom Image] tile format.
 [Omeka S]: https://omeka.org/s
 [International Image Interoperability Framework]: http://iiif.io
 [IIIF specifications]: http://iiif.io/api/
-[IIP Image]: http://iipimage.sourceforge.net
+[Cantaloupe]: https://cantaloupe-project.github.io
+[IIP Image]: https://iipimage.sourceforge.io
 [Iiif Server]: https://gitlab.com/Daniel-KM/Omeka-S-module-IiifServer
 [OpenSeadragon]: https://openseadragon.github.io
 [Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
@@ -447,6 +479,7 @@ support the [Deep Zoom Image] tile format.
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/
 [Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
 [performance reasons]: https://github.com/libvips/libvips/wiki/Speed-and-memory-use
+[Vips]: https://gitlab.com/Daniel-KM/Omeka-S-module-Vips
 [vips]: https://libvips.github.io/libvips
 [ImageMagick]: https://www.imagemagick.org
 [GD]: https://secure.php.net/manual/en/book.image.php
@@ -469,7 +502,7 @@ support the [Deep Zoom Image] tile format.
 [Deepzoom library]: https://gitlab.com/Daniel-KM/LibraryDeepzoom
 [Zoomify library]: https://gitlab.com/Daniel-KM/LibraryZoomify
 [Deepzoom]: https://github.com/jeremytubbs/deepzoom
-[#6]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues/6
+[gitlab#7]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues/7
 [aws documentation]: https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html
 [default thumbnailer]: https://omeka.org/s/docs/user-manual/configuration/#thumbnails
 [performance]: https://cantaloupe-project.github.io/manual/4.0/images.html
