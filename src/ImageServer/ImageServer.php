@@ -96,6 +96,7 @@ class ImageServer implements LoggerAwareInterface
             '\\ImageServer\\ImageServer\\GD',
             '\\ImageServer\\ImageServer\\Imagick',
             '\\ImageServer\\ImageServer\\ImageMagick',
+            '\\ImageServer\\ImageServer\\Vips',
         ];
         if (!in_array($imagerClass, $imagerClasses)) {
             throw new \RuntimeException((string) new PsrMessage(
