@@ -203,7 +203,6 @@ class TileServer extends AbstractPlugin
             // already returned.
             // These checks are useless when called from controller.
             switch ($size['feature']) {
-                case !empty($size['width'] && !empty($size['height'])):
                 case 'sizeByWh':
                 case 'sizeByWhListed':
                 case 'sizeByConfinedWh':
@@ -256,9 +255,9 @@ class TileServer extends AbstractPlugin
             // Determine cell position from source and region.
             // TODO Here, only "full"/"max" and "sizeByWh" are checked. Anyway, via controller, width and height are always defined.
             switch ($size['feature']) {
-                case !empty($size['width'] && !empty($size['height'])):
                 case 'sizeByWh':
                 case 'sizeByWhListed':
+                case 'sizeByForcedWh':
                     // TODO To improve.
                     if ($isLastColumn) {
                         // Normal row. The last cell is an exception below.
@@ -327,10 +326,6 @@ class TileServer extends AbstractPlugin
 
                 case 'sizeByConfinedWh':
                     // TODO Manage sizeByConfinedWh by tile server (see and merge with controller).
-                    break;
-
-                case 'sizeByForcedWh':
-                    // TODO Manage sizeByForcedWh by tile server (see and merge with controller).
                     break;
 
                 case 'sizeByPct':
