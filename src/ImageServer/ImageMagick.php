@@ -40,6 +40,9 @@ use Omeka\Stdlib\Cli;
  */
 class ImageMagick extends AbstractImager
 {
+    const MAGICK_COMMAND = 'magick';
+    const CONVERT_COMMAND = 'convert';
+
     /**
      * List of managed IIIF media types.
      *
@@ -61,7 +64,7 @@ class ImageMagick extends AbstractImager
     protected $cli;
 
     /**
-     * Path to the ImageMagick "convert" command.
+     * Path to the ImageMagick "magick" or "convert" command.
      *
      * @var string
      */

@@ -2,11 +2,12 @@
 
 namespace ImageServer\Service\ControllerPlugin;
 
+use Common\Stdlib\PsrMessage;
 use ImageServer\ImageServer\Vips;
 use ImageServer\Mvc\Controller\Plugin\Tiler;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use Omeka\File\Thumbnailer\ImageMagick;
+use ImageServer\ImageServer\ImageMagick;
 use Omeka\Stdlib\Cli;
 
 class TilerFactory implements FactoryInterface
@@ -29,8 +30,25 @@ class TilerFactory implements FactoryInterface
         $params['tile_dir'] = $tileDir;
         $params['tile_type'] = $settings->get('imageserver_image_tile_type');
         $params['processor'] = $processor === 'Auto' ? '' : $processor;
-        $params['convertPath'] = $this->getPath($cli, $convertDir, ImageMagick::CONVERT_COMMAND);
+        $params['convertPath'] = $this->getConvertPath($cli, $convertDir);
         $params['vipsPath'] = $this->getPath($cli, $vipsDir, Vips::VIPS_COMMAND);
+        $logger = $services->get('Omeka\Logger');
+        // Skip warnings when an external image server is configured, since
+        // local image processing tools are not needed in that case.
+        if (!$settings->get('iiifserver_media_api_url')) {
+            if ($params['vipsPath'] === '') {
+                $logger->warn(new PsrMessage(
+                    'ImageServer: the command `{command}` was not found on the server. Install it, or set correct directory in configuration, or set another image processor.', // @translate
+                    ['command' => Vips::VIPS_COMMAND]
+                ));
+            }
+            if ($params['convertPath'] === '') {
+                $logger->warn(new PsrMessage(
+                    'ImageServer: the command `{command_1}` or `{command_2}` was not found on the server. Install it, or set correct directory in configuration, or set another image processor.', // @translate
+                    ['command_1' => ImageMagick::MAGICK_COMMAND, 'command_2' => ImageMagick::CONVERT_COMMAND]
+                ));
+            }
+        }
         $params['executeStrategy'] = $config['cli']['execute_strategy'];
         $params['basePath'] = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
 
@@ -57,12 +75,19 @@ class TilerFactory implements FactoryInterface
     }
 
     /**
+     * Get the path to "magick" (preferred) or "convert" (fallback).
+     */
+    protected function getConvertPath(Cli $cli, ?string $convertDir): string
+    {
+        $path = $this->getPath($cli, $convertDir, ImageMagick::MAGICK_COMMAND);
+        if ($path !== '') {
+            return $path;
+        }
+        return $this->getPath($cli, $convertDir, ImageMagick::CONVERT_COMMAND);
+    }
+
+    /**
      * Check and get the path of a command.
-     *
-     * @param Cli $cli
-     * @param string $dir
-     * @param string $command
-     * @return string
      */
     protected function getPath(Cli $cli, ?string $dir, string $command): string
     {
