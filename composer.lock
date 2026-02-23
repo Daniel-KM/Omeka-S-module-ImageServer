@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3e24d6aefe749f9d8d37752d8659704d",
+    "content-hash": "05dec70a2e8bdc23da2fec7cf2ec7693",
     "packages": [
         {
             "name": "daniel-km/deepzoom",
-            "version": "0.6.2",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://gitlab.com/Daniel-KM/LibraryDeepzoom.git",
-                "reference": "69cb854f64341d5cf8913869019a35049e10a150"
+                "reference": "1d370c9556a0c10d10cbacd7951f6c51ae368135"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryDeepzoom/repository/archive.zip?sha=69cb854f64341d5cf8913869019a35049e10a150",
-                "reference": "69cb854f64341d5cf8913869019a35049e10a150",
+                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryDeepzoom/repository/archive.zip?sha=1d370c9556a0c10d10cbacd7951f6c51ae368135",
+                "reference": "1d370c9556a0c10d10cbacd7951f6c51ae368135",
                 "shasum": ""
             },
             "require": {
@@ -25,7 +25,13 @@
                 "php": ">=5.4.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "^2.15"
+                "friendsofphp/php-cs-fixer": "^2.15",
+                "jcupitt/vips": "^1.0",
+                "phpunit/phpunit": "^10.5"
+            },
+            "suggest": {
+                "ext-vips": "PHP extension for vips (for PhpVips processor).",
+                "jcupitt/vips": "PHP library for vips (for PhpVips processor)."
             },
             "type": "library",
             "autoload": {
@@ -61,6 +67,7 @@
                 "openseadragon",
                 "stand-alone",
                 "tiled",
+                "vips",
                 "zoom",
                 "zoomable"
             ],
@@ -69,25 +76,33 @@
                 "issues": "https://gitlab.com/Daniel-KM/LibraryDeepzoom/-/issues",
                 "source": "https://gitlab.com/Daniel-KM/LibraryDeepzoom"
             },
-            "time": "2020-11-30T00:00:00+00:00"
+            "time": "2026-02-23T00:00:00+00:00"
         },
         {
             "name": "daniel-km/zoomify",
-            "version": "1.0.3",
+            "version": "1.0.4",
             "source": {
                 "type": "git",
                 "url": "https://gitlab.com/Daniel-KM/LibraryZoomify.git",
-                "reference": "f581cdc7ecbb8a495b397e28f80ee46107ad6f58"
+                "reference": "7cd4771725f45824c4cc3e4ba705b4705dc7389c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryZoomify/repository/archive.zip?sha=f581cdc7ecbb8a495b397e28f80ee46107ad6f58",
-                "reference": "f581cdc7ecbb8a495b397e28f80ee46107ad6f58",
+                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryZoomify/repository/archive.zip?sha=7cd4771725f45824c4cc3e4ba705b4705dc7389c",
+                "reference": "7cd4771725f45824c4cc3e4ba705b4705dc7389c",
                 "shasum": ""
             },
             "require": {
                 "lsolesen/pel": "^0.9.6",
                 "php": ">=5.4.0"
+            },
+            "require-dev": {
+                "jcupitt/vips": "^1.0",
+                "phpunit/phpunit": "^10.5"
+            },
+            "suggest": {
+                "ext-vips": "PHP extension for vips (for PhpVips processor).",
+                "jcupitt/vips": "PHP library for vips (for PhpVips processor)."
             },
             "type": "library",
             "autoload": {
@@ -128,6 +143,7 @@
                 "openseadragon",
                 "stand-alone",
                 "tiled",
+                "vips",
                 "zoom",
                 "zoomable",
                 "zoomify"
@@ -137,7 +153,7 @@
                 "issues": "https://gitlab.com/Daniel-KM/LibraryZoomify/-/issues",
                 "source": "https://gitlab.com/Daniel-KM/LibraryZoomify"
             },
-            "time": "2020-11-30T00:00:00+00:00"
+            "time": "2026-02-23T00:00:00+00:00"
         }
     ],
     "packages-dev": [],
