@@ -710,8 +710,8 @@ class ImageController extends AbstractActionController
                     'height' => $transform['region']['height'],
                 ];
             } else {
-                $pctWidth = $transform['region']['width'] / $destinationWidth;
-                $pctHeight = $transform['region']['height'] / $destinationHeight;
+                $pctWidth = $destinationWidth / $transform['region']['width'];
+                $pctHeight = $destinationHeight / $transform['region']['height'];
                 if ($pctWidth > $pctHeight) {
                     $transform['size'] = [
                         'feature' => 'sizeByConfinedWh',
