@@ -101,7 +101,7 @@ class ImageMagick extends AbstractImager
 
         // The version list the common formats simpler than "-list format", but
         // it is not complete.
-        $command = sprintf($this->convertPath . ' -list format 2>/dev/null ; echo ""', $this->convertPath);
+        $command = sprintf('%s -list format 2>/dev/null ; echo ""', $this->convertPath);
         $result = $this->cli->execute($command);
         $matches = [];
         // For simplicity, manage only read and write formats.

@@ -218,7 +218,7 @@ class Vips extends AbstractThumbnailer
 
     public function setIsOldVips($isOldVips): self
     {
-        $this->setIsOldVips = (bool) $isOldVips;
+        $this->isOldVips = (bool) $isOldVips;
         return $this;
     }
 
@@ -226,8 +226,8 @@ class Vips extends AbstractThumbnailer
     {
         if ($this->isOldVips === null) {
             $version = (string) $this->cli->execute($this->vipsPath . ' --version');
-            $this->setIsOldVips = version_compare($version, 'vips-8.6', '<');
+            $this->isOldVips = version_compare($version, 'vips-8.6', '<');
         }
-        return $this->setIsOldVips;
+        return $this->isOldVips;
     }
 }

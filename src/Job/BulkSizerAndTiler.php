@@ -32,6 +32,11 @@ class BulkSizerAndTiler extends AbstractJob
      */
     protected $totalToProcess;
 
+    /**
+     * @var \ImageServer\Mvc\Controller\Plugin\TileInfo
+     */
+    protected $tileInfo;
+
     public function perform(): void
     {
         /** @var \Omeka\Api\Manager $api */

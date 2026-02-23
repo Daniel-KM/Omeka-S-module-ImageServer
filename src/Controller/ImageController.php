@@ -594,7 +594,7 @@ class ImageController extends AbstractActionController
         ) {
             $this->_view->setVariable('message', (new PsrMessage(
                 'The Image server cannot fulfill the request: the region "{region}" is invalid.', // @translate
-                $region
+                ['region' => $region]
             ))->setTranslator($this->translator()));
             return null;
         }
@@ -689,7 +689,8 @@ class ImageController extends AbstractActionController
         // "!w,h": sizeByConfinedWh (keep ratio), with or without upscale.
         elseif (strpos($size, '!') === 0 || strpos($size, '^!') === 0) {
             $pos = strpos($size, ',');
-            $destinationWidth = (int) substr($size, $upscale ? 2 : 1, $pos);
+            $start = $upscale ? 2 : 1;
+            $destinationWidth = (int) substr($size, $start, $pos - $start);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) || empty($destinationHeight)) {
                 $this->_view->setVariable('message', (new PsrMessage(
@@ -748,11 +749,12 @@ class ImageController extends AbstractActionController
         // "w,h" (no ratio check), "w," or ",h" (keep ratio) with upscale or not.
         else {
             $pos = strpos($size, ',');
-            $destinationWidth = (int) substr($size, $upscale ? 1 : 0, $pos);
+            $start = $upscale ? 1 : 0;
+            $destinationWidth = (int) substr($size, $start, $pos - $start);
             $destinationHeight = (int) substr($size, $pos + 1);
             if (empty($destinationWidth) && empty($destinationHeight)) {
                 $this->_view->setVariable('message', (new PsrMessage(
-                    'The Image server cannot fulfill the request: the size "%s" is incorrect.', // @translate
+                    'The Image server cannot fulfill the request: the size "{size}" is incorrect.', // @translate
                     ['size' => $size]
                 ))->setTranslator($this->translator()));
                 return null;
@@ -870,7 +872,7 @@ class ImageController extends AbstractActionController
         else {
             $rotation = trim($rotation, '0');
             $rotationDotPos = strpos($rotation, '.');
-            if ($rotationDotPos === strlen($rotation)) {
+            if ($rotationDotPos === strlen($rotation) - 1) {
                 $rotation = (int) trim($rotation, '.');
             } elseif ($rotationDotPos === 0) {
                 $rotation = '0' . $rotation;
@@ -900,7 +902,7 @@ class ImageController extends AbstractActionController
 
         // Determine the format. The regex in route checks it first.
         // @see https://www.php.net/manual/fr/function.imagetypes.php
-        if (!isset($this->mediaTypes, $format)) {
+        if (!isset($this->mediaTypes[$format])) {
             /** @var \ImageServer\ImageServer\AbstractImager $imager */
             $imager = $this->imageServer()->getImager();
             if (!$imager->checkExtension($format)) {

@@ -145,8 +145,10 @@ class TileRemover extends AbstractPlugin
             return false;
         }
 
-        $files = array_diff($scandir, ['.', '..']);
-        foreach ($files as $file) {
+        foreach ($scandir as $file) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
             $path = $dir . '/' . $file;
             if (is_dir($path)) {
                 $this->rrmdir($path);

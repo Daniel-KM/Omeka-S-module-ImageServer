@@ -100,7 +100,7 @@ class ImageServer implements LoggerAwareInterface
         ];
         if (!in_array($imagerClass, $imagerClasses)) {
             throw new \RuntimeException((string) new PsrMessage(
-                'The imager "{class}" is not supported.', // @translate
+                'The imager "{imager}" is not supported.', // @translate
                 ['imager' => $imagerClass]
             ));
         }

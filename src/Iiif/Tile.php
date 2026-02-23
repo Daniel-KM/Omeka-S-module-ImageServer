@@ -113,7 +113,7 @@ class Tile extends AbstractType
         return !empty($this->tilingInfo);
     }
 
-    protected function prepareTilingInfo(): self
+    protected function prepareTilingInfo(): ?self
     {
         if (empty($this->options['tilingData'])) {
             return null;

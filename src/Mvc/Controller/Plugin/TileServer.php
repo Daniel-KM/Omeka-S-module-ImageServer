@@ -173,7 +173,7 @@ class TileServer extends AbstractPlugin
         // Simplify region to be "regionByPx" or "full".
         if ($region['feature'] === 'regionByPct') {
             $region = $this->convertRegionByPercent($source, $region);
-        } elseif ($size['feature'] === 'square') {
+        } elseif ($region['feature'] === 'square') {
             $region = $this->convertRegionBySquare($source, $region);
         }
 
@@ -340,7 +340,6 @@ class TileServer extends AbstractPlugin
             // $maxSize = max($source['width'], $source['height']);
             // $total = (int) ceil($maxSize / $tileInfo['size']);
             // If level is set, count is not set and useless.
-            $level = isset($level) ? $level : 0;
             $count = isset($count) ? $count : 0;
             foreach ($scaleFactors as $scaleFactor) {
                 if ($scaleFactor >= $count) {

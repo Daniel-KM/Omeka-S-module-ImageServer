@@ -16,7 +16,7 @@ class TileRemoverFactory implements FactoryInterface
 
         $tileDir = $settings->get('imageserver_image_tile_dir') ?: '';
         if (empty($tileDir)) {
-            $logger = $services->get('Omeka\logger');
+            $logger = $services->get('Omeka\Logger');
             $logger->err('The tile dir is not defined.'); // @translate
         }
 

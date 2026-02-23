@@ -67,6 +67,11 @@ abstract class AbstractImager implements LoggerAwareInterface
     protected $args = [];
 
     /**
+     * @var array Paths of fetched temporary files to destroy after use.
+     */
+    protected $fetched = [];
+
+    /**
      * Get the list of supported formats.
      *
      * @param string $mediaType

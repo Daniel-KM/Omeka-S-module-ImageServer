@@ -104,8 +104,8 @@ class Vips extends AbstractImager
         // The version lists the common formats simpler than "-list format", but
         // it is not complete.
         // Available only in version 8.8.
-        // $command = sprintf($this->vipsPath . ' -l foreign | grep save', $this->vipsPath);
-        $command = sprintf($this->vipsPath . ' -l | grep -i save', $this->vipsPath);
+        // $command = sprintf('%s -l foreign | grep save', $this->vipsPath);
+        $command = sprintf('%s -l | grep -i save', $this->vipsPath);
         $result = $this->cli->execute($command);
         $matches = [];
         if ($result && preg_match_all('~^.*\(\.(?<extensions>.[.a-z0-9, ]+)\).*$~m', $result, $matches, PREG_SET_ORDER, 0)) {

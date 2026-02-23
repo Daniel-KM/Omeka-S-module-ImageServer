@@ -12,7 +12,7 @@ class SizerFactory implements FactoryInterface
     {
         // The api cannot update value "data", so use entity manager.
         $entityManager = $services->get('Omeka\EntityManager');
-        $mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
+        $mediaRepository = $entityManager->getRepository(\Omeka\Entity\Media::class);
 
         $imageTypes = array_keys($services->get('Config')['thumbnails']['types']);
         array_unshift($imageTypes, 'original');

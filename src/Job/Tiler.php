@@ -380,16 +380,25 @@ class Tiler extends AbstractJob
                 if (is_writeable($path)) {
                     return true;
                 }
-                $msg = $this->translate('Error directory non writable: "%s".', $path);
-                throw new RuntimeException('[ArchiveRepertory] ' . $msg);
+                $msg = new PsrMessage(
+                    '[ArchiveRepertory] Error directory non writeable: {path}', // @translate
+                    ['path' => $path]
+                );
+                throw new RuntimeException((string) $msg);
             }
-            $msg = $this->translate('Failed to create folder "%s": a file with the same name exists…', $path);
-            throw new RuntimeException('[ArchiveRepertory] ' . $msg);
+            $msg = new PsrMessage(
+                '[ArchiveRepertory] Failed to create folder because a file with the same name exists: {path}', // @translate
+                ['path' => $path]
+           );
+            throw new RuntimeException((string) $msg);
         }
 
         if (!mkdir($path, 0775, true)) {
-            $msg = sprintf($this->translate('Error making directory: "%s".'), $path);
-            throw new RuntimeException('[ArchiveRepertory] ' . $msg);
+            $msg = new PsrMessage(
+                '[ArchiveRepertory] Error creating directory {path}.', // @translate
+                ['path' => $path]
+            );
+            throw new RuntimeException((string) $msg);
         }
         @chmod($path, 0775);
 

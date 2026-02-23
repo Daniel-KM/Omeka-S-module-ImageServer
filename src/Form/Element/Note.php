@@ -105,7 +105,7 @@ class Note extends Element
     {
         if ($wrap === null) {
             $this->wrap = $this->options['wrap'] = null;
-            return self;
+            return $this;
         }
 
         if (is_object($wrap)) {
@@ -127,7 +127,7 @@ class Note extends Element
         $wrap = (string) $wrap;
         if ($wrap === '') {
             $this->wrap = $this->options['wrap'] = null;
-            return self;
+            return $this;
         } elseif (!ctype_alnum($wrap) || !ctype_alpha(substr($wrap, 0, 1))) {
             throw new InvalidArgumentException(sprintf(
                 'Argument "wrap" of method %1$s must be a null or alphanumeric string, received "%2$s".', // @translate

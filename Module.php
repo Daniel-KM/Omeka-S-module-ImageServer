@@ -182,6 +182,7 @@ class Module extends AbstractModule
 
         $basePath = $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $tileDir = $settings->get('imageserver_image_tile_dir');
+        $removable = false;
         if (empty($tileDir)) {
             $message = new PsrMessage(
                 'The tile dir is not defined and won’t be removed.' // @translate
