@@ -70,6 +70,9 @@ class TileServer extends AbstractPlugin
                 return $this->getController()->tileServerDeepZoom($tileInfo, $transform);
             case 'zoomify':
                 return $this->getController()->tileServerZoomify($tileInfo, $transform);
+            case 'jpeg2000':
+            case 'tiled_tiff':
+                return $this->getController()->tileServerNativeTiled($tileInfo, $transform);
             default:
                 return null;
         }

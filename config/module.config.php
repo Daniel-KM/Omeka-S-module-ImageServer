@@ -101,6 +101,7 @@ return [
             'tileMediaInfo' => Mvc\Controller\Plugin\TileMediaInfo::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
             'tileServerDeepZoom' => Mvc\Controller\Plugin\TileServerDeepZoom::class,
+            'tileServerNativeTiled' => Mvc\Controller\Plugin\TileServerNativeTiled::class,
             'tileServerZoomify' => Mvc\Controller\Plugin\TileServerZoomify::class,
         ],
         'factories' => [
