@@ -125,9 +125,7 @@ class DeepzoomLibraryTest extends TestCase
      */
     public function testConstructorPhpVipsProcessor(): void
     {
-        $hasPhpVips = (extension_loaded('vips') || extension_loaded('ffi'))
-            && class_exists('Jcupitt\Vips\Image');
-        if (!$hasPhpVips) {
+        if (!$this->hasPhpVips()) {
             $this->markTestSkipped('php-vips not available.');
         }
 
@@ -142,9 +140,7 @@ class DeepzoomLibraryTest extends TestCase
      */
     public function testConstructorPhpVipsThrowsWhenMissing(): void
     {
-        $hasPhpVips = (extension_loaded('vips') || extension_loaded('ffi'))
-            && class_exists('Jcupitt\Vips\Image');
-        if ($hasPhpVips) {
+        if ($this->hasPhpVips()) {
             $this->markTestSkipped('php-vips is available, cannot test failure.');
         }
 
@@ -221,5 +217,19 @@ class DeepzoomLibraryTest extends TestCase
             $source,
             'getConvertPath() must not use deprecated "whereis"'
         );
+    }
+
+    protected function hasPhpVips(): bool
+    {
+        if (!extension_loaded('vips') && !extension_loaded('ffi')) {
+            return false;
+        }
+        // jcupitt/vips lives in the Vips module vendor.
+        $autoloader = dirname(__DIR__, 3)
+            . '/Vips/vendor/autoload.php';
+        if (file_exists($autoloader)) {
+            require_once $autoloader;
+        }
+        return class_exists('Jcupitt\Vips\Image');
     }
 }
