@@ -157,6 +157,13 @@ class ImageMagick extends AbstractImager
         // Get width and height if missing.
         if (empty($args['source']['width']) || empty($args['source']['height'])) {
             [$args['source']['width'], $args['source']['height']] = getimagesize($image);
+            // EXIF orientations 5-8 swap width and height
+            // (auto-orient rotates the pixels before crop).
+            $exif = @exif_read_data($image);
+            if ($exif && !empty($exif['Orientation']) && $exif['Orientation'] >= 5) {
+                [$args['source']['width'], $args['source']['height']]
+                    = [$args['source']['height'], $args['source']['width']];
+            }
         }
 
         // Region + Size.
@@ -175,6 +182,8 @@ class ImageMagick extends AbstractImager
             $destinationHeight] = $extraction;
 
         $params = [];
+        // Auto-orient to handle EXIF rotation before crop.
+        $params[] = '-auto-orient';
         // The background is normally useless, but it's costless.
         $params[] = '-background black';
         $params[] = '+repage';

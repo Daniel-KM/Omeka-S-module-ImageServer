@@ -159,6 +159,13 @@ class Vips extends AbstractImager
         // Get width and height if missing.
         if (empty($args['source']['width']) || empty($args['source']['height'])) {
             [$args['source']['width'], $args['source']['height']] = getimagesize($image);
+            // EXIF orientations 5-8 swap width and height
+            // (autorot rotates the pixels before crop).
+            $exif = @exif_read_data($image);
+            if ($exif && !empty($exif['Orientation']) && $exif['Orientation'] >= 5) {
+                [$args['source']['width'], $args['source']['height']]
+                    = [$args['source']['height'], $args['source']['width']];
+            }
         }
 
         // Region + Size.
@@ -189,6 +196,13 @@ class Vips extends AbstractImager
         // @todo Use vips thumbnail (or vipsthumbnail) when there is only region.
 
         $chain = [];
+
+        // Auto-orient to handle EXIF rotation before crop.
+        $chain[] = sprintf(
+            '%s autorot _input_ _output_',
+            $this->vipsPath
+        );
+
         if ($sourceWidth !== $args['source']['width']
             || $sourceHeight !== $args['source']['height']
         ) {
@@ -215,7 +229,7 @@ class Vips extends AbstractImager
             } else {
                 // Force because destination width and height are already checked.
                 $chain[] = sprintf(
-                    '%s thumbnail _input_ _output_ %d --height %d --size force --no-rotate --intent absolute',
+                    '%s thumbnail _input_ _output_ %d --height %d --size force --intent absolute',
                     $this->vipsPath,
                     $destinationWidth,
                     $destinationHeight

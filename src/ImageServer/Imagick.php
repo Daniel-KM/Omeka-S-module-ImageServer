@@ -110,6 +110,9 @@ class Imagick extends AbstractImager
             return null;
         }
 
+        // Auto-orient to handle EXIF rotation before crop.
+        $imagick->autoOrient();
+
         // Get width and height if missing.
         if (empty($args['source']['width']) || empty($args['source']['height'])) {
             $args['source']['width'] = $imagick->getImageWidth();

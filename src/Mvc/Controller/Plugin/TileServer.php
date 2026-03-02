@@ -444,6 +444,12 @@ class TileServer extends AbstractPlugin
     {
         if (file_exists($filepath)) {
             [$width, $height] = getimagesize($filepath);
+            // EXIF orientations 5-8 indicate a 90° or 270°
+            // rotation, so width and height must be swapped.
+            $exif = @exif_read_data($filepath);
+            if ($exif && !empty($exif['Orientation']) && $exif['Orientation'] >= 5) {
+                [$width, $height] = [$height, $width];
+            }
             return [
                 'width' => $width,
                 'height' => $height,
