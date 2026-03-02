@@ -28,8 +28,8 @@
         "daniel-km/omeka-s-module-common": "*"
     },
     "require": {
-        "daniel-km/deepzoom": "^1.0",
-        "daniel-km/zoomify": "^1.0"
+        "daniel-km/deepzoom": "^1.1",
+        "daniel-km/zoomify": "^1.1"
     },
     "provide": {
         "lsolesen/pel": "*"
