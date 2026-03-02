@@ -181,3 +181,14 @@ if (version_compare($oldVersion, '3.6.22', '<')) {
         SQL;
     $connection->executeStatement($sql);
 }
+
+if (version_compare($oldVersion, '3.6.23', '<')) {
+    if (!$this->checkModuleActiveVersion('IiifServer', '3.6.29')) {
+        $message = new \Omeka\Stdlib\Message(
+            $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+            'IiifServer', '3.6.29'
+        );
+        $messenger->addError($message);
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
+    }
+}
