@@ -42,6 +42,9 @@ class BulkSizerAndTiler extends AbstractJob
         /** @var \Omeka\Api\Manager $api */
         $services = $this->getServiceLocator();
         $this->logger = $services->get('Omeka\Logger');
+        $referenceIdProcessor = new \Laminas\Log\Processor\ReferenceId();
+        $referenceIdProcessor->setReferenceId('imageserver/bulk-sizer-tiler/job_' . $this->job->getId());
+        $this->logger->addProcessor($referenceIdProcessor);
         $this->entityManager = $services->get('Omeka\EntityManager');
         $api = $services->get('Omeka\ApiManager');
 

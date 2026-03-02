@@ -68,6 +68,9 @@ class BulkTileClean extends AbstractJob
         $services = $this->getServiceLocator();
         $plugins = $services->get('ControllerPluginManager');
         $this->logger = $services->get('Omeka\Logger');
+        $referenceIdProcessor = new \Laminas\Log\Processor\ReferenceId();
+        $referenceIdProcessor->setReferenceId('imageserver/bulk-tile-clean/job_' . $this->job->getId());
+        $this->logger->addProcessor($referenceIdProcessor);
         $this->entityManager = $services->get('Omeka\EntityManager');
         $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
         $api = $services->get('Omeka\ApiManager');

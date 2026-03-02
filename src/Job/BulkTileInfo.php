@@ -69,6 +69,9 @@ class BulkTileInfo extends AbstractJob
         /** @var \Omeka\Api\Manager $api */
         $services = $this->getServiceLocator();
         $this->logger = $services->get('Omeka\Logger');
+        $referenceIdProcessor = new \Laminas\Log\Processor\ReferenceId();
+        $referenceIdProcessor->setReferenceId('imageserver/bulk-tile-info/job_' . $this->job->getId());
+        $this->logger->addProcessor($referenceIdProcessor);
         $this->entityManager = $services->get('Omeka\EntityManager');
         $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
         $this->tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
