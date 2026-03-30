@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-// Lightweight IIIF Image API tile server via vips.
+// Lightweight IIIF Image API tile server via vips (php-vips or cli).
 //
 // Bypasses the full Omeka S MVC stack for maximum performance.
 // Handles region extraction and resizing via vips CLI with disk caching.
@@ -21,11 +21,25 @@
 // @link https://iiif.io/api/image/2.1/
 // @link https://iiif.io/api/image/3.0/
 
-// Require vips CLI. If absent, fall back to Omeka S standard stack.
-$vips = trim(shell_exec('which vips 2>/dev/null') ?? '');
-if (!$vips) {
-    require dirname(__DIR__, 4) . '/index.php';
-    return;
+// Detect vips: prefer php-vips library, then CLI, else fall back to Omeka S
+// standard stack.
+// php-vips v1 (ext-vips) or v2 (ext-ffi) are loaded via Composer autoloader
+// from the Omeka vendor directory.
+$usePhpVips = false;
+$vips = '';
+$autoloader = dirname(__DIR__, 4) . '/vendor/autoload.php';
+if (file_exists($autoloader)) {
+    require_once $autoloader;
+    if (class_exists('Jcupitt\Vips\Image')) {
+        $usePhpVips = true;
+    }
+}
+if (!$usePhpVips) {
+    $vips = trim(shell_exec('which vips 2>/dev/null') ?? '');
+    if (!$vips) {
+        require dirname(__DIR__, 4) . '/index.php';
+        return;
+    }
 }
 
 // Resolve Omeka root from script location.
@@ -322,144 +336,189 @@ if ($region === 'full' && $rotDegrees == 0 && !$mirror
 }
 
 // ---------------------------------------------------------------------------
-// 6. Process with vips CLI
+// 6. Process with vips
 // ---------------------------------------------------------------------------
 
-$tmpDir = sys_get_temp_dir();
-$tmpBase = $tmpDir . '/iiif_' . md5($identifier . microtime(true) . getmypid());
-
-$formatOptions = [
-    'gif' => '',
-    'jp2' => '',
-    'jpg' => '[Q=85,strip]',
-    'png' => '[compression=6,strip]',
-    'tif' => '[compression=jpeg,Q=85,strip]',
-    'webp' => '[Q=85,strip]',
-];
-$outOpt = $formatOptions[$outputFormat] ?? '[Q=85,strip]';
-
-// Build vips command chain.
-// vips CLI is not pipable, so we use intermediate .v files.
-$commands = [];
-$currentInput = escapeshellarg($filepath);
-$step = 0;
-
-// Auto-orient (EXIF rotation).
-$stepFile = $tmpBase . '_' . (++$step) . '.v';
-$commands[] = sprintf(
-    '%s autorot %s %s',
-    escapeshellarg($vips),
-    $currentInput,
-    escapeshellarg($stepFile)
-);
-$currentInput = escapeshellarg($stepFile);
-$tempFiles = [$stepFile];
-
-// Region extraction (skip if full).
-if ($rX !== 0 || $rY !== 0 || $rW !== $srcWidth || $rH !== $srcHeight) {
-    $stepFile = $tmpBase . '_' . (++$step) . '.v';
-    $commands[] = sprintf(
-        '%s extract_area %s %s %d %d %d %d',
-        escapeshellarg($vips),
-        $currentInput,
-        escapeshellarg($stepFile),
-        $rX, $rY, $rW, $rH
-    );
-    $currentInput = escapeshellarg($stepFile);
-    $tempFiles[] = $stepFile;
-}
-
-// Resize (skip if same dimensions).
-if ($dW !== $rW || $dH !== $rH) {
-    $stepFile = $tmpBase . '_' . (++$step) . '.v';
-    $commands[] = sprintf(
-        '%s thumbnail %s %s %d --height %d --size force',
-        escapeshellarg($vips),
-        $currentInput,
-        escapeshellarg($stepFile),
-        $dW, $dH
-    );
-    $currentInput = escapeshellarg($stepFile);
-    $tempFiles[] = $stepFile;
-}
-
-// Mirror.
-if ($mirror) {
-    $stepFile = $tmpBase . '_' . (++$step) . '.v';
-    $commands[] = sprintf(
-        '%s flip %s %s horizontal',
-        escapeshellarg($vips),
-        $currentInput,
-        escapeshellarg($stepFile)
-    );
-    $currentInput = escapeshellarg($stepFile);
-    $tempFiles[] = $stepFile;
-}
-
-// Rotation.
-if ($rotDegrees != 0) {
-    $stepFile = $tmpBase . '_' . (++$step) . '.v';
-    if (in_array((int) $rotDegrees, [90, 180, 270], true)) {
-        $angle = 'd' . (int) $rotDegrees;
-        $commands[] = sprintf(
-            '%s rot %s %s %s',
-            escapeshellarg($vips),
-            $currentInput,
-            escapeshellarg($stepFile),
-            $angle
-        );
-    } else {
-        $commands[] = sprintf(
-            '%s similarity %s %s --angle %s',
-            escapeshellarg($vips),
-            $currentInput,
-            escapeshellarg($stepFile),
-            escapeshellarg((string) $rotDegrees)
-        );
-    }
-    $currentInput = escapeshellarg($stepFile);
-    $tempFiles[] = $stepFile;
-}
-
-// Quality: grayscale/bitonal.
-if ($quality === 'gray' || $quality === 'grey') {
-    $stepFile = $tmpBase . '_' . (++$step) . '.v';
-    $commands[] = sprintf(
-        '%s colourspace %s %s b-w',
-        escapeshellarg($vips),
-        $currentInput,
-        escapeshellarg($stepFile)
-    );
-    $currentInput = escapeshellarg($stepFile);
-    $tempFiles[] = $stepFile;
-}
-
-// Final output to cache.
 $cacheFileDir = dirname($cacheFile);
 if (!is_dir($cacheFileDir)) {
     @mkdir($cacheFileDir, 0775, true);
 }
-$commands[] = sprintf(
-    '%s copy %s %s',
-    escapeshellarg($vips),
-    $currentInput,
-    escapeshellarg($cacheFile . $outOpt)
-);
 
-// Execute the chain.
-$fullCmd = implode(' && ', $commands);
-exec($fullCmd . ' 2>&1', $output, $returnCode);
+$needsCrop = $rX !== 0 || $rY !== 0 || $rW !== $srcWidth || $rH !== $srcHeight;
+$needsResize = $dW !== $rW || $dH !== $rH;
 
-// Cleanup temp files.
-foreach ($tempFiles as $f) {
-    @unlink($f);
-}
+if ($usePhpVips) {
+    // --- php-vips: single process, no temp files, no shell ---
+    try {
+        $image = \Jcupitt\Vips\Image::newFromFile($filepath, ['access' => 'sequential']);
+        $image = $image->autorot();
 
-if ($returnCode !== 0 || !file_exists($cacheFile)) {
-    http_response_code(500);
-    header('Content-Type: text/plain');
-    echo 'Image processing failed: ' . implode("\n", $output);
-    exit;
+        if ($needsCrop) {
+            $image = $image->extract_area($rX, $rY, $rW, $rH);
+        }
+
+        if ($needsResize) {
+            $hScale = $dW / ($needsCrop ? $rW : $srcWidth);
+            $vScale = $dH / ($needsCrop ? $rH : $srcHeight);
+            $image = $image->resize($hScale, ['vscale' => $vScale]);
+        }
+
+        if ($mirror) {
+            $image = $image->flip('horizontal');
+        }
+
+        if ($rotDegrees != 0) {
+            if (in_array((int) $rotDegrees, [90, 180, 270], true)) {
+                $image = $image->rot('d' . (int) $rotDegrees);
+            } else {
+                $image = $image->similarity(['angle' => $rotDegrees]);
+            }
+        }
+
+        if ($quality === 'gray' || $quality === 'grey') {
+            $image = $image->colourspace('b-w');
+        }
+
+        $saveOptions = [
+            'gif' => [],
+            'jp2' => [],
+            'jpg' => ['Q' => 85, 'strip' => true],
+            'png' => ['compression' => 6, 'strip' => true],
+            'tif' => ['compression' => 'jpeg', 'Q' => 85, 'strip' => true],
+            'webp' => ['Q' => 85, 'strip' => true],
+        ];
+        $image->writeToFile($cacheFile, $saveOptions[$outputFormat] ?? []);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        header('Content-Type: text/plain');
+        echo 'Image processing failed: ' . $e->getMessage();
+        exit;
+    }
+} else {
+    // --- vips CLI: chain of commands with intermediate .v files ---
+    $formatOptions = [
+        'gif' => '',
+        'jp2' => '',
+        'jpg' => '[Q=85,strip]',
+        'png' => '[compression=6,strip]',
+        'tif' => '[compression=jpeg,Q=85,strip]',
+        'webp' => '[Q=85,strip]',
+    ];
+    $outOpt = $formatOptions[$outputFormat] ?? '[Q=85,strip]';
+
+    $tmpDir = sys_get_temp_dir();
+    $tmpBase = $tmpDir . '/iiif_' . md5($identifier . microtime(true) . getmypid());
+
+    $commands = [];
+    $currentInput = escapeshellarg($filepath);
+    $step = 0;
+    $tempFiles = [];
+
+    // Auto-orient (EXIF rotation).
+    $stepFile = $tmpBase . '_' . (++$step) . '.v';
+    $commands[] = sprintf(
+        '%s autorot %s %s',
+        escapeshellarg($vips),
+        $currentInput,
+        escapeshellarg($stepFile)
+    );
+    $currentInput = escapeshellarg($stepFile);
+    $tempFiles[] = $stepFile;
+
+    if ($needsCrop) {
+        $stepFile = $tmpBase . '_' . (++$step) . '.v';
+        $commands[] = sprintf(
+            '%s extract_area %s %s %d %d %d %d',
+            escapeshellarg($vips),
+            $currentInput,
+            escapeshellarg($stepFile),
+            $rX, $rY, $rW, $rH
+        );
+        $currentInput = escapeshellarg($stepFile);
+        $tempFiles[] = $stepFile;
+    }
+
+    if ($needsResize) {
+        $stepFile = $tmpBase . '_' . (++$step) . '.v';
+        $commands[] = sprintf(
+            '%s thumbnail %s %s %d --height %d --size force',
+            escapeshellarg($vips),
+            $currentInput,
+            escapeshellarg($stepFile),
+            $dW, $dH
+        );
+        $currentInput = escapeshellarg($stepFile);
+        $tempFiles[] = $stepFile;
+    }
+
+    if ($mirror) {
+        $stepFile = $tmpBase . '_' . (++$step) . '.v';
+        $commands[] = sprintf(
+            '%s flip %s %s horizontal',
+            escapeshellarg($vips),
+            $currentInput,
+            escapeshellarg($stepFile)
+        );
+        $currentInput = escapeshellarg($stepFile);
+        $tempFiles[] = $stepFile;
+    }
+
+    if ($rotDegrees != 0) {
+        $stepFile = $tmpBase . '_' . (++$step) . '.v';
+        if (in_array((int) $rotDegrees, [90, 180, 270], true)) {
+            $commands[] = sprintf(
+                '%s rot %s %s %s',
+                escapeshellarg($vips),
+                $currentInput,
+                escapeshellarg($stepFile),
+                'd' . (int) $rotDegrees
+            );
+        } else {
+            $commands[] = sprintf(
+                '%s similarity %s %s --angle %s',
+                escapeshellarg($vips),
+                $currentInput,
+                escapeshellarg($stepFile),
+                escapeshellarg((string) $rotDegrees)
+            );
+        }
+        $currentInput = escapeshellarg($stepFile);
+        $tempFiles[] = $stepFile;
+    }
+
+    if ($quality === 'gray' || $quality === 'grey') {
+        $stepFile = $tmpBase . '_' . (++$step) . '.v';
+        $commands[] = sprintf(
+            '%s colourspace %s %s b-w',
+            escapeshellarg($vips),
+            $currentInput,
+            escapeshellarg($stepFile)
+        );
+        $currentInput = escapeshellarg($stepFile);
+        $tempFiles[] = $stepFile;
+    }
+
+    $commands[] = sprintf(
+        '%s copy %s %s',
+        escapeshellarg($vips),
+        $currentInput,
+        escapeshellarg($cacheFile . $outOpt)
+    );
+
+    $fullCmd = implode(' && ', $commands);
+    exec($fullCmd . ' 2>&1', $output, $returnCode);
+
+    // Cleanup temp files.
+    foreach ($tempFiles as $f) {
+        @unlink($f);
+    }
+
+    if ($returnCode !== 0 || !file_exists($cacheFile)) {
+        http_response_code(500);
+        header('Content-Type: text/plain');
+        echo 'Image processing failed: ' . implode("\n", $output);
+        exit;
+    }
 }
 
 // ---------------------------------------------------------------------------
