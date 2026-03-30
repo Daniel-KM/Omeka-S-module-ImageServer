@@ -110,11 +110,18 @@ class Auto extends AbstractImager
 
         // Create imager instances once and cache them to avoid redundant CLI
         // calls for format detection in getImager().
+        // PhpVips is preferred over CLI vips (no shell spawn, no temp files).
+        $imager = new PhpVips($this->tempFileFactory, $this->store);
+        $supporteds = $imager->getSupportedFormats();
+        if (count($supporteds)) {
+            $this->imagers['PhpVips'] = $imager;
+            $this->supportedFormats = $supporteds;
+        }
         $imager = new Vips($this->tempFileFactory, $this->store, $this->commandLineArgs);
         $supporteds = $imager->getSupportedFormats();
         if (count($supporteds)) {
             $this->imagers['Vips'] = $imager;
-            $this->supportedFormats = $supporteds;
+            $this->supportedFormats = array_merge($this->supportedFormats, $supporteds);
         }
         if (extension_loaded('gd')) {
             $imager = new GD($this->tempFileFactory, $this->store);
@@ -164,7 +171,18 @@ class Auto extends AbstractImager
 
     public function getImager(array $args)
     {
-        // Vips is the quickest, so check it first.
+        // PhpVips is the quickest (no shell, no temp files).
+        if (isset($this->imagers['PhpVips'])) {
+            $imager = $this->imagers['PhpVips'];
+            if ($imager->checkMediaType($args['source']['media_type'])
+                && $imager->checkMediaType($args['format']['feature'])
+            ) {
+                return $imager
+                    ->setLogger($this->getLogger());
+            }
+        }
+
+        // Vips CLI is second best.
         if (isset($this->imagers['Vips'])) {
             $imager = $this->imagers['Vips'];
             if ($imager->checkMediaType($args['source']['media_type'])

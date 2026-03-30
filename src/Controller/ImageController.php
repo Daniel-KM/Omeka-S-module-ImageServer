@@ -234,21 +234,36 @@ class ImageController extends AbstractActionController
 
                 // The image needs to be transformed dynamically.
                 else {
-                    // Vips can manage any size instantly, so skip check of it.
+                    // Vips can manage any size, so skip the size check.
                     $imager = $settings->get('imageserver_imager');
                     if ($imager === 'Auto') {
-                        /** @var \ImageServer\ImageServer\Auto $imager */
-                        $imager = $this->imageServer()->getImager()->getImager($transform);
-                        if ($imager && $imager instanceof \ImageServer\ImageServer\Vips) {
+                        $imagerObj = $this->imageServer()->getImager()->getImager($transform);
+                        if ($imagerObj instanceof \ImageServer\ImageServer\Vips
+                            || $imagerObj instanceof \ImageServer\ImageServer\PhpVips
+                        ) {
                             $imager = 'Vips';
                         }
                     }
-                    if ($imager !== 'Vips') {
-                        $maxFileSize = $settings->get('imageserver_image_max_size');
-                        if (!empty($maxFileSize) && $media->size() > $maxFileSize) {
-                            return $this->viewError(new PsrMessage(
-                                'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.' // @translate
-                            ), \Laminas\Http\Response::STATUS_CODE_500);
+                    if (!in_array($imager, ['Vips', 'PhpVips'])) {
+                        $maxFileSize = (int) $settings->get('imageserver_image_max_size');
+                        if ($maxFileSize) {
+                            // Use pixel dimensions if available (more
+                            // accurate than file size for memory usage),
+                            // else fall back to file size in bytes.
+                            $mediaData = $media->mediaData();
+                            $origW = $mediaData['dimensions']['original']['width'] ?? 0;
+                            $origH = $mediaData['dimensions']['original']['height'] ?? 0;
+                            // Approximate memory: width × height × 4
+                            // bytes (RGBA). Compare against max file
+                            // size as a proxy for memory budget.
+                            $tooLarge = ($origW && $origH)
+                                ? ($origW * $origH * 4 > $maxFileSize * 10)
+                                : ($media->size() > $maxFileSize);
+                            if ($tooLarge) {
+                                return $this->viewError(new PsrMessage(
+                                    'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.' // @translate
+                                ), \Laminas\Http\Response::STATUS_CODE_500);
+                            }
                         }
                     }
                     $imagePath = $this->imageServer()->transform($transform);

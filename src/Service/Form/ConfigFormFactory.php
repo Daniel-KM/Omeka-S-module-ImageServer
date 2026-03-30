@@ -18,7 +18,11 @@ class ConfigFormFactory implements FactoryInterface
         $imagers = [
             'Auto' => [
                 'value' => 'Auto',
-                'label' => 'Automatic (Vips when possible, else GD, else Imagick, else ImageMagick)', // @translate
+                'label' => 'Automatic (php-vips, else Vips CLI, else GD, else Imagick, else ImageMagick)', // @translate
+            ],
+            'PhpVips' => [
+                'value' => 'PhpVips',
+                'label' => 'php-vips (library, fastest)', // @translate
             ],
             'Vips' => [
                 'value' => 'Vips',
@@ -37,6 +41,9 @@ class ConfigFormFactory implements FactoryInterface
                 'label' => 'ImageMagick (command line)', // @translate
             ],
         ];
+        if (!class_exists('Jcupitt\Vips\Image')) {
+            $imagers['PhpVips']['disabled'] = true;
+        }
         $dir = $services->get('Omeka\Settings')->get('imageserver_vips_dir');
         $validate = $this->getPath($cli, $dir, Vips::VIPS_COMMAND);
         if (!$validate) {
