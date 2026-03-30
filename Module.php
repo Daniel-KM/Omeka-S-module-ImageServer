@@ -88,23 +88,23 @@ class Module extends AbstractModule
     protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
-        $plugins = $services->get('ControllerPluginManager');
-        $translate = $plugins->get('translate');
+        $translator = $services->get('MvcTranslator');
 
         if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.82')) {
             $message = new \Omeka\Stdlib\Message(
-                $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+                $translator->translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
                 'Common', '3.4.82'
             );
             throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
         }
 
-        if (!$this->checkModuleActiveVersion('IiifServer', '3.6.29')) {
-            $message = new \Omeka\Stdlib\Message(
-                $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
-                'Common', '3.6.29'
+        $errors = [];
+
+        if (!$this->checkModuleActiveVersion('IiifServer', '3.6.31')) {
+            $errors[] = (string) new \Omeka\Stdlib\Message(
+                $translator->translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+                'Iiif Server', '3.6.31'
             );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
         }
 
         $config = $services->get('Config');
@@ -116,17 +116,27 @@ class Module extends AbstractModule
         $tileDir = $defaultSettings['imageserver_image_tile_dir'];
         $tileDir = trim(strtr($tileDir, ['\\' => '/']), '/');
         if (empty($tileDir)) {
-            throw new ModuleCannotInstallException((string) new PsrMessage(
+            $errors[] = (string) new PsrMessage(
                 'The tile dir is not defined.' // @translate
-            ));
-        }
-
-        if (!$this->checkDestinationDir($basePath . '/' . $tileDir)) {
-            $message = new PsrMessage(
+            );
+        } elseif (!$this->checkDestinationDir($basePath . '/' . $tileDir)) {
+            $errors[] = (string) new PsrMessage(
                 'The directory "{directory}" is not writeable.', // @translate
                 ['directory' => $basePath . '/' . $tileDir]
             );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        }
+
+        // Create the tile cache directory for the fast tile script.
+        $cachePath = $basePath . '/' . $tileDir . '/cache';
+        if ($this->checkDestinationDir($cachePath) && !$this->checkDestinationDir($cachePath)) {
+            $errors[] = (string) new PsrMessage(
+                'The directory "{directory}" is not writeable.', // @translate
+                ['directory' => $cachePath]
+            );
+        }
+
+        if ($errors) {
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException(implode("\n", $errors));
         }
 
         $messenger = $plugins->get('messenger');
