@@ -26,19 +26,20 @@ class ConfigForm extends Form
      */
     protected $supportTiledTiff;
 
+    protected $elementGroups = [
+        'infra' => 'Infrastructure', // @translate
+        'tiling' => 'Tiling', // @translate
+        'metadata' => 'Metadata and rights', // @translate
+        'bulk' => 'Bulk processing', // @translate
+    ];
+
     public function init(): void
     {
-        // Use the same name than the module Iiif Server for simplicity.
-        // Except "iiifserver_media_api_url", that is hidden.
-
         $this
-            ->add([
-                'name' => 'fieldset_media_api',
-                'type' => Fieldset::class,
-                'options' => [
-                    'label' => 'Image server', // @translate
-                ],
-            ])
+            ->setOption('element_groups', $this->elementGroups)
+
+            // Use the same name than the module Iiif Server for simplicity.
+            // Except "iiifserver_media_api_url", that is hidden.
 
             ->add([
                 'name' => 'iiifserver_media_api_url',
@@ -50,8 +51,9 @@ class ConfigForm extends Form
 
             ->add([
                 'name' => 'iiifserver_media_api_default_version',
-                'type' => Element\Radio::class,
+                'type' => CommonElement\OptionalRadio::class,
                 'options' => [
+                    'element_group' => 'infra',
                     'label' => 'Default IIIF image api version', // @translate
                     'info' => 'Set the version of the iiif info.json to provide. The image server should support it.', // @translate
                     'value_options' => [
@@ -69,19 +71,35 @@ class ConfigForm extends Form
 
             ->add([
                 'name' => 'iiifserver_media_api_supported_versions',
-                'type' => Element\MultiCheckbox::class,
+                'type' => CommonElement\OptionalMultiCheckbox::class,
                 'options' => [
+                    'element_group' => 'infra',
                     'label' => 'Supported IIIF image api versions and max compliance level', // @translate
                     'value_options' => [
-                        '1/0' => 'Image Api 1 level 0', // @translate
-                        '1/1' => 'Image Api 1 level 1', // @translate
-                        '1/2' => 'Image Api 1 level 2', // @translate
-                        '2/0' => 'Image Api 2 level 0', // @translate
-                        '2/1' => 'Image Api 2 level 1', // @translate
-                        '2/2' => 'Image Api 2 level 2', // @translate
-                        '3/0' => 'Image Api 3 level 0', // @translate
-                        '3/1' => 'Image Api 3 level 1', // @translate
-                        '3/2' => 'Image Api 3 level 2', // @translate
+                        'v1' => [
+                            'label' => 'Image API 1',
+                            'options' => [
+                                '1/0' => 'Level 0', // @translate
+                                '1/1' => 'Level 1', // @translate
+                                '1/2' => 'Level 2', // @translate
+                            ],
+                        ],
+                        'v2' => [
+                            'label' => 'Image API 2',
+                            'options' => [
+                                '2/0' => 'Level 0', // @translate
+                                '2/1' => 'Level 1', // @translate
+                                '2/2' => 'Level 2', // @translate
+                            ],
+                        ],
+                        'v3' => [
+                            'label' => 'Image API 3',
+                            'options' => [
+                                '3/0' => 'Level 0', // @translate
+                                '3/1' => 'Level 1', // @translate
+                                '3/2' => 'Level 2', // @translate
+                            ],
+                        ],
                     ],
                 ],
                 'attributes' => [
@@ -91,8 +109,9 @@ class ConfigForm extends Form
 
             ->add([
                 'name' => 'iiifserver_media_api_version_append',
-                'type' => Element\Checkbox::class,
+                'type' => CommonElement\OptionalCheckbox::class,
                 'options' => [
+                    'element_group' => 'infra',
                     'label' => 'Append the version to the url (to be set inside module.config.php currently)', // @translate
                     'info' => 'If set, the version will be appended to the url of the server: "iiif/3".', // @translate
                 ],
@@ -117,8 +136,9 @@ class ConfigForm extends Form
 
             ->add([
                 'name' => 'iiifserver_media_api_identifier',
-                'type' => Element\Radio::class,
+                'type' => CommonElement\OptionalRadio::class,
                 'options' => [
+                    'element_group' => 'infra',
                     'label' => 'Media identifier', // @translate
                     'info' => 'Using the full filename with extension for images allows to use an image server like Cantaloupe sharing the Omeka original files directory. In other cases, this option is not recommended because the identifier should not have an extension.', // @translate
                     'value_options' => [
@@ -136,27 +156,125 @@ class ConfigForm extends Form
             ])
 
             ->add([
-                'name' => 'fieldset_media_infojson',
-                'type' => Fieldset::class,
+                'name' => 'imageserver_tile_mode',
+                'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'label' => 'Content of media info.json', // @translate
+                    'element_group' => 'tiling',
+                    'label' => 'Tile processing mode', // @translate
+                    'info' => 'If set manual, to run the task below will be required to create tiles. Unless in the case of an external server, it is recommended to set automatic tiling once all existing items are tiled to avoid to overload the server. So bulk tile all items first below.', // @translate
+                    'value_options' => [
+                        'auto' => 'Create tiles automatically on save (recommended without external server)', // @translate
+                        'manual' => 'Create tiles manually', // @translate
+                        'external' => 'Use an external image server', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_tile_mode',
+                ],
+            ])
+            ->add([
+                'name' => 'imageserver_image_tile_type',
+                'type' => CommonElement\OptionalRadio::class,
+                'options' => [
+                    'element_group' => 'tiling',
+                    'label' => 'Tiling type', // @translate
+                    'info' => <<<'TXT'
+                        If vips is available, the recommended processor strategy is "Tiled tiff". If jpeg2000 is available, use "Jpeg 2000". Else, use Deepzoom or Zoomify.
+                        Deep Zoom Image is a free proprietary format from Microsoft largely supported.
+                        Zoomify is an old format that was largely supported by proprietary softwares and free viewers.
+                        All formats are served as native by default, but may be served as IIIF too when a viewer request it.
+                        TXT, // @translate
+                    'documentation' => 'https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer#image-server',
+                    'value_options' => [
+                        'deepzoom' => [
+                            'value' => 'deepzoom',
+                            'label' => 'Deep Zoom Image', // @translate
+                        ],
+                        'zoomify' => [
+                            'value' => 'zoomify',
+                            'label' => 'Zoomify', // @translate
+                        ],
+                        'jpeg2000' => [
+                            'value' => 'jpeg2000',
+                            'label' => $this->supportJpeg2000
+                                ? 'Jpeg 2000' // @translate
+                                : 'Jpeg 2000 (not supported)', // @translate
+                            'disabled' => !$this->supportJpeg2000,
+                        ],
+                        'tiled_tiff' => [
+                            'value' => 'tiled_tiff',
+                            'label' => $this->supportTiledTiff
+                                ? 'Tiled tiff' // @translate
+                                : 'Tiled tiff (not supported)', // @translate
+                            'disabled' => !$this->supportTiledTiff,
+                        ],
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'imageserver-image-tile-type',
+                ],
+            ])
+            ->add([
+                'name' => 'imageserver_imager',
+                'type' => CommonElement\OptionalSelect::class,
+                'options' => [
+                    'element_group' => 'tiling',
+                    'label' => 'Image processor', // @translate
+                    'info' => <<<'TXT'
+                        Vips is the quickest in all cases, then GD is a little faster than ImageMagick, but ImageMagick manages more formats.
+                        Nevertheless, the performance depends on your installation and your server.
+                        TXT, // @translate
+                    'value_options' => $this->getImagers(),
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_imager',
+                ],
+            ])
+            ->add([
+                // Limits for all versions.
+                'name' => 'imageserver_image_max_size',
+                'type' => Element\Text::class,
+                'options' => [
+                    'element_group' => 'tiling',
+                    'label' => 'Max dynamic size for images', // @translate
+                    'info' => <<<'TXT'
+                        Set the maximum size in bytes for the dynamic processing of images.
+                        Beyond this limit, the plugin will require a tiled image.
+                        Let empty to allow processing of any image.
+                        With vips, this option is bypassed.
+                        TXT, // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver-image-max-size',
                 ],
             ])
 
             ->add([
                 'name' => 'imageserver_info_rights',
-                'type' => Element\Select::class,
+                'type' => CommonElement\OptionalSelect::class,
                 'options' => [
-                    'label' => 'Rights (license)', // @translate
+                    'element_group' => 'metadata',
+                    'label' => 'Rights source', // @translate
+                    'info' => 'For IIIF v3, the value must be a URL from creativecommons.org or rightsstatements.org.', // @translate
                     'value_options' => [
-                        'none' => 'No mention', // @translate
-                        'text' => 'Specified text below (only for iiif 2.0)', // @translate
-                        'url' => 'Specified license url below', // @translate
-                        'property' => 'Specified property below', // @translate
-                        'property_or_text' => 'Property if any, else specified license text (only for iiif 2.0)', // @translate
-                        'property_or_url' => 'Property if any, else specified license', // @translate
-                        'item' => 'Url specified by the iiif server for the item', // @translate
-                        'item_or_url' => 'Item rights url if any, else specified license', // @translate
+                        'none' => 'No mention of rights', // @translate
+                        'source_fallback' => [
+                            'label' => 'Source with fallback', // @translate
+                            'options' => [
+                                'item_or_url' => 'Item property, or default url below', // @translate
+                                'property_or_url' => 'Media property, or default url', // @translate
+                                'property_or_text' => 'Media property, or default text (IIIF v2 only)', // @translate
+                            ],
+                        ],
+                        'source_none' => [
+                            'label' => 'Source without fallback', // @translate
+                            'options' => [
+                                'item' => 'Item property (from IIIF Server config)', // @translate
+                                'property' => 'Media property below', // @translate
+                                'url' => 'Default url below', // @translate
+                                'text' => 'Default text below (IIIF v2 only)', // @translate
+                            ],
+                        ],
                     ],
                 ],
                 'attributes' => [
@@ -168,7 +286,8 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights_property',
                 'type' => OmekaElement\PropertySelect::class,
                 'options' => [
-                    'label' => 'Property to use for rights (license)', // @translate
+                    'element_group' => 'metadata',
+                    'label' => 'Rights property', // @translate
                     'empty_option' => '',
                     'term_as_value' => true,
                 ],
@@ -180,9 +299,10 @@ class ConfigForm extends Form
             ])
             ->add([
                 'name' => 'imageserver_info_rights_uri',
-                'type' => Element\Select::class,
+                'type' => CommonElement\OptionalSelect::class,
                 'options' => [
-                    'label' => 'Uri of the license or rights', // @translate
+                    'element_group' => 'metadata',
+                    'label' => 'Default rights URL', // @translate
                     'value_options' => [
                         '' => 'Uri below', // @translate
                         // CreativeCommons.
@@ -245,8 +365,8 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights_url',
                 'type' => Element\Url::class,
                 'options' => [
-                    'label' => 'Uri of the rights/license of the media when unselected above', // @translate
-                    'info' => 'For IIIF v3, the license of the item must be an url from https://creativecommons.org or https://rightsstatements.org.', // @translate
+                    'element_group' => 'metadata',
+                    'label' => 'Custom rights URL (if not selected above)', // @translate
                 ],
                 'attributes' => [
                     'id' => 'imageserver_info_rights_url',
@@ -256,115 +376,23 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights_text',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Default license text (only for iiif 2.0)', // @translate
+                    'element_group' => 'metadata',
+                    'label' => 'Default rights text (IIIF v2 only)', // @translate
                 ],
                 'attributes' => [
                     'id' => 'imageserver_info_rights_text',
                 ],
             ])
 
-            ->add([
-                'name' => 'imageserver_tiling',
-                'type' => Fieldset::class,
-                'options' => [
-                    'label' => 'Tiling service', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'imageserver_tiling',
-                ],
-            ])
-            ->add([
-                'name' => 'imageserver_tile_mode',
-                'type' => Element\Radio::class,
-                'options' => [
-                    'label' => 'Tile processing mode', // @translate
-                    'info' => 'If set manual, to run the task below will be required to create tiles. Unless in the case of an external server, it is recommended to set automatic tiling once all existing items are tiled to avoid to overload the server. So bulk tile all items first below.', // @translate
-                    'value_options' => [
-                        'auto' => 'Create tiles automatically on save (recommended without external server)', // @translate
-                        'manual' => 'Create tiles manually', // @translate
-                        'external' => 'Use an external image server', // @translate
-                    ],
-                ],
-                'attributes' => [
-                    'id' => 'imageserver_tile_mode',
-                ],
-            ])
-            ->add([
-                'name' => 'imageserver_imager',
-                'type' => Element\Select::class,
-                'options' => [
-                    'label' => 'Image processor', // @translate
-                    'info' => 'Vips is the quickest in all cases, then GD is a little faster than ImageMagick, but ImageMagick manages more formats.
-Nevertheless, the performance depends on your installation and your server.', // @translate
-                    'value_options' => $this->getImagers(),
-                ],
-                'attributes' => [
-                    'id' => 'imageserver_imager',
-                ],
-            ])
-            ->add([
-                // Limits for all versions.
-                'name' => 'imageserver_image_max_size',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Max dynamic size for images', // @translate
-                    'info' => 'Set the maximum size in bytes for the dynamic processing of images.
-Beyond this limit, the plugin will require a tiled image.
-Let empty to allow processing of any image.
-With vips, this option is bypassed.', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'imageserver-image-max-size',
-                ],
-            ])
-            ->add([
-                'name' => 'imageserver_image_tile_type',
-                'type' => Element\Radio::class,
-                'options' => [
-                    'label' => 'Tiling type', // @translate
-                    'info' => 'If vips is available, the recommended processor strategy is "Tiled tiff". If jpeg2000 is available, use "Jpeg 2000". Else, use Deepzoom or Zoomify.
-Deep Zoom Image is a free proprietary format from Microsoft largely supported.
-Zoomify is an old format that was largely supported by proprietary softwares and free viewers.
-All formats are served as native by default, but may be served as IIIF too when a viewer request it.', // @translate
-                    'documentation' => 'https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer#image-server',
-                    'value_options' => [
-                        'deepzoom' => [
-                            'value' => 'deepzoom',
-                            'label' => 'Deep Zoom Image', // @translate
-                        ],
-                        'zoomify' => [
-                            'value' => 'zoomify',
-                            'label' => 'Zoomify', // @translate
-                        ],
-                        'jpeg2000' => [
-                            'value' => 'jpeg2000',
-                            'label' => $this->supportJpeg2000
-                                ? 'Jpeg 2000' // @translate
-                                : 'Jpeg 2000 (not supported)', // @translate
-                            'disabled' => !$this->supportJpeg2000,
-                        ],
-                        'tiled_tiff' => [
-                            'value' => 'tiled_tiff',
-                            'label' => $this->supportTiledTiff
-                                ? 'Tiled tiff' // @translate
-                                : 'Tiled tiff (not supported)', // @translate
-                            'disabled' => !$this->supportTiledTiff,
-                        ],
-                    ],
-                ],
-                'attributes' => [
-                    'id' => 'imageserver-image-tile-type',
-                ],
-            ])
         ;
 
-        // Tasks.
+        // Bulk processing.
         $this
             ->add([
                 'name' => 'imageserver_bulk_prepare',
                 'type' => Fieldset::class,
                 'options' => [
-                    'label' => 'Bulk prepare tiles and sizes', // @translate
+                    'label' => 'Bulk processing', // @translate
                 ],
                 'attributes' => [
                     'id' => 'imageserver_bulk_prepare',
@@ -376,31 +404,18 @@ All formats are served as native by default, but may be served as IIIF too when 
                 'name' => 'note',
                 'type' => CommonElement\Note::class,
                 'options' => [
-                    'text' => 'This process builds tiles and and saves dimensions of existing files via a background job.
-To save the height and the width of all images and derivatives allows to speed up creation of the iiif "info.json" of medias.', // @translate
-                ],
-            ])
-            ->add([
-                'name' => 'query',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Query', // @translate
-                    'info' => 'This query will be used to select all items whose attached images will be prepared in the background.', // @translate
-                    'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
-                ],
-                'attributes' => [
-                    'id' => 'tiler_query',
+                    'text' => 'Run tiling and/or dimension sizing for existing images via a background job. Dimensions are needed for the IIIF info.json. Tiles improve zoom performance in viewers.', // @translate
                 ],
             ])
             ->add([
                 'name' => 'tasks',
-                'type' => Element\MultiCheckbox::class,
+                'type' => CommonElement\OptionalMultiCheckbox::class,
                 'options' => [
-                    'label' => 'Tasks', // @translate
+                    'label' => 'Tasks to run', // @translate
                     'value_options' => [
-                        'tile' => 'Tiling', // @translate
-                        'size' => 'Sizing', // @translate
-                        'tile_clean' => 'Remove tiles and associated metadata', // @translate
+                        'size' => 'Compute dimensions (sizing)', // @translate
+                        'tile' => 'Create tiles (tiling)', // @translate
+                        'tile_clean' => 'Remove all tiles and tile metadata', // @translate
                     ],
                 ],
                 'attributes' => [
@@ -409,51 +424,51 @@ To save the height and the width of all images and derivatives allows to speed u
                 ],
             ])
             ->add([
-                'name' => 'remove_destination',
-                'type' => Element\Radio::class,
+                'name' => 'query',
+                'type' => OmekaElement\Query::class,
                 'options' => [
-                    'label' => 'Limit process to prepare tiles', // @translate
-                    'value_options' => [
-                        'skip' => 'Keep existing', // @translate
-                        'specific' => 'Remove existing tiles for the specified format', // @translate
-                        'all' => 'Remove all existing tiles', // @translate
+                    'label' => 'Filter items (optional)', // @translate
+                    'info' => 'Restrict processing to specific items. Leave empty to process all items.', // @translate
+                    'query_resource_type' => 'items',
+                    'query_partial_excludelist' => [
+                        'common/advanced-search/sort',
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'remove_destination',
-                    'value' => 'skip',
-                ],
-            ])
-            ->add([
-                'name' => 'update_renderer',
-                'type' => Element\Radio::class,
-                'options' => [
-                    'label' => 'Renderer', // @translate
-                    'value_options' => [
-                        '0' => 'Keep existing', // @translate
-                        'file' => 'File', // @translate
-                        'tile' => 'Tile', // @translate
-                    ],
-                ],
-                'attributes' => [
-                    'id' => 'update_renderer',
-                    'value' => '0',
+                    'id' => 'tiler_query',
                 ],
             ])
             ->add([
                 'name' => 'filter_sized',
-                'type' => Element\Radio::class,
+                'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'label' => 'Limit process to get sizes', // @translate
+                    'label' => 'Sizing scope', // @translate
+                    'info' => 'Choose which images to size.', // @translate
                     'value_options' => [
-                        'unsized' => 'Keep existing', // @translate
-                        'sized' => 'Only already sized', // @translate
-                        'all' => 'All', // @translate
+                        'unsized' => 'Only images without dimensions', // @translate
+                        'all' => 'All images', // @translate
                     ],
                 ],
                 'attributes' => [
                     'id' => 'filter_sized',
                     'value' => 'unsized',
+                ],
+            ])
+            ->add([
+                'name' => 'remove_destination',
+                'type' => CommonElement\OptionalRadio::class,
+                'options' => [
+                    'label' => 'Tiling scope', // @translate
+                    'info' => 'Choose how to handle existing tiles when creating new ones.', // @translate
+                    'value_options' => [
+                        'skip' => 'Only images without tiles', // @translate
+                        'specific' => 'Only images with tiles', // @translate
+                        'all' => 'All images', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'remove_destination',
+                    'value' => 'skip',
                 ],
             ])
             ->add([
@@ -469,52 +484,6 @@ To save the height and the width of all images and derivatives allows to speed u
             ])
         ;
 
-        $this->getInputFilter()
-            ->add([
-                'name' => 'imageserver_info_rights',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'imageserver_info_rights_property',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'imageserver_info_rights_uri',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'imageserver_info_rights_url',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'imageserver_imager',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'imageserver_image_tile_type',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'imageserver_bulk_prepare',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'tasks',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'remove_destination',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'update_renderer',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'filter_sized',
-                'required' => false,
-            ])
-        ;
     }
 
     /**

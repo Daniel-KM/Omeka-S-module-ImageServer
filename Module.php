@@ -46,6 +46,7 @@ use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Entity\Media;
+use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
 
@@ -152,7 +153,6 @@ class Module extends AbstractModule
         $hasVipsCli = (bool) trim(
             (string) shell_exec('which vips 2>/dev/null')
         );
-        $hasVips = $hasPhpVips || $hasVipsCli;
 
         // Auto-select best imager.
         if ($hasPhpVips) {
@@ -334,8 +334,159 @@ class Module extends AbstractModule
 
     public function getConfigForm(PhpRenderer $renderer)
     {
+        $services = $this->getServiceLocator();
+        $plugins = $services->get('ControllerPluginManager');
+        $messenger = $plugins->get('messenger');
+
+        // Clear any previous messages, then run diagnostics.
+        $messenger->clear();
         $this->runDiagnostics();
-        return $this->getConfigFormAuto($renderer);
+
+        // Collect diagnostic messages and clear them from the flash
+        // messenger so they appear only in the audit tab.
+        $diagnostics = $messenger->get();
+        $messenger->clear();
+
+        $settings = $services->get('Omeka\Settings');
+        $formManager = $services->get('FormElementManager');
+
+        $renderer->ckEditor();
+
+        $this->initDataToPopulate($settings, 'config');
+        $data = $this->prepareDataToPopulate($settings, 'config');
+        if ($data === null) {
+            return null;
+        }
+
+        $view = $renderer;
+        $translate = $view->plugin('translate');
+        $escape = $view->plugin('escapeHtml');
+
+        $form = $formManager->get(ConfigForm::class);
+        $form->init();
+
+        // Update bulk note with current tile type.
+        $tileTypeLabels = [
+            'deepzoom' => $translate('Deep Zoom Image'), // @translate
+            'zoomify' => $translate('Zoomify'), // @translate
+            'jpeg2000' => $translate('Jpeg 2000'), // @translate
+            'tiled_tiff' => $translate('Tiled tiff'), // @translate
+        ];
+        $currentTileType = $settings->get('imageserver_image_tile_type', 'deepzoom');
+        $bulkFieldset = $form->get('imageserver_bulk_prepare');
+        $note = $bulkFieldset->get('note');
+        $noteText = $translate('Run tiling and/or dimension sizing for existing images via a background job. Dimensions are needed for the IIIF info.json. Tiles improve zoom performance in viewers.'); // @translate
+        $noteText .= ' ' . new PsrMessage(
+            'Current tile format: {format}.', // @translate
+            ['format' => $tileTypeLabels[$currentTileType] ?? $currentTileType]
+        );
+        $note->setOption('text', $noteText);
+        $form->setData($data);
+        $form->prepare();
+
+
+        // --- Audit tab ---
+        $levelClasses = [
+            Messenger::ERROR => 'error',
+            Messenger::SUCCESS => 'success',
+            Messenger::WARNING => 'warning',
+            Messenger::NOTICE => 'notice',
+        ];
+        $auditHtml = '';
+        foreach ($diagnostics as $type => $messages) {
+            $class = $levelClasses[$type] ?? 'notice';
+            foreach ($messages as $msg) {
+                $text = $msg instanceof PsrMessage
+                    ? ($msg->escapeHtml() === false ? (string) $msg : $escape((string) $msg))
+                    : $escape((string) $msg);
+                $auditHtml .= '<p class="' . $class . '">' . $text . '</p>';
+            }
+        }
+        if (!$auditHtml) {
+            $auditHtml = '<p class="success">'
+                . $escape($translate('All checks passed.'))
+                . '</p>';
+        }
+
+        // --- Collect elements by group ---
+        $elementGroups = $form->getOption('element_groups') ?: [];
+        $elementsInGroups = [];
+        $elementsNotInGroups = [];
+        foreach ($form as $element) {
+            if ($element instanceof \Laminas\Form\FieldsetInterface) {
+                continue;
+            }
+            $group = $element->getOption('element_group');
+            if ($group && isset($elementGroups[$group])) {
+                $elementsInGroups[$group][] = $element;
+            } else {
+                $elementsNotInGroups[] = $element;
+            }
+        }
+
+        // Render a group as a fieldset with legend.
+        $renderGroup = function (string $groupName) use ($elementsInGroups, $elementGroups, $escape, $translate, $view): string {
+            if (empty($elementsInGroups[$groupName])) {
+                return '';
+            }
+            $html = sprintf(
+                '<fieldset id="%s"><legend>%s</legend>',
+                $escape($groupName),
+                $escape($translate($elementGroups[$groupName]))
+            );
+            foreach ($elementsInGroups[$groupName] as $el) {
+                $html .= $view->formRow($el);
+            }
+            return $html . '</fieldset>';
+        };
+
+        // --- Configuration tab: infra + tiling ---
+        $configHtml = '';
+        foreach ($elementsNotInGroups as $el) {
+            $configHtml .= $view->formRow($el);
+        }
+        $configHtml .= $renderGroup('infra');
+        $configHtml .= $renderGroup('tiling');
+
+        // --- Metadata tab ---
+        $metadataHtml = $renderGroup('metadata');
+
+        // --- Bulk tab ---
+        $bulkFieldset = $form->get('imageserver_bulk_prepare');
+        $bulkHtml = $view->formCollection($bulkFieldset);
+
+        // --- Module navigation bar ---
+        $iiifModules = ['IiifServer', 'ImageServer', 'IiifSearch'];
+        $moduleNav = $view->moduleConfigNav($iiifModules, 'ImageServer');
+
+        // --- Tabbed layout ---
+        return $moduleNav
+            . '<ul class="section-nav" style="list-style:none;padding:0;">'
+            . '<li class="active"><a href="#imageserver-audit">'
+            . $escape($translate('Audit'))
+            . '</a></li>'
+            . '<li><a href="#imageserver-config">'
+            . $escape($translate('Configuration'))
+            . '</a></li>'
+            . '<li><a href="#imageserver-metadata">'
+            . $escape($translate('Metadata'))
+            . '</a></li>'
+            . '<li><a href="#imageserver-bulk">'
+            . $escape($translate('Bulk processing'))
+            . '</a></li>'
+            . '</ul>'
+            . '<div id="imageserver-audit" class="section active">'
+            . $auditHtml
+            . '</div>'
+            . '<div id="imageserver-config" class="section">'
+            . $configHtml
+            . '</div>'
+            . '<div id="imageserver-metadata" class="section">'
+            . $metadataHtml
+            . '</div>'
+            . '<div id="imageserver-bulk" class="section">'
+            . $bulkHtml
+            . '</div>';
     }
 
     public function handleConfigForm(AbstractController $controller)
@@ -381,7 +532,7 @@ class Module extends AbstractModule
         $params['query'] = $query;
 
         $params['remove_destination'] ??= 'skip';
-        $params['update_renderer'] = empty($params['update_renderer']) ? false : $params['update_renderer'];
+        $params['update_renderer'] = false;
         $params['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
         $params = array_intersect_key($params, [
             'query' => null,
@@ -462,7 +613,8 @@ class Module extends AbstractModule
     }
 
     /**
-     * Run all infrastructure diagnostics and display messages.
+     * Run all infrastructure diagnostics via messenger.
+     * Messages are retrieved by getConfigForm() for the audit tab.
      */
     protected function runDiagnostics(): void
     {
@@ -802,7 +954,7 @@ class Module extends AbstractModule
 
         if (!is_writable($htaccessPath)) {
             $message = new PsrMessage(
-                'The .htaccess file is not writable. Add the following rules manually after "RewriteEngine On":{line_break}{rule}', // @translate
+                'For a better performance, it is recommended to redirect urls to iiif images to a specific quick script. However, the .htaccess file is not writeable. Add the following rules manually after "RewriteEngine On":{line_break}{rule}', // @translate
                 ['line_break' => '<br>', 'rule' => '<pre>' . htmlspecialchars($rule) . '</pre>']
             );
             $message->setEscapeHtml(false);
@@ -811,6 +963,7 @@ class Module extends AbstractModule
         }
 
         // Insert after "RewriteEngine On".
+        $m = [];
         if (preg_match('/RewriteEngine\s+On\s*\n/i', $htaccess, $m, PREG_OFFSET_CAPTURE)) {
             $insertPos = $m[0][1] + strlen($m[0][0]);
             $htaccess = substr_replace($htaccess, "\n" . $rule . "\n", $insertPos, 0);
