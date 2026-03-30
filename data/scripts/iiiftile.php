@@ -117,39 +117,31 @@ $formatAliases = [
 $outputFormat = $formatAliases[$format] ?? $format;
 
 // ---------------------------------------------------------------------------
-// 2. Resolve identifier to file path
+// 2. Resolve identifier to file path and check access
 // ---------------------------------------------------------------------------
 
 $filesPath = OMEKA_PATH . '/files';
 
-// Try filename identifier first (contains a dot).
-if (strpos($identifier, '.') !== false) {
-    $filepath = $filesPath . '/original/' . $identifier;
-    if (!file_exists($filepath)) {
-        $filepath = null;
-    }
+$ini = parse_ini_file(OMEKA_PATH . '/config/database.ini');
+if (!$ini) {
+    http_response_code(500);
+    exit('Cannot read database config.');
+}
+try {
+    $dsn = 'mysql:host=' . ($ini['host'] ?? 'localhost')
+        . (!empty($ini['port']) ? ';port=' . $ini['port'] : '')
+        . ';dbname=' . $ini['dbname'];
+    $pdo = new PDO($dsn, $ini['user'], $ini['password'], [
+        PDO::ATTR_TIMEOUT => 2,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    ]);
+} catch (\Throwable $e) {
+    http_response_code(500);
+    exit('Database connection failed.');
 }
 
-// Numeric media ID: need DB lookup.
-if (empty($filepath) && ctype_digit($identifier)) {
-    $ini = parse_ini_file(OMEKA_PATH . '/config/database.ini');
-    if (!$ini) {
-        http_response_code(500);
-        exit('Cannot read database config.');
-    }
-    try {
-        $dsn = 'mysql:host=' . ($ini['host'] ?? 'localhost')
-            . (!empty($ini['port']) ? ';port=' . $ini['port'] : '')
-            . ';dbname=' . $ini['dbname'];
-        $pdo = new PDO($dsn, $ini['user'], $ini['password'], [
-            PDO::ATTR_TIMEOUT => 2,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        ]);
-    } catch (\Throwable $e) {
-        http_response_code(500);
-        exit('Database connection failed.');
-    }
-
+// Lookup by numeric media ID or by storage filename.
+if (ctype_digit($identifier)) {
     $stmt = $pdo->prepare(<<<'SQL'
         SELECT m.storage_id, m.extension, r.is_public, m.media_type
         FROM media m JOIN resource r ON m.id = r.id
@@ -157,27 +149,39 @@ if (empty($filepath) && ctype_digit($identifier)) {
         SQL
     );
     $stmt->execute([(int) $identifier]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    $pdo = null;
+} else {
+    // Filename identifier: strip extension to get the storage_id, or match with
+    // extension.
+    $stmt = $pdo->prepare(<<<'SQL'
+        SELECT m.storage_id, m.extension, r.is_public, m.media_type
+        FROM media m JOIN resource r ON m.id = r.id
+        WHERE CONCAT(m.storage_id, '.', m.extension) = ?
+           OR m.storage_id = ?
+        LIMIT 1
+        SQL
+    );
+    $stmt->execute([$identifier, $identifier]);
+}
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
+$pdo = null;
 
-    if (!$row) {
-        http_response_code(404);
-        exit('Media not found.');
-    }
-    if (!$row['is_public']) {
-        http_response_code(403);
-        exit('Forbidden.');
-    }
-    if (strpos((string) $row['media_type'], 'image/') !== 0) {
-        http_response_code(400);
-        exit('Not an image.');
-    }
-
-    $ext = $row['extension'] ? '.' . $row['extension'] : '';
-    $filepath = $filesPath . '/original/' . $row['storage_id'] . $ext;
+if (!$row) {
+    http_response_code(404);
+    exit('Media not found.');
+}
+if (!$row['is_public']) {
+    http_response_code(403);
+    exit('Forbidden.');
+}
+if (strpos((string) $row['media_type'], 'image/') !== 0) {
+    http_response_code(400);
+    exit('Not an image.');
 }
 
-if (empty($filepath) || !file_exists($filepath)) {
+$ext = $row['extension'] ? '.' . $row['extension'] : '';
+$filepath = $filesPath . '/original/' . $row['storage_id'] . $ext;
+
+if (!file_exists($filepath)) {
     http_response_code(404);
     exit('Image file not found.');
 }
