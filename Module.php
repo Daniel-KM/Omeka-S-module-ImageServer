@@ -1209,103 +1209,81 @@ class Module extends AbstractModule
             $jobClass,
             'imageserver_size_tile',
             ['item_ids' => $item->getId()],
-            function (string $key, array $allParams): array {
-                $itemIds = [];
-                foreach ($allParams as $p) {
-                    $itemIds[] = $p['item_ids'];
-                }
-                return [
-                    'tasks' => ['size', 'tile'],
-                    'query' => ['id' => array_unique($itemIds)],
-                    'filter' => 'unsized',
-                    'remove_destination' => 'skip',
-                    'update_renderer' => false,
-                ];
-            }
+            [$this, 'mergeSizeTileParams']
         );
     }
 
     public function handleAfterSaveMedia(Event $event): void
     {
-        // Don't run sizing during a batch edit of media, because it runs one
-        // job by media and it is slow. A batch process is always partial.
+        // Don't run sizing during a batch edit of media, because it
+        // runs one job by media and it is slow.
         /** @var \Omeka\Api\Request $request */
         $request = $event->getParam('request');
         if ($request->getOption('isPartial')) {
             return;
         }
 
+        /** @var \Omeka\Entity\Media $media */
         $media = $event->getParam('response')->getContent();
-        $this->afterSaveMedia($media);
-    }
-
-    /**
-     * Save dimensions of a media and create tiles.
-     *
-     * @param Media $media
-     */
-    protected function afterSaveMedia(Media $media): void
-    {
-        static $processingMedia = [];
 
         if (strtok((string) $media->getMediaType(), '/') !== 'image'
-            || !empty($processingMedia[$media->getId()])
-            // For ingester bulk_upload, wait that the process is finished, else
-            // the thumbnails won't be available and the size of derivative will
-            // be the fallback ones.
-            // Anyway, the process is now launched from the job bulk upload.
             || $media->getIngester() === 'bulk_upload'
         ) {
             return;
         }
 
-        $processingMedia[$media->getId()] = true;
-
         $services = $this->getServiceLocator();
 
-        $mediaData = $media->getData() ?: [];
+        // For standard media, defer sizing and tiling into a single
+        // aggregated job, shared with handleAfterSaveItem. This
+        // avoids launching one job per media.
+        $tileMode = $services->get('Omeka\Settings')
+            ->get('imageserver_tile_mode', 'auto');
+        $jobClass = $tileMode === 'auto'
+            ? \ImageServer\Job\BulkSizerAndTiler::class
+            : \ImageServer\Job\BulkSizer::class;
 
-        $mediaRepr = $services->get('Omeka\ApiAdapterManager')->get('media')->getRepresentation($media);
-        /** @var \ImageServer\Mvc\Controller\Plugin\TileInfo $tileMediaInfo */
-        $tileMediaInfo = $services->get('ControllerPluginManager')->get('tileMediaInfo');
+        $services->get('Common\DeferredJobDispatch')->defer(
+            $jobClass,
+            'imageserver_size_tile',
+            ['media_ids' => $media->getId()],
+            [$this, 'mergeSizeTileParams']
+        );
+    }
 
-        // A quick check to avoid a useless job.
-        // Check is not done on original, because in some cases, the original
-        // file is removed.
-        $hasSize = !empty($mediaData['dimensions']['large']['width']);
-        $hasTile = $tileMediaInfo($mediaRepr);
-        $isTileModeAuto = $services->get('Omeka\Settings')->get('imageserver_tile_mode', 'auto') === 'auto';
-        if ($hasSize && ($hasTile || !$isTileModeAuto)) {
-            return;
+    /**
+     * Merge callback for deferred size/tile jobs. Aggregates item and
+     * media IDs from both handleAfterSaveItem and
+     * handleAfterSaveMedia into a single job.
+     */
+    public function mergeSizeTileParams(
+        string $key,
+        array $allParams
+    ): array {
+        $mediaIds = [];
+        $itemIds = [];
+        foreach ($allParams as $p) {
+            if (isset($p['media_ids'])) {
+                $mediaIds[] = $p['media_ids'];
+            }
+            if (isset($p['item_ids'])) {
+                $itemIds[] = $p['item_ids'];
+            }
         }
-
-        $tasks = [];
-        if (!$hasSize) {
-            $tasks[] = 'size';
+        $query = [];
+        if ($itemIds) {
+            $query['item_id'] = array_unique($itemIds);
         }
-        if (!$hasTile && $isTileModeAuto) {
-            $tasks[] = 'tile';
+        if ($mediaIds) {
+            $query['id'] = array_unique($mediaIds);
         }
-
-        // Media sizer and tiler.
-        $params = [
-            'tasks' => $tasks,
-            'query' => ['id' => $media->getId()],
-            'filter' => 'all',
-            'remove_destination' => 'all',
+        return [
+            'tasks' => ['size', 'tile'],
+            'query' => $query,
+            'filter' => 'unsized',
+            'remove_destination' => 'skip',
             'update_renderer' => false,
         ];
-
-        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        if (!$hasSize && !$hasTile) {
-            $dispatcher->dispatch(\ImageServer\Job\MediaSizerAndTiler::class, $params);
-        } elseif (!$hasSize) {
-            $params = array_intersect_key($params, ['query' => null, 'filter' => null]);
-            $dispatcher->dispatch(\ImageServer\Job\MediaSizer::class, $params);
-        } else {
-            $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
-            $dispatcher->dispatch(\ImageServer\Job\MediaTiler::class, $params);
-        }
     }
 
     /**
