@@ -40,7 +40,7 @@ The module supports the local storage (file system) by default. For external
 storage, image serving works with any store whose `getUri()` returns a public
 url. However, tile creation and deletion require the [Amazon S3] module
 specifically, because they use methods (`hasFile()`, `deleteDir()`) not
-available in Omeka's `StoreInterface`.
+available in Omeka `StoreInterface`.
 
 
 Installation
@@ -53,10 +53,11 @@ This module requires the module [Common], that should be installed first.
 PHP should be installed with the extension `exif` in order to get the size of
 images. This is the case for all major distributions and providers.
 
-For [performance reasons], the recommended image processor is [vips] (command
-line tool), but the more common [ImageMagick] (command line `magick` or legacy
-`convert`), [GD] or [Imagick] (php extensions) are supported. Except vips, they
-are installed by default in most servers.
+For [performance reasons], the recommended image processor is [vips] (with the
+php extension if possible, or as command line tool), but the more common
+[ImageMagick] (command line `magick` or legacy `convert`), [GD] or [Imagick]
+(php extensions) are supported. Except vips, they are installed by default in
+most servers.
 
 The module [Iiif Server] is currently required and should be installed first.
 
@@ -107,6 +108,8 @@ a2enmod http2
 systemctl restart apache2
 systemctl restart php7.4-fpm
 ```
+
+Of course, the config may be improved with http/3.
 
 ### CORS (Cross-Origin Resource Sharing)
 
@@ -204,15 +207,67 @@ module [Vips].
 Image Server
 ------------
 
-From version 3.6.3.1, tiles are created automatically for all new images when
-the option is set to "auto". It's not recommended to set it if the existing
-media doesn't have tiles yet, so you have to bulk size them first. The
-conversion of the ingester and the renderer from the old "tile" to the standard
-"upload" and "file" is done automatically on upgrade.
+### Diagnostics
 
-Furthermore, an option in settings and site settings allows to specify the
-default display: tile or large thumbnail. It can be selected directly in the
-theme too (thumbnail "tile").
+When opening the module configuration page, the module runs infrastructure
+diagnostics and displays recommendations:
+
+- Image processor: detect php-vips, vips cli, ImageMagick, Imagick, GD.
+  Auto-select vips when available (best performance and memory efficiency).
+- Tiling status: count tiled vs untiled images and recommend bulk tiling.
+- Fast tile server: check if the `.htaccess` rewrite rule is set up (see below).
+- Directories: verify that `files/tile/` and `files/tile/cache/` are writeable.
+- PHP memory: warn if `memory_limit` is too low for image processing.
+- Auto-tiling mode: warn if auto-tiling is not enabled.
+
+### Auto-tiling
+
+Tiles are created automatically for all new images (default setting "auto").
+Existing images can be tiled in bulk via the config form. The module aggregates
+all sizing and tiling requests into a single background job per HTTP request,
+avoiding the overhead of one job per media.
+
+**Warning**: don't forget to tile all existing medias and to prepare all image
+dimensions. Run the tasks in the config form.
+
+### Zoomable thumbnail display
+
+An option in settings and site settings allows to replace the standard thumbnail
+display with a zoomable [OpenSeadragon] viewer for images on public pages. Three
+modes are available:
+
+- Tile: display images via OpenSeadragon using pre-tiled data when available,
+  with configurable fallback (large thumbnail or original in OSD).
+- Large: standard large thumbnail (default for sites).
+- Original: serves the original file (not recommended for large images).
+
+This is independent of IIIF viewers (Universal Viewer, Mirador, Diva) and works
+without them. It provides a simple zoom experience on any item/media page,
+similar to the admin media show page.
+
+### Fast tile script
+
+A lightweight PHP script (`data/scripts/iiiftile.php`) can serve IIIF image
+tiles without loading the full Omeka S stack. It uses vips (php-vips or cli)
+with disk caching for optimal performance:
+
+- Cache hit: ~5ms (vs ~200ms with Omeka S stack)
+- Cache miss: ~200ms (vips processing + cache write)
+- Pre-tiled images: still benefits from bypassing the Omeka S bootstrap
+
+Setup: add these rules in `.htaccess` before the Omeka catch-all:
+
+```apache
+# Fast IIIF tile server (bypass Omeka S stack).
+RewriteCond %{REQUEST_URI} /iiif/([23]/)?[^/]+/[^/]+/[^/]+/[^/]+/[^.]+\.\w+$
+RewriteRule iiif/(.*) modules/ImageServer/data/scripts/iiiftile.php [END,E=IIIF_PATH:/iiif/$1]
+```
+
+Warning: check if you install modules with composer (see [#2432]), replace
+"modules/" by "composer-addons/modules/".
+
+The script checks `is_public` on each media via a lightweight DB query, and
+falls back to the standard Omeka S stack when vips is not available.
 
 Of course, if you use an external server, you don't need to create static or
 dynamic tiles (and in that case you don't need this module anyway).
@@ -266,7 +321,7 @@ and with the command line tools ImageMagick, default in Omeka, and vips. GD is
 generally a little quicker, but ImageMagick manages many more formats. An option
 allows to select the library to use according to your server and your documents
 or to let the module chooses automagically. Vips is the largely the quickest in
-all cases, and it manages natively common formats (jpeg, png, pdf, tiff).
+all cases, and it manages natively common formats (gif, jpeg, png, pdf, tiff).
 
 In case of big files, it is recommended to use vips or the command line version
 of ImageMagick, that is not limited by the php memory.
@@ -327,47 +382,22 @@ returns a publicly accessible URL, so any S3-compatible module (Amazon, MinIO,
 Wasabi, etc.) works for that part. However, tile creation and deletion currently
 require the [Amazon S3] module specifically, because the tiling pipeline calls
 `AmazonS3`-specific methods (`hasFile()`, `deleteDir()`) that are not part of
-Omeka's `StoreInterface`.
+Omeka `StoreInterface`.
 
 Currently, only the public files are available: let the option "expiration" to "0".
 You should add CORS header `Access-Control-Allow-Origin` to make OpenSeadragon
 and other viewers working. See [aws documentation].
 
-### Vips as default thumbnailer (without module Vips)
+### Vips as default thumbnailer
 
-Note: the module [Vips] provides a more complete thumbnailer, with PHP library
-mode (faster) and CLI fallback, and sets itself automatically as the default
-thumbnailer. If you use the module [Vips], the manual configuration below is not
-needed. The thumbnailer provided by ImageServer (`ImageServer\File\Thumbnailer\Vips`)
-is a CLI-only alternative kept for installations without the module [Vips].
+To use vips as the default thumbnailer for Omeka S, install the module [Vips].
+It provides PHP library mode (faster) and CLI fallback, and sets itself
+automatically as the default thumbnailer. See the module [Vips] documentation
+for configuration details.
 
-If you installed vips, you can use it as a [default thumbnailer] for Omeka. The
-main interest to use Vips as thumbnailer is not only the performance, but the
-possibility to center on the region of interest when cropping the image to get
-the square thumbnails. Just set it in the file "config/local.config.php" at the
-root of Omeka:
-
-```php
-    'thumbnails' => [
-        'types' => [
-            'square' => [
-                'options' => [
-                    // Other options: low, centre, high, attention, entropy, depending on version of vips.
-                    'gravity' => 'attention',
-                ],
-            ],
-        ],
-        'thumbnailer_options' => [
-            // Set directory path of "vips" if not in the system path.
-            'vips_dir' => null,
-        ],
-    ],
-    'service_manager' => [
-        'aliases' => [
-            'Omeka\File\Thumbnailer' => 'ImageServer\File\Thumbnailer\Vips',
-        ],
-    ],
-```
+Note: the old `ImageServer\File\Thumbnailer\Vips` thumbnailer has been removed.
+If your `config/local.config.php` references it, replace it with the module
+[Vips] and remove the alias.
 
 
 TODO / Bugs
@@ -508,6 +538,7 @@ support the [Deep Zoom Image] tile format.
 [performance]: https://cantaloupe-project.github.io/manual/4.0/images.html
 [OpenJpeg]: https://github.com/uclouvain/openjpeg
 [libvips]: https://libvips.github.io/libvips
+[#2432]: https://github.com/omeka/omeka-s/pull/2432
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
