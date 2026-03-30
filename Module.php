@@ -181,6 +181,9 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
 
+        // Remove the fast tile script rule from .htaccess.
+        $this->removeFastTileHtaccess();
+
         // Convert all media tile ingesters and renderers into upload/file.
         $connection = $services->get('Omeka\Connection');
         $sql = <<<'SQL'
@@ -700,6 +703,7 @@ class Module extends AbstractModule
 
     /**
      * Check if the fast tile script is set up in .htaccess.
+     * If writable, add the rule automatically.
      */
     protected function checkFastTileScript(): void
     {
@@ -707,28 +711,103 @@ class Module extends AbstractModule
         $messenger = $services->get('ControllerPluginManager')
             ->get('messenger');
 
+        $scriptPath = __DIR__ . '/data/scripts/iiiftile.php';
+        if (!file_exists($scriptPath)) {
+            return;
+        }
+
         $htaccessPath = OMEKA_PATH . '/.htaccess';
         $htaccess = @file_get_contents($htaccessPath);
         if ($htaccess === false) {
             return;
         }
 
-        $scriptPath = __DIR__ . '/data/scripts/iiiftile.php';
-        if (!file_exists($scriptPath)) {
-            return;
-        }
+        $marker = '# Module ImageServer: fast IIIF tile server.';
 
         if (strpos($htaccess, 'iiiftile.php') !== false) {
             $message = new PsrMessage(
                 'The fast IIIF tile script is active in .htaccess.' // @translate
             );
             $messenger->addSuccess($message);
+            return;
+        }
+
+        // Determine the script path relative to the Omeka root.
+        // Modules may be in modules/ or composer-addons/modules/.
+        $modulePath = realpath(__DIR__);
+        $omekaPath = realpath(OMEKA_PATH);
+        $relativeScript = str_replace(
+            $omekaPath . '/',
+            '',
+            $modulePath . '/data/scripts/iiiftile.php'
+        );
+
+        $rule = "$marker\n"
+            . "RewriteCond %{REQUEST_URI} /iiif/([23]/)?[^/]+/[^/]+/[^/]+/[^/]+/[^.]+\.\w+$\n"
+            . "RewriteRule iiif/(.*) $relativeScript [END,E=IIIF_PATH:/iiif/\$1]\n";
+
+        if (!is_writable($htaccessPath)) {
+            $message = new PsrMessage(
+                'The .htaccess file is not writable. Add the following rules manually after "RewriteEngine On":{line_break}{rule}', // @translate
+                ['line_break' => '<br>', 'rule' => '<pre>' . htmlspecialchars($rule) . '</pre>']
+            );
+            $message->setEscapeHtml(false);
+            $messenger->addWarning($message);
+            return;
+        }
+
+        // Insert after "RewriteEngine On".
+        if (preg_match('/RewriteEngine\s+On\s*\n/i', $htaccess, $m, PREG_OFFSET_CAPTURE)) {
+            $insertPos = $m[0][1] + strlen($m[0][0]);
+            $htaccess = substr_replace($htaccess, "\n" . $rule . "\n", $insertPos, 0);
+            file_put_contents($htaccessPath, $htaccess);
+            $message = new PsrMessage(
+                'The fast IIIF tile script has been added to .htaccess automatically.' // @translate
+            );
+            $messenger->addSuccess($message);
         } else {
             $message = new PsrMessage(
-                'The fast IIIF tile script is available but not set up in .htaccess. It bypasses the Omeka S stack for tile requests and improves response time significantly. See the module documentation to enable it.' // @translate
+                'Could not find "RewriteEngine On" in .htaccess. Add the fast tile rules manually. See the module documentation.' // @translate
             );
             $messenger->addWarning($message);
         }
+    }
+
+    /**
+     * Remove the fast tile script rule from .htaccess on uninstall.
+     */
+    protected function removeFastTileHtaccess(): void
+    {
+        $htaccessPath = OMEKA_PATH . '/.htaccess';
+        $htaccess = @file_get_contents($htaccessPath);
+        if ($htaccess === false) {
+            return;
+        }
+
+        $marker = '# Module ImageServer: fast IIIF tile server.';
+        if (strpos($htaccess, $marker) === false) {
+            return;
+        }
+
+        if (!is_writable($htaccessPath)) {
+            $messenger = $this->getServiceLocator()
+                ->get('ControllerPluginManager')->get('messenger');
+            $messenger->addWarning(new PsrMessage(
+                'The .htaccess file is not writable. Remove the fast tile rules (starting with "{marker}") manually.', // @translate
+                ['marker' => $marker]
+            ));
+            return;
+        }
+
+        // Remove the marker line and the two following rewrite lines.
+        $htaccess = preg_replace(
+            '/' . preg_quote($marker, '/') . '\s*\n'
+            . '(?:\s*RewriteCond\s+[^\n]*\n)?'
+            . '(?:\s*RewriteRule\s+[^\n]*\n)?/',
+            '',
+            $htaccess
+        );
+        file_put_contents($htaccessPath, $htaccess);
     }
 
     /**
