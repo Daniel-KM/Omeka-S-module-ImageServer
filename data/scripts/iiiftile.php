@@ -366,13 +366,75 @@ if ($region === 'full' && $rotDegrees == 0 && !$mirror
 // 6. Process with vips
 // ---------------------------------------------------------------------------
 
+$needsCrop = $rX !== 0 || $rY !== 0 || $rW !== $srcWidth || $rH !== $srcHeight;
+$needsResize = $dW !== $rW || $dH !== $rH;
+
+// Fast path: simple crop from tiled source, no rotation/mirror/quality change.
+// Direct extract_area without autorot or temp files.
+if ($tiledPath && $needsCrop && !$needsResize && !$mirror
+    && $rotDegrees == 0 && in_array($quality, ['default', 'color'])
+) {
+    $cacheFileDir = dirname($cacheFile);
+    if (!is_dir($cacheFileDir)) {
+        @mkdir($cacheFileDir, 0775, true);
+    }
+
+    // Options as filename suffix for ext-vips compatibility.
+    $saveOptSuffix = [
+        'gif' => '',
+        'jp2' => '',
+        'jpg' => '[Q=85,strip]',
+        'png' => '[compression=6,strip]',
+        'tif' => '[compression=jpeg,Q=85,strip]',
+        'webp' => '[Q=85,strip]',
+    ];
+
+    $ok = false;
+    if ($usePhpVips) {
+        try {
+            $image = \Jcupitt\Vips\Image::newFromFile($filepath . '[access=random]');
+            $image = $image->extract_area($rX, $rY, $rW, $rH);
+            $image->writeToFile($cacheFile . ($saveOptSuffix[$outputFormat] ?? ''));
+            $ok = true;
+        } catch (\Throwable $e) {
+            // Fall through to generic processing.
+        }
+    } else {
+        $formatOptionsCli = [
+            'gif' => '',
+            'jp2' => '',
+            'jpg' => '[Q=85,strip]',
+            'png' => '[compression=6,strip]',
+            'tif' => '[compression=jpeg,Q=85,strip]',
+            'webp' => '[Q=85,strip]',
+        ];
+        $cmd = sprintf(
+            '%s extract_area %s %s %d %d %d %d',
+            escapeshellarg($vips),
+            escapeshellarg($filepath),
+            escapeshellarg($cacheFile . ($formatOptionsCli[$outputFormat] ?? '[Q=85,strip]')),
+            $rX, $rY, $rW, $rH
+        );
+        exec($cmd . ' 2>&1', $output, $returnCode);
+        $ok = $returnCode === 0 && file_exists($cacheFile);
+    }
+
+    if ($ok) {
+        header('Content-Type: ' . (MEDIA_TYPES[$outputFormat] ?? 'image/jpeg'));
+        header('Content-Length: ' . filesize($cacheFile));
+        header('Cache-Control: public, max-age=86400, s-maxage=604800');
+        header('Access-Control-Allow-Origin: *');
+        header('X-IIIF-Cache: miss');
+        readfile($cacheFile);
+        exit;
+    }
+    // Fall through to generic processing on error.
+}
+
 $cacheFileDir = dirname($cacheFile);
 if (!is_dir($cacheFileDir)) {
     @mkdir($cacheFileDir, 0775, true);
 }
-
-$needsCrop = $rX !== 0 || $rY !== 0 || $rW !== $srcWidth || $rH !== $srcHeight;
-$needsResize = $dW !== $rW || $dH !== $rH;
 
 if ($usePhpVips) {
     // --- php-vips: single process, no temp files, no shell ---
@@ -380,8 +442,11 @@ if ($usePhpVips) {
         // Use random access for tiled TIFF/JP2 (direct tile read), sequential
         // for other formats (streams top-to-bottom).
         $accessMode = $tiledPath ? 'random' : 'sequential';
-        $image = \Jcupitt\Vips\Image::newFromFile($filepath, ['access' => $accessMode]);
-        $image = $image->autorot();
+        $image = \Jcupitt\Vips\Image::newFromFile($filepath . "[access=$accessMode]");
+        // Skip autorot for tiled sources (no EXIF rotation).
+        if (!$tiledPath) {
+            $image = $image->autorot();
+        }
 
         if ($needsCrop) {
             $image = $image->extract_area($rX, $rY, $rW, $rH);
@@ -409,15 +474,15 @@ if ($usePhpVips) {
             $image = $image->colourspace('b-w');
         }
 
-        $saveOptions = [
-            'gif' => [],
-            'jp2' => [],
-            'jpg' => ['Q' => 85, 'strip' => true],
-            'png' => ['compression' => 6, 'strip' => true],
-            'tif' => ['compression' => 'jpeg', 'Q' => 85, 'strip' => true],
-            'webp' => ['Q' => 85, 'strip' => true],
+        $saveSuffix = [
+            'gif' => '',
+            'jp2' => '',
+            'jpg' => '[Q=85,strip]',
+            'png' => '[compression=6,strip]',
+            'tif' => '[compression=jpeg,Q=85,strip]',
+            'webp' => '[Q=85,strip]',
         ];
-        $image->writeToFile($cacheFile, $saveOptions[$outputFormat] ?? []);
+        $image->writeToFile($cacheFile . ($saveSuffix[$outputFormat] ?? ''));
     } catch (\Throwable $e) {
         http_response_code(500);
         header('Content-Type: text/plain');
@@ -444,16 +509,19 @@ if ($usePhpVips) {
     $step = 0;
     $tempFiles = [];
 
-    // Auto-orient (EXIF rotation).
-    $stepFile = $tmpBase . '_' . (++$step) . '.v';
-    $commands[] = sprintf(
-        '%s autorot %s %s',
-        escapeshellarg($vips),
-        $currentInput,
-        escapeshellarg($stepFile)
-    );
-    $currentInput = escapeshellarg($stepFile);
-    $tempFiles[] = $stepFile;
+    // Auto-orient (EXIF rotation). Skip for tiled sources (created by vips, no
+    // EXIF rotation to fix).
+    if (!$tiledPath) {
+        $stepFile = $tmpBase . '_' . (++$step) . '.v';
+        $commands[] = sprintf(
+            '%s autorot %s %s',
+            escapeshellarg($vips),
+            $currentInput,
+            escapeshellarg($stepFile)
+        );
+        $currentInput = escapeshellarg($stepFile);
+        $tempFiles[] = $stepFile;
+    }
 
     if ($needsCrop) {
         $stepFile = $tmpBase . '_' . (++$step) . '.v';
