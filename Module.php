@@ -724,14 +724,6 @@ class Module extends AbstractModule
 
         $marker = '# Module ImageServer: fast IIIF tile server.';
 
-        if (strpos($htaccess, 'iiiftile.php') !== false) {
-            $message = new PsrMessage(
-                'The fast IIIF tile script is active in .htaccess.' // @translate
-            );
-            $messenger->addSuccess($message);
-            return;
-        }
-
         // Determine the script path relative to the Omeka root.
         // Modules may be in modules/ or composer-addons/modules/.
         $modulePath = realpath(__DIR__);
@@ -741,6 +733,37 @@ class Module extends AbstractModule
             '',
             $modulePath . '/data/scripts/iiiftile.php'
         );
+
+        if (strpos($htaccess, 'iiiftile.php') !== false) {
+            // Check that the path in .htaccess matches the current
+            // module location (modules/ vs composer-addons/modules/).
+            if (strpos($htaccess, $relativeScript) !== false) {
+                $message = new PsrMessage(
+                    'The fast IIIF tile script is active in .htaccess.' // @translate
+                );
+                $messenger->addSuccess($message);
+            } else {
+                $message = new PsrMessage(
+                    'The fast IIIF tile script is in .htaccess but the path does not match the current module location. Update it to: {path}', // @translate
+                    ['path' => $relativeScript]
+                );
+                $messenger->addError($message);
+                // Auto-fix if writable.
+                if (is_writable($htaccessPath)) {
+                    $htaccess = preg_replace(
+                        '#(RewriteRule\s+iiif/\(.*\)\s+)\S*iiiftile\.php#',
+                        '$1' . $relativeScript,
+                        $htaccess
+                    );
+                    file_put_contents($htaccessPath, $htaccess);
+                    $message = new PsrMessage(
+                        'The path has been updated automatically in .htaccess.' // @translate
+                    );
+                    $messenger->addSuccess($message);
+                }
+            }
+            return;
+        }
 
         $rule = "$marker\n"
             . "RewriteCond %{REQUEST_URI} /iiif/([23]/)?[^/]+/[^/]+/[^/]+/[^/]+/[^.]+\.\w+$\n"
