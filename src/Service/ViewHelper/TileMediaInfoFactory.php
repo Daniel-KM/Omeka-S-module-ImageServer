@@ -16,7 +16,7 @@ class TileMediaInfoFactory implements FactoryInterface
      *
      * @return TileMediaInfo
      */
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         return new TileMediaInfo(
             $services->get('ControllerPluginManager')->get('tileMediaInfo')

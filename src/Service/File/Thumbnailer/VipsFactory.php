@@ -13,7 +13,7 @@ class VipsFactory implements FactoryInterface
      *
      * @return Vips
      */
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         return new Vips(
             $services->get('Omeka\Cli'),

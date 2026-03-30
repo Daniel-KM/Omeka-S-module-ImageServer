@@ -11,7 +11,7 @@ use Psr\Container\ContainerInterface;
 
 class ConfigFormFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         $cli = $services->get('Omeka\Cli');
 

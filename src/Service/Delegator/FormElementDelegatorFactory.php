@@ -8,7 +8,7 @@ use Psr\Container\ContainerInterface;
 class FormElementDelegatorFactory implements DelegatorFactoryInterface
 {
     public function __invoke(ContainerInterface $container, $name,
-        callable $callback, array $options = null
+        callable $callback, ?array $options = null
     ) {
         /** @var \Laminas\Form\View\Helper\FormElement $formElement */
         $formElement = $callback();

@@ -15,7 +15,7 @@ class TileInfoFactory implements FactoryInterface
      *
      * @return TileInfo
      */
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         return new TileInfo(
             $services->get('ControllerPluginManager')->get('tileInfo')

@@ -430,7 +430,7 @@ class Tile implements IngesterInterface
      * @return bool
      * @see \Omeka\File\Validator
      */
-    protected function validatorFileIsImage(TempFile $tempFile, ErrorStore $errorStore = null)
+    protected function validatorFileIsImage(TempFile $tempFile, ?ErrorStore $errorStore = null)
     {
         // $validatorChain = $fileInput->getValidatorChain();
         // $validatorChain->attachByName('FileIsImage', [], true);
