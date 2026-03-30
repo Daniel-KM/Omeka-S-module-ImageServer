@@ -114,18 +114,6 @@ return [
             'tileRemover' => Service\ControllerPlugin\TileRemoverFactory::class,
         ],
     ],
-    /*
-    'media_ingesters' => [
-        'factories' => [
-            'tile' => Service\Media\Ingester\TileFactory::class,
-        ],
-    ],
-    */
-    'media_renderers' => [
-        'factories' => [
-            'tile' => Service\Media\Renderer\TileFactory::class,
-        ],
-    ],
     'router' => [
         // The routes override the ones set in the module Iiif Server in order
         // to redirect most of the urls directly to the image server.
@@ -276,35 +264,6 @@ return [
             ],
         ],
     ],
-    'archiverepertory' => [
-        // The key is "ingesters", even if "tile" is no more an ingester.
-        'ingesters' => [
-            'tile' => [
-                // This is the param "imageserver_image_tile_dir".
-                'path' => 'tile',
-                'extension' => [
-                    '.dzi',
-                    '.js',
-                    // The classes are not available before the end of install.
-                    // TileInfo::FOLDER_EXTENSION_DEEPZOOM,
-                    '_files',
-                    // TileInfo::FOLDER_EXTENSION_ZOOMIFY,
-                    '_zdata',
-                    // Jpeg 2000 files.
-                    '.jp2',
-                    // Tiled pyramidal tiff.
-                    '.tif',
-                ],
-            ],
-        ],
-    ],
-    /*
-    'csv_import' => [
-        'media_ingester_adapter' => [
-            'tile' => MediaIngesterAdapter\TileMediaIngesterAdapter::class,
-        ],
-    ],
-    */
     'imageserver' => [
         'config' => [
             // Use the same name than the module Iiif Server for simplicity.
