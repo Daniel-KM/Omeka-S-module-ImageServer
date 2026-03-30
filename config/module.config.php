@@ -54,11 +54,6 @@ return [
             'thumbnail' => Media\FileRenderer\ThumbnailRenderer::class,
         ],
     ],
-    'service_manager' => [
-        'factories' => [
-            File\Thumbnailer\Vips::class => Service\File\Thumbnailer\VipsFactory::class,
-        ],
-    ],
     'view_manager' => [
         'template_path_stack' => [
             dirname(__DIR__) . '/view',

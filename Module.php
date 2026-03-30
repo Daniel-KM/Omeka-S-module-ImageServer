@@ -476,6 +476,7 @@ class Module extends AbstractModule
         $this->checkTilingMode();
         $this->checkImager();
         $this->checkTileType();
+        $this->checkDeprecatedThumbnailer();
         $this->checkTilingStatus();
         $this->checkFastTileScript();
         $this->checkDirectories();
@@ -551,6 +552,24 @@ class Module extends AbstractModule
                 'Tile type is "deepzoom": fastest tile serving (static files, ~0.5ms via Apache). Creates many small files on disk.' // @translate
             );
             $messenger->addSuccess($message);
+        }
+    }
+
+    /**
+     * Check if vips thumbnailer is referenced in config to force module Vips.
+     */
+    protected function checkDeprecatedThumbnailer(): void
+    {
+        $services = $this->getServiceLocator();
+        $config = $services->get('Config');
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
+
+        $alias = $config['service_manager']['aliases']['Omeka\File\Thumbnailer'] ?? null;
+        if ($alias === 'ImageServer\File\Thumbnailer\Vips') {
+            $message = new PsrMessage(
+                'The vips thumbnailer from ImageServer has been removed. Remove the alias "Omeka\File\Thumbnailer" from your file config/local.config.php. Then, install and enable the module Vips.' // @translate
+            );
+            $messenger->addError($message);
         }
     }
 
