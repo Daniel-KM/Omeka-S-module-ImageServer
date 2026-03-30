@@ -2,7 +2,7 @@
 
 namespace ImageServer\Form;
 
-use ImageServer\Form\Element\Note;
+use Common\Form\Element as CommonElement;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
@@ -371,11 +371,10 @@ All formats are served as native by default, but may be served as IIIF too when 
                 ],
             ]);
         $bulkFieldset = $this->get('imageserver_bulk_prepare');
-        // TODO Remove Element Note.
         $bulkFieldset
             ->add([
                 'name' => 'note',
-                'type' => Note::class,
+                'type' => CommonElement\Note::class,
                 'options' => [
                     'text' => 'This process builds tiles and and saves dimensions of existing files via a background job.
 To save the height and the width of all images and derivatives allows to speed up creation of the iiif "info.json" of medias.', // @translate

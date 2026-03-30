@@ -63,22 +63,13 @@ return [
         ],
     ],
     'view_helpers' => [
-        'invokables' => [
-            'formNote' => Form\View\Helper\FormNote::class,
-        ],
         'factories' => [
             'tileInfo' => Service\ViewHelper\TileInfoFactory::class,
             'tileMediaInfo' => Service\ViewHelper\TileMediaInfoFactory::class,
         ],
-        'delegators' => [
-            'Laminas\Form\View\Helper\FormElement' => [
-                __NAMESPACE__ => Service\Delegator\FormElementDelegatorFactory::class,
-            ],
-        ],
     ],
     'form_elements' => [
         'invokables' => [
-            Form\Element\Note::class => Form\Element\Note::class,
             Form\SettingsFieldset::class => Form\SettingsFieldset::class,
             Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
         ],
