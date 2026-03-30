@@ -163,7 +163,7 @@ class BulkSizerAndTiler extends AbstractJob
         }
 
         $this->logger->notice(
-            'End of bulk sizing: {count}/{total} items processed, {total_succeed} files sized, {total_failed} errors, {total_skipped} skipped on a total of {total_images} images.', // @translate
+            'End of bulk sizing and tiling: {count}/{total} items processed, {total_images} images checked, {total_succeed} processed, {total_skipped} already done (skipped), {total_failed} errors.', // @translate
             [
                 'count' => $this->totalProcessed,
                 'total' => $this->totalToProcess,

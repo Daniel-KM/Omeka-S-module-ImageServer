@@ -149,7 +149,7 @@ class BulkTileInfo extends AbstractJob
         }
 
         $this->logger->notice(
-            'End of bulk prepare tile info: {count}/{total} items processed, {total_succeed} files sized, {total_failed} errors, {total_skipped} skipped on a total of {total_images} images.', // @translate
+            'End of bulk tile info: {count}/{total} items processed, {total_images} images checked, {total_succeed} updated, {total_skipped} skipped, {total_failed} errors.', // @translate
             [
                 'count' => $this->totalProcessed,
                 'total' => $this->totalToProcess,

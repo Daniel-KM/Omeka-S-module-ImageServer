@@ -31,18 +31,38 @@ class ImageServerFactory implements FactoryInterface
         $commandLineArgs['vipsPath'] = $this->getPath($cli, $vipsDir, Vips::VIPS_COMMAND);
         // Skip warnings when an external image server is configured, since
         // local image processing tools are not needed in that case.
+        // In "Auto" mode, warn only if no processor is available at all.
+        $processor = $settings->get('imageserver_imager', 'Auto');
         if (!$settings->get('iiifserver_media_api_url')) {
-            if ($commandLineArgs['vipsPath'] === '') {
-                $logger->warn(new PsrMessage(
-                    'ImageServer: the command `{command}` was not found on the server. Install it, or set correct directory in configuration, or set another image processor.', // @translate
-                    ['command' => Vips::VIPS_COMMAND]
-                ));
-            }
-            if ($commandLineArgs['convertPath'] === '') {
-                $logger->warn(new PsrMessage(
-                    'ImageServer: the command `{command_1}` or `{command_2}` was not found on the server. Install it, or set correct directory in configuration, or set another image processor.', // @translate
-                    ['command_1' => ImageMagick::MAGICK_COMMAND, 'command_2' => ImageMagick::CONVERT_COMMAND]
-                ));
+            $isAuto = $processor === 'Auto' || $processor === '';
+            $hasPhpImager = extension_loaded('gd')
+                || extension_loaded('imagick');
+            if ($isAuto) {
+                if ($commandLineArgs['vipsPath'] === ''
+                    && $commandLineArgs['convertPath'] === ''
+                    && !$hasPhpImager
+                ) {
+                    $logger->err(new PsrMessage(
+                        'ImageServer: no image processor is available. Install the command `vips` or `magick`, or enable the PHP extension GD or Imagick.', // @translate
+                    ));
+                }
+            } else {
+                if ($processor === 'Vips'
+                    && $commandLineArgs['vipsPath'] === ''
+                ) {
+                    $logger->err(new PsrMessage(
+                        'ImageServer: the command `{command}` was not found on the server. Install it, set the correct directory in module configuration, or set the image processor to "Auto".', // @translate
+                        ['command' => Vips::VIPS_COMMAND]
+                    ));
+                }
+                if ($processor === 'ImageMagick'
+                    && $commandLineArgs['convertPath'] === ''
+                ) {
+                    $logger->err(new PsrMessage(
+                        'ImageServer: the command `{command_1}` or `{command_2}` was not found on the server. Install it, set the correct directory in module configuration, or set the image processor to "Auto".', // @translate
+                        ['command_1' => ImageMagick::MAGICK_COMMAND, 'command_2' => ImageMagick::CONVERT_COMMAND]
+                    ));
+                }
             }
         }
         $commandLineArgs['executeStrategy'] = $config['cli']['execute_strategy'];
