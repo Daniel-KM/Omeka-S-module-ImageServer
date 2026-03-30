@@ -1358,12 +1358,25 @@ class Module extends AbstractModule
             ? \ImageServer\Job\BulkSizerAndTiler::class
             : \ImageServer\Job\BulkSizer::class;
 
-        $services->get('Common\DeferredJobDispatch')->defer(
-            $jobClass,
-            'imageserver_size_tile',
-            ['item_ids' => $item->getId()],
-            [$this, 'mergeSizeTileParams']
-        );
+        if ($services->has('Common\DeferredJobDispatch')) {
+            $services->get('Common\DeferredJobDispatch')->defer(
+                $jobClass,
+                'imageserver_size_tile',
+                ['item_ids' => $item->getId()],
+                [$this, 'mergeSizeTileParams']
+            );
+        } else {
+            $services->get(\Omeka\Job\Dispatcher::class)->dispatch(
+                $jobClass,
+                [
+                    'tasks' => ['size', 'tile'],
+                    'query' => ['item_id' => [$item->getId()]],
+                    'filter' => 'unsized',
+                    'remove_destination' => 'skip',
+                    'update_renderer' => false,
+                ]
+            );
+        }
     }
 
     public function handleAfterSaveMedia(Event $event): void
@@ -1396,12 +1409,25 @@ class Module extends AbstractModule
             ? \ImageServer\Job\BulkSizerAndTiler::class
             : \ImageServer\Job\BulkSizer::class;
 
-        $services->get('Common\DeferredJobDispatch')->defer(
-            $jobClass,
-            'imageserver_size_tile',
-            ['media_ids' => $media->getId()],
-            [$this, 'mergeSizeTileParams']
-        );
+        if ($services->has('Common\DeferredJobDispatch')) {
+            $services->get('Common\DeferredJobDispatch')->defer(
+                $jobClass,
+                'imageserver_size_tile',
+                ['media_ids' => $media->getId()],
+                [$this, 'mergeSizeTileParams']
+            );
+        } else {
+            $services->get(\Omeka\Job\Dispatcher::class)->dispatch(
+                $jobClass,
+                [
+                    'tasks' => ['size', 'tile'],
+                    'query' => ['id' => [$media->getId()]],
+                    'filter' => 'unsized',
+                    'remove_destination' => 'skip',
+                    'update_renderer' => false,
+                ]
+            );
+        }
     }
 
     /**
