@@ -109,7 +109,7 @@ class Tiler extends AbstractPlugin
         $tileBuilder = $this->controllerPlugins->get('tileBuilder');
         try {
             $result = $tileBuilder($sourcePath, $tileDir, $this->params);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->controllerPlugins->get('logger')->__invoke()->err(
                 'Media #{media_id}: The tiler failed: {exception}', // @translate
                 ['media_id' => $media->id(), 'exception' => $e]

@@ -306,7 +306,7 @@ abstract class AbstractImager implements LoggerAwareInterface
                     $tempFile->delete();
                     try {
                         $result = copy($source, $tempPath);
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         return false;
                     }
                     if (!$result) {
@@ -316,7 +316,7 @@ abstract class AbstractImager implements LoggerAwareInterface
                     $image = $tempPath;
                     break;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->getLogger()->err(
                 "Image Server failed to open the file \"{file}\". Details:\n{message}", // @translate
                 ['file' => $source, 'message' => $e->getMessage()]

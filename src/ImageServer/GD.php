@@ -383,7 +383,7 @@ class GD extends AbstractImager
                     unlink($tempPath);
                     break;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->getLogger()->err(
                 'GD failed to open the file \"{file}\". Details:\n{message}', // @translate
                 ['file' => $source, 'message' => $e->getMessage()]
