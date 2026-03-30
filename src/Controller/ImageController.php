@@ -222,6 +222,8 @@ class ImageController extends AbstractActionController
                     ) {
                         $args = $transform;
                         $args['source'] = $pretiled['source'];
+                        // Tiled sources have no EXIF rotation.
+                        $args['source']['skip_autorot'] = true;
                         $args['region'] = $pretiled['region'];
                         $args['size'] = $pretiled['size'];
                         $imagePath = $this->imageServer()->transform($args);
@@ -234,6 +236,29 @@ class ImageController extends AbstractActionController
 
                 // The image needs to be transformed dynamically.
                 else {
+                    // Prefer tiled TIFF/JP2 source over original for
+                    // fast region extraction with vips.
+                    $tileDir = $settings->get('imageserver_image_tile_dir', 'tile');
+                    $config = $this->getEvent()->getApplication()
+                        ->getServiceManager()->get('Config');
+                    $basePath = $config['file_store']['local']['base_path']
+                        ?: (OMEKA_PATH . '/files');
+                    $storageId = $media->storageId();
+                    $tiledSource = null;
+                    foreach (['.tif', '.jp2'] as $tExt) {
+                        $candidate = $basePath . '/' . $tileDir . '/' . $storageId . $tExt;
+                        if (file_exists($candidate)) {
+                            $tiledSource = $candidate;
+                            break;
+                        }
+                    }
+                    if ($tiledSource) {
+                        $transform['source']['filepath'] = $tiledSource;
+                        // Tiled sources are created by vips: no EXIF
+                        // rotation, dimensions are already correct.
+                        $transform['source']['skip_autorot'] = true;
+                    }
+
                     // Vips can manage any size, so skip the size check.
                     $imager = $settings->get('imageserver_imager');
                     if ($imager === 'Auto') {

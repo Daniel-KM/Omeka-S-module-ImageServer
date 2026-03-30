@@ -198,10 +198,13 @@ class Vips extends AbstractImager
         $chain = [];
 
         // Auto-orient to handle EXIF rotation before crop.
-        $chain[] = sprintf(
-            '%s autorot _input_ _output_',
-            $this->vipsPath
-        );
+        // Skip for tiled sources (created by vips, no EXIF rotation).
+        if (empty($args['source']['skip_autorot'])) {
+            $chain[] = sprintf(
+                '%s autorot _input_ _output_',
+                $this->vipsPath
+            );
+        }
 
         if ($sourceWidth !== $args['source']['width']
             || $sourceHeight !== $args['source']['height']

@@ -105,13 +105,21 @@ class PhpVips extends AbstractImager
         }
 
         try {
+            // Use random access for tiled sources (direct tile
+            // read), sequential for other formats.
+            // Options are passed in the filename string for
+            // compatibility with all versions of ext-vips.
+            $accessMode = empty($args['source']['skip_autorot'])
+                ? 'sequential' : 'random';
             $image = \Jcupitt\Vips\Image::newFromFile(
-                $source . '[0]',
-                ['access' => 'sequential']
+                $source . "[access=$accessMode]"
             );
 
             // Auto-orient (EXIF rotation).
-            $image = $image->autorot();
+            // Skip for tiled sources (created by vips).
+            if (empty($args['source']['skip_autorot'])) {
+                $image = $image->autorot();
+            }
 
             // Region.
             if ($sourceWidth !== $args['source']['width']
@@ -188,9 +196,10 @@ class PhpVips extends AbstractImager
                     return null;
             }
 
-            // Save.
-            $saveOptions = $this->getSaveOptions($args);
-            $image->writeToFile($destination, $saveOptions);
+            // Save. Options are passed in the filename string for
+            // compatibility with all versions of ext-vips.
+            $saveOptionsSuffix = $this->getSaveOptionsSuffix($args);
+            $image->writeToFile($destination . $saveOptionsSuffix);
         } catch (\Throwable $e) {
             $this->getLogger()->err(
                 'PhpVips failed to process "{file}": {message}', // @translate
@@ -202,6 +211,31 @@ class PhpVips extends AbstractImager
 
         $this->_destroyIfFetched($source);
         return file_exists($destination) ? $destination : null;
+    }
+
+    /**
+     * Build a filename suffix string for vips save options for compatibility.
+     *
+     * Example: "[Q=85,strip]" for JPEG.
+     */
+    protected function getSaveOptionsSuffix(array $args): string
+    {
+        $destOptions = $args['destination']['options'] ?? null;
+        if ($destOptions === 'image/tiff') {
+            return '[compression=jpeg,Q=88,tile,tile-width=256,tile-height=256,pyramid,background=0 0 0]';
+        }
+        switch ($args['format']['feature']) {
+            case 'image/jpeg':
+                return '[Q=85,strip]';
+            case 'image/png':
+                return '[compression=6,strip]';
+            case 'image/webp':
+                return '[Q=85,strip]';
+            case 'image/tiff':
+                return '[compression=jpeg,Q=85,strip]';
+            default:
+                return '';
+        }
     }
 
     protected function getSaveOptions(array $args): array
