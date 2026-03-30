@@ -41,7 +41,15 @@ class ConfigFormFactory implements FactoryInterface
                 'label' => 'ImageMagick (command line)', // @translate
             ],
         ];
-        if (!class_exists('Jcupitt\Vips\Image')) {
+        $phpVipsAvailable = false;
+        if (class_exists('Jcupitt\Vips\Image')) {
+            try {
+                \Jcupitt\Vips\Image::black(1, 1);
+                $phpVipsAvailable = true;
+            } catch (\Throwable $e) {
+            }
+        }
+        if (!$phpVipsAvailable) {
             $imagers['PhpVips']['disabled'] = true;
         }
         $dir = $services->get('Omeka\Settings')->get('imageserver_vips_dir');

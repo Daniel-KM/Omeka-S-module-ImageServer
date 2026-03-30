@@ -141,6 +141,41 @@ class Module extends AbstractModule
         );
     }
 
+    protected function postInstall(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $hasPhpVips = $this->isPhpVipsAvailable();
+        $hasVipsCli = (bool) trim(
+            (string) shell_exec('which vips 2>/dev/null')
+        );
+        $hasVips = $hasPhpVips || $hasVipsCli;
+
+        // Auto-select best imager.
+        if ($hasPhpVips) {
+            $settings->set('imageserver_imager', 'PhpVips');
+            $messenger->addSuccess(new PsrMessage(
+                'php-vips detected and set as default image processor (fastest).' // @translate
+            ));
+        } elseif ($hasVipsCli) {
+            $settings->set('imageserver_imager', 'Vips');
+            $messenger->addSuccess(new PsrMessage(
+                'Vips CLI detected and set as default image processor. For better performance, install php-vips (composer require jcupitt/vips).' // @translate
+            ));
+        }
+
+        // Keep deepzoom as default tile type: static files served
+        // directly by Apache (~0.5ms per tile) without PHP.
+
+        // Set base url.
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+        $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
+        $settings->set('imageserver_base_url', $top);
+    }
+
     protected function postUninstall(): void
     {
         $services = $this->getServiceLocator();
@@ -296,7 +331,7 @@ class Module extends AbstractModule
 
     public function getConfigForm(PhpRenderer $renderer)
     {
-        $this->checkTilingMode();
+        $this->runDiagnostics();
         return $this->getConfigFormAuto($renderer);
     }
 
@@ -311,7 +346,7 @@ class Module extends AbstractModule
             return false;
         }
 
-        $this->checkTilingMode();
+        $this->runDiagnostics();
 
         $urlHelper = $services->get('ViewHelperManager')->get('url');
         $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
@@ -421,6 +456,389 @@ class Module extends AbstractModule
         );
         $messenger->addWarning($message);
         return false;
+    }
+
+    /**
+     * Run all infrastructure diagnostics and display messages.
+     */
+    protected function runDiagnostics(): void
+    {
+        // When an external image server handles image requests,
+        // most local diagnostics are irrelevant.
+        if ($this->checkExternalServer()) {
+            $this->checkDeprecatedThumbnailer();
+            return;
+        }
+
+        $this->checkTilingMode();
+        $this->checkImager();
+        $this->checkTileType();
+        $this->checkTilingStatus();
+        $this->checkFastTileScript();
+        $this->checkDirectories();
+        $this->checkPhpMemory();
+    }
+
+    /**
+     * Check if an external image server is configured.
+     *
+     * @return bool True if external server is active (skip local
+     * diagnostics).
+     */
+    protected function checkExternalServer(): bool
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $externalUrl = $settings->get('iiifserver_media_api_url');
+        if (empty($externalUrl)) {
+            return false;
+        }
+
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+        $message = new PsrMessage(
+            'An external image server is configured ({url}). Local image processing, tiling and performance diagnostics are skipped.', // @translate
+            ['url' => $externalUrl]
+        );
+        $messenger->addSuccess($message);
+        return true;
+    }
+
+    /**
+     * Recommend tiled tiff when vips is available.
+     */
+    /**
+     * Check tile type and recommend the best option.
+     *
+     * - Deepzoom: tiles are static files served by Apache (~0.5ms).
+     *   Best for serving performance. Works with any imager. Many
+     *   small files on disk (thousands per image).
+     * - Tiled TIFF: single file per image, vips extracts regions
+     *   instantly (~10ms). Better for storage and creation speed.
+     *   Requires vips for extraction and goes through PHP.
+     */
+    protected function checkTileType(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $tileType = $settings->get('imageserver_image_tile_type', 'deepzoom');
+        $hasVips = $this->isPhpVipsAvailable()
+            || (bool) trim((string) shell_exec('which vips 2>/dev/null'));
+
+        if ($tileType === 'tiled_tiff' && !$hasVips) {
+            $message = new PsrMessage(
+                'Tile type is "tiled tiff" but vips is not available. Only vips can extract regions from tiled TIFF. Switch to "deepzoom" or install vips.' // @translate
+            );
+            $messenger->addError($message);
+        } elseif ($tileType === 'tiled_tiff') {
+            $message = new PsrMessage(
+                'Tile type is "tiled tiff": compact storage (single file per image), requires vips for each tile request (~10ms via PHP). For faster tile serving (~0.5ms), use "deepzoom" (static files served by Apache).' // @translate
+            );
+            $messenger->addSuccess($message);
+        } elseif ($tileType === 'deepzoom') {
+            $message = new PsrMessage(
+                'Tile type is "deepzoom": fastest tile serving (static files, ~0.5ms via Apache). Creates many small files on disk.' // @translate
+            );
+            $messenger->addSuccess($message);
+        }
+    }
+
+    /**
+     * Check which image processor is available and auto-select vips.
+     */
+    protected function checkImager(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $imager = $settings->get('imageserver_imager', 'Auto');
+
+        $hasVipsCli = (bool) trim(
+            (string) shell_exec('which vips 2>/dev/null')
+        );
+        $hasPhpVips = $this->isPhpVipsAvailable();
+        $hasImagick = extension_loaded('imagick');
+        $hasGd = extension_loaded('gd');
+
+        $available = [];
+        if ($hasVipsCli) {
+            $version = trim(
+                (string) shell_exec('vips --version 2>/dev/null')
+            );
+            $available[] = 'vips CLI (' . $version . ')';
+        }
+        if ($hasPhpVips) {
+            $available[] = 'php-vips';
+        }
+        if ($hasImagick) {
+            $available[] = 'Imagick';
+        }
+        if ($hasGd) {
+            $available[] = 'GD';
+        }
+
+        $message = new PsrMessage(
+            'Available image processors: {list}.', // @translate
+            ['list' => implode(', ', $available) ?: 'none']
+        );
+        $messenger->addSuccess($message);
+
+        // Auto-select best vips mode when current setting is Auto.
+        if ($imager === 'Auto' && $hasPhpVips) {
+            $settings->set('imageserver_imager', 'PhpVips');
+            $message = new PsrMessage(
+                'php-vips detected and set as default image processor (fastest).' // @translate
+            );
+            $messenger->addSuccess($message);
+        } elseif ($imager === 'Auto' && $hasVipsCli) {
+            $settings->set('imageserver_imager', 'Vips');
+            $message = new PsrMessage(
+                'Vips CLI detected and set as default image processor. For better performance, install php-vips (composer require jcupitt/vips).' // @translate
+            );
+            $messenger->addSuccess($message);
+        } elseif (!in_array($imager, ['PhpVips', 'Vips', 'Auto']) && ($hasPhpVips || $hasVipsCli)) {
+            $message = new PsrMessage(
+                'Vips is available but not selected as image processor. It is recommended for best performance and memory efficiency.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
+
+        if (!$hasVipsCli && !$hasPhpVips) {
+            $message = new PsrMessage(
+                'Vips is not installed. Install libvips-tools (apt install libvips-tools) or php-vips (composer require jcupitt/vips) for best performance.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
+    }
+
+    /**
+     * Check tile coverage: count tiled vs untiled image media.
+     */
+    protected function checkTilingStatus(): void
+    {
+        $services = $this->getServiceLocator();
+        $connection = $services->get('Omeka\Connection');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        // Count image media with and without tile data.
+        $totalImages = (int) $connection->fetchOne(<<<'SQL'
+            SELECT COUNT(*) FROM media
+            WHERE media_type LIKE 'image/%'
+                AND media_type != 'image/svg+xml'
+            SQL
+        );
+        if (!$totalImages) {
+            return;
+        }
+
+        // Tile info is stored in data.tile (deepzoom, zoomify,
+        // tiled_tiff, or jpeg2000).
+        $tiledImages = (int) $connection->fetchOne(<<<'SQL'
+            SELECT COUNT(*) FROM media
+            WHERE media_type LIKE 'image/%'
+                AND media_type != 'image/svg+xml'
+                AND JSON_EXTRACT(data, '$.tile') IS NOT NULL
+            SQL
+        );
+
+        $untiled = $totalImages - $tiledImages;
+        if ($untiled === 0) {
+            $message = new PsrMessage(
+                'All {total} images are tiled.', // @translate
+                ['total' => $totalImages]
+            );
+            $messenger->addSuccess($message);
+            return;
+        }
+
+        $message = new PsrMessage(
+            '{untiled} of {total} images are not tiled. Pre-tiling improves display performance significantly. Use the bulk tiler in the config form below.', // @translate
+            ['untiled' => $untiled, 'total' => $totalImages]
+        );
+        if ($untiled > $totalImages / 2) {
+            $messenger->addWarning($message);
+        } else {
+            $messenger->addSuccess($message);
+        }
+
+        // Warn about large untiled images.
+        $settings = $services->get('Omeka\Settings');
+        $maxSize = (int) $settings->get('imageserver_image_max_size', 5000000);
+        $largeUntiled = (int) $connection->fetchOne(<<<'SQL'
+            SELECT COUNT(*) FROM media
+            WHERE media_type LIKE 'image/%'
+                AND media_type != 'image/svg+xml'
+                AND size > ?
+                AND JSON_EXTRACT(data, '$.tile') IS NULL
+            SQL,
+            [$maxSize]
+        );
+        if ($largeUntiled) {
+            $hasVips = $this->isPhpVipsAvailable()
+                || (bool) trim((string) shell_exec('which vips 2>/dev/null'));
+            if ($hasVips) {
+                $message = new PsrMessage(
+                    '{count} large images (> {size} bytes) are not tiled. Vips handles them dynamically, but pre-tiling is recommended for best performance.', // @translate
+                    ['count' => $largeUntiled, 'size' => $maxSize]
+                );
+                $messenger->addSuccess($message);
+            } else {
+                $message = new PsrMessage(
+                    '{count} large images (> {size} bytes) are not tiled and vips is not available. These images cannot be processed dynamically. Pre-tile them or install vips.', // @translate
+                    ['count' => $largeUntiled, 'size' => $maxSize]
+                );
+                $messenger->addError($message);
+            }
+        }
+    }
+
+    /**
+     * Check if the fast tile script is set up in .htaccess.
+     */
+    protected function checkFastTileScript(): void
+    {
+        $services = $this->getServiceLocator();
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $htaccessPath = OMEKA_PATH . '/.htaccess';
+        $htaccess = @file_get_contents($htaccessPath);
+        if ($htaccess === false) {
+            return;
+        }
+
+        $scriptPath = __DIR__ . '/data/scripts/iiiftile.php';
+        if (!file_exists($scriptPath)) {
+            return;
+        }
+
+        if (strpos($htaccess, 'iiiftile.php') !== false) {
+            $message = new PsrMessage(
+                'The fast IIIF tile script is active in .htaccess.' // @translate
+            );
+            $messenger->addSuccess($message);
+        } else {
+            $message = new PsrMessage(
+                'The fast IIIF tile script is available but not set up in .htaccess. It bypasses the Omeka S stack for tile requests and improves response time significantly. See the module documentation to enable it.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
+    }
+
+    /**
+     * Check that required directories are writable.
+     */
+    protected function checkDirectories(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $config = $services->get('Config');
+        $basePath = $config['file_store']['local']['base_path']
+            ?: (OMEKA_PATH . '/files');
+
+        $tileDir = $settings->get('imageserver_image_tile_dir', 'tile');
+        $tilePath = $basePath . '/' . $tileDir;
+
+        $dirs = [
+            $tileDir => $tilePath,
+            'tile/cache' => $basePath . '/' . $tileDir . '/cache',
+        ];
+
+        foreach ($dirs as $label => $path) {
+            if (!is_dir($path)) {
+                @mkdir($path, 0775, true);
+            }
+            if (!is_dir($path) || !is_writable($path)) {
+                $message = new PsrMessage(
+                    'The directory "{dir}" is not writable. Check permissions.', // @translate
+                    ['dir' => $label]
+                );
+                $messenger->addError($message);
+            }
+        }
+    }
+
+    /**
+     * Check PHP memory limit for image processing.
+     */
+    protected function checkPhpMemory(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $memoryLimit = ini_get('memory_limit');
+        if ($memoryLimit === '-1') {
+            return;
+        }
+
+        $bytes = $this->parseMemoryValue($memoryLimit);
+        $imager = $settings->get('imageserver_imager', 'Auto');
+
+        // Vips uses memory-mapped files, so PHP memory limit is
+        // less critical. For GD/Imagick, 256M is the minimum.
+        $minBytes = ($imager === 'Vips') ? 128 * 1024 * 1024 : 256 * 1024 * 1024;
+        if ($bytes < $minBytes) {
+            $recommended = ($imager === 'Vips') ? '128M' : '256M';
+            $message = new PsrMessage(
+                'PHP memory_limit is {current}. For image processing, at least {recommended} is recommended.', // @translate
+                ['current' => $memoryLimit, 'recommended' => $recommended]
+            );
+            $messenger->addWarning($message);
+        }
+    }
+
+    protected function parseMemoryValue(string $value): int
+    {
+        $value = trim($value);
+        $last = strtolower(substr($value, -1));
+        $num = (int) $value;
+        switch ($last) {
+            case 'g':
+                $num *= 1024 * 1024 * 1024;
+                break;
+            case 'm':
+                $num *= 1024 * 1024;
+                break;
+            case 'k':
+                $num *= 1024;
+                break;
+        }
+        return $num;
+    }
+
+    /**
+     * Check if php-vips is actually usable (not just autoloaded).
+     *
+     * jcupitt/vips v1 requires ext-vips, v2 requires ext-ffi with
+     * ffi.enable=true. The class may exist via Composer but fail at
+     * runtime without the underlying extension.
+     */
+    protected function isPhpVipsAvailable(): bool
+    {
+        static $available;
+        if ($available === null) {
+            $available = false;
+            if (class_exists('Jcupitt\Vips\Image')) {
+                try {
+                    \Jcupitt\Vips\Image::black(1, 1);
+                    $available = true;
+                } catch (\Throwable $e) {
+                    // ext-vips or ext-ffi not available.
+                }
+            }
+        }
+        return $available;
     }
 
     /**
