@@ -2,8 +2,8 @@
 namespace ImageServer\Service\ViewHelper;
 
 use ImageServer\View\Helper\TileInfo;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Service factory for the TileInfo view helper.

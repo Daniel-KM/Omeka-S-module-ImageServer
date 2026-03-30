@@ -3,9 +3,9 @@
 namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\Mvc\Controller\Plugin\TileInfo;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Omeka\File\Exception\ConfigException;
+use Psr\Container\ContainerInterface;
 
 class TileInfoFactory implements FactoryInterface
 {

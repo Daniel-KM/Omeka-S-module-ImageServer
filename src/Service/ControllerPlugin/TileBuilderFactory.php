@@ -3,8 +3,8 @@
 namespace ImageServer\Service\ControllerPlugin;
 
 use ImageServer\Mvc\Controller\Plugin\TileBuilder;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 
 class TileBuilderFactory implements FactoryInterface
 {

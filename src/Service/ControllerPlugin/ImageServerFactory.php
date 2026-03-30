@@ -3,13 +3,13 @@
 namespace ImageServer\Service\ControllerPlugin;
 
 use Common\Stdlib\PsrMessage;
+use ImageServer\ImageServer\ImageMagick;
 use ImageServer\ImageServer\ImageServer;
 use ImageServer\ImageServer\Vips;
 use ImageServer\Mvc\Controller\Plugin\ImageServer as ImageServerPlugin;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use ImageServer\ImageServer\ImageMagick;
 use Omeka\Stdlib\Cli;
+use Psr\Container\ContainerInterface;
 
 class ImageServerFactory implements FactoryInterface
 {

@@ -3,12 +3,12 @@
 namespace ImageServer\Service\ControllerPlugin;
 
 use Common\Stdlib\PsrMessage;
+use ImageServer\ImageServer\ImageMagick;
 use ImageServer\ImageServer\Vips;
 use ImageServer\Mvc\Controller\Plugin\Tiler;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use ImageServer\ImageServer\ImageMagick;
 use Omeka\Stdlib\Cli;
+use Psr\Container\ContainerInterface;
 
 class TilerFactory implements FactoryInterface
 {

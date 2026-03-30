@@ -2,9 +2,9 @@
 namespace ImageServer\Service\Media\Renderer;
 
 use ImageServer\Media\Renderer\Tile;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Omeka\Service\Exception\ConfigException;
+use Psr\Container\ContainerInterface;
 
 class TileFactory implements FactoryInterface
 {

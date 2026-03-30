@@ -3,8 +3,8 @@
 namespace ImageServer\Service\Controller;
 
 use ImageServer\Controller\ImageController;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 
 class ImageControllerFactory implements FactoryInterface
 {

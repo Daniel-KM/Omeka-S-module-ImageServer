@@ -3,8 +3,8 @@
 namespace ImageServer\Service\ViewHelper;
 
 use ImageServer\View\Helper\TileMediaInfo;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Service factory for the TileMediaInfo view helper.

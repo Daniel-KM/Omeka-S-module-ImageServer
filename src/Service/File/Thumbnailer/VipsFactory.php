@@ -3,8 +3,8 @@
 namespace ImageServer\Service\File\Thumbnailer;
 
 use ImageServer\File\Thumbnailer\Vips;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 
 class VipsFactory implements FactoryInterface
 {

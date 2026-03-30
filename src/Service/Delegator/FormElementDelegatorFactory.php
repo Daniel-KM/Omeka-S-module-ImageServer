@@ -2,8 +2,8 @@
 
 namespace ImageServer\Service\Delegator;
 
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\DelegatorFactoryInterface;
+use Psr\Container\ContainerInterface;
 
 class FormElementDelegatorFactory implements DelegatorFactoryInterface
 {

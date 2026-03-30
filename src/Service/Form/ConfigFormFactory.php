@@ -4,10 +4,10 @@ namespace ImageServer\Service\Form;
 
 use ImageServer\Form\ConfigForm;
 use ImageServer\ImageServer\Vips;
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Omeka\File\Thumbnailer\ImageMagick;
 use Omeka\Stdlib\Cli;
+use Psr\Container\ContainerInterface;
 
 class ConfigFormFactory implements FactoryInterface
 {
