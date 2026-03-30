@@ -26,12 +26,12 @@ class SettingsFieldset extends Fieldset
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
                     'element_group' => 'image_server',
-                    'label' => 'Default display of images', // @translate
-                    'info' => 'To use the original file is not recommended when files are bigger than 1-10 MB.', // @translate
+                    'label' => 'Default image display on public pages', // @translate
+                    'info' => 'Specify how images are displayed on item and media pages. "Large" shows the standard Omeka large thumbnail. "Tile" renders images in a zoomable OpenSeadragon viewer using pre-tiled data when available. "Original" serves the original file (not recommended for large images). This is independent of IIIF viewers (Universal Viewer, Mirador, Diva…).', // @translate
                     'value_options' => [
-                        'tile' => 'Tile', // @translate
-                        'large' => 'Large', // @translate
-                        'original' => 'Original', // @translate
+                        'large' => 'Large thumbnail (default)', // @translate
+                        'tile' => 'Zoomable viewer (OpenSeadragon with tiles)', // @translate
+                        'original' => 'Original file (not recommended for images larger than 1-10 MB)', // @translate
                     ],
                 ],
                 'attributes' => [
@@ -43,12 +43,12 @@ class SettingsFieldset extends Fieldset
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
                     'element_group' => 'image_server',
-                    'label' => 'Fallback when there is no tile', // @translate
-                    'info' => 'To use the original file is not recommended when files are bigger than 1-10 MB.', // @translate
+                    'label' => 'Fallback when image is not pre-tiled', // @translate
+                    'info' => 'When "Zoomable viewer" is selected above but the image is not pre-tiled, this setting controls what is displayed instead. "Zoomable with large" loads the large thumbnail in OpenSeadragon (limited zoom). "Large thumbnail" falls back to the standard display. "Zoomable with original" loads the original file in OpenSeadragon (good zoom but slow for large files).', // @translate
                     'value_options' => [
-                        'tile_large' => 'Tile with large thumbnail', // @translate
+                        'tile_large' => 'Zoomable with large thumbnail (OpenSeadragon)', // @translate
                         'large' => 'Large thumbnail', // @translate
-                        'tile_original' => 'Tile with original file', // @translate
+                        'tile_original' => 'Zoomable with original file (OpenSeadragon)', // @translate
                     ],
                 ],
                 'attributes' => [
