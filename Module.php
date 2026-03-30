@@ -46,9 +46,8 @@ use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Entity\Media;
-use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Module\AbstractModule;
-use Omeka\Module\Exception\ModuleCannotInstallException;
+use Omeka\Mvc\Controller\Plugin\Messenger;
 
 /**
  * Image Server
@@ -383,7 +382,6 @@ class Module extends AbstractModule
         $note->setOption('text', $noteText);
         $form->setData($data);
         $form->prepare();
-
 
         // --- Audit tab ---
         $levelClasses = [

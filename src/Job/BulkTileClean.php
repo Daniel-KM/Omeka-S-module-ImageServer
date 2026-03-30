@@ -92,7 +92,6 @@ class BulkTileClean extends AbstractJob
             ['total' => $this->totalToProcess]
         );
 
-
         $offset = 0;
         $this->totalImages = 0;
         $this->totalProcessed = 0;

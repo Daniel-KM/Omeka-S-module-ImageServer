@@ -226,7 +226,7 @@ class Tiler extends AbstractJob
                 $data = json_decode($data, true);
                 unset($data['tileArgs']);
                 $newData = $data
-                    ? $connection->quote(json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))
+                    ? $connection->quote(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))
                     : 'NULL';
             } else {
                 $newData = 'NULL';
@@ -389,7 +389,7 @@ class Tiler extends AbstractJob
             $msg = new PsrMessage(
                 '[ArchiveRepertory] Failed to create folder because a file with the same name exists: {path}', // @translate
                 ['path' => $path]
-           );
+            );
             throw new RuntimeException((string) $msg);
         }
 
