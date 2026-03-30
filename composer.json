@@ -23,16 +23,22 @@
         "issues": "https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues",
         "forum": "https://forum.omeka.org/"
     },
-    "_require (not set until Omeka S merges PR #2412)": {
+    "_require (not set until Omeka S merges PR #2432)": {
         "omeka/omeka-s": "^4.0",
         "daniel-km/omeka-s-module-common": "*"
     },
     "require": {
         "daniel-km/deepzoom": "^1.1",
-        "daniel-km/zoomify": "^1.1"
+        "daniel-km/zoomify": "^1.1",
+        "jcupitt/vips": "^1.0"
+    },
+    "suggest": {
+        "ext-vips": "Php extension for vips, recommended for performance."
     },
     "provide": {
-        "lsolesen/pel": "*"
+        "lsolesen/pel": "*",
+        "ext-vips": "*",
+        "psr/log": "*"
     },
     "autoload": {
         "psr-4": {

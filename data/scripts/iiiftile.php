@@ -6,25 +6,28 @@
 // Handles region extraction and resizing via vips CLI with disk caching.
 // Subsequent requests for the same tile are served directly from cache.
 //
-// Requirements: vips cli (libvips-tools).
+// Requirements: vips cli (libvips-tools) or php-vips (jcupitt/vips).
 //
 // Setup: add these rules in .htaccess BEFORE the Omeka catch-all, so before
 // `RewriteCond %{REQUEST_FILENAME} -f`. The version segment (2/3) is optional.
 //
-//   # Fast IIIF tile server (bypass Omeka S stack).
+//   # Module ImageServer: fast IIIF tile server.
 //   RewriteCond %{REQUEST_URI} /iiif/([23]/)?[^/]+/[^/]+/[^/]+/[^/]+/[^.]+\.\w+$
 //   RewriteRule iiif/(.*) modules/ImageServer/data/scripts/iiiftile.php [END,E=IIIF_PATH:/iiif/$1]
 //
-// Warning: check if you install modules with composer, replace "modules/" by
-// "composer-addons/modules/".
+// If modules are installed via composer, replace "modules/" by "composer-addons/modules/".
+//
+// @todo Support quality "bitonal" (1-bit monochrome).
+// @todo Distinguish ^w, (upscale allowed, IIIF v3) from w, (no upscale). Currently both are treated identically.
 //
 // @link https://iiif.io/api/image/2.1/
 // @link https://iiif.io/api/image/3.0/
 
-// Detect vips: prefer php-vips library, then CLI, else fall back to Omeka S
+// Detect vips: prefer php-vips library, then cli, else fall back to Omeka S
 // standard stack.
 // php-vips v1 (ext-vips) or v2 (ext-ffi) are loaded via Composer autoloader
 // from the Omeka vendor directory.
+
 $usePhpVips = false;
 $vips = '';
 $autoloader = dirname(__DIR__, 4) . '/vendor/autoload.php';
