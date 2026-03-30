@@ -480,6 +480,11 @@ class Module extends AbstractModule
         $this->checkFastTileScript();
         $this->checkDirectories();
         $this->checkPhpMemory();
+        $this->checkIiifVersion();
+        $this->checkRights();
+        $this->checkBaseUrl();
+        $this->checkHttp2();
+        $this->checkOpcache();
     }
 
     /**
@@ -574,6 +579,13 @@ class Module extends AbstractModule
                 (string) shell_exec('vips --version 2>/dev/null')
             );
             $available[] = 'vips CLI (' . $version . ')';
+            if (version_compare($version, 'vips-8.10', '<')) {
+                $message = new PsrMessage(
+                    'Vips version {version} is older than 8.10. Upgrade is recommended for full feature support.', // @translate
+                    ['version' => $version]
+                );
+                $messenger->addWarning($message);
+            }
         }
         if ($hasPhpVips) {
             $available[] = 'php-vips';
@@ -917,6 +929,130 @@ class Module extends AbstractModule
                 break;
         }
         return $num;
+    }
+
+    /**
+     * Recommend IIIF v3 and level 2 support.
+     */
+    protected function checkIiifVersion(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $defaultVersion = $settings->get('iiifserver_media_api_default_version', '2');
+        if ($defaultVersion !== '3') {
+            $message = new PsrMessage(
+                'The default IIIF image API version is {version}. Version 3 is recommended as the current standard, supported by all modern viewers.', // @translate
+                ['version' => $defaultVersion ?: '0']
+            );
+            $messenger->addWarning($message);
+        }
+
+        $supported = $settings->get('iiifserver_media_api_supported_versions', []);
+        if (!in_array('2/2', $supported) || !in_array('3/2', $supported)) {
+            $message = new PsrMessage(
+                'For full viewer compatibility, enable at least Image API 2 level 2 and Image API 3 level 2 in supported versions.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
+    }
+
+    /**
+     * Warn if no rights/license is configured in info.json.
+     */
+    protected function checkRights(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $rights = $settings->get('imageserver_info_rights', '');
+        if (empty($rights) || $rights === 'none') {
+            $message = new PsrMessage(
+                'No rights/license is configured for the IIIF info.json. It is recommended to set a rights statement for IIIF compliance and interoperability.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
+    }
+
+    /**
+     * Verify that the base URL matches the current server URL.
+     */
+    protected function checkBaseUrl(): void
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $stored = $settings->get('imageserver_base_url', '');
+        if (empty($stored)) {
+            return;
+        }
+
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+        $current = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
+        if ($stored !== $current) {
+            $settings->set('imageserver_base_url', $current);
+            $message = new PsrMessage(
+                'The base URL was updated from "{old}" to "{new}".', // @translate
+                ['old' => $stored, 'new' => $current]
+            );
+            $messenger->addSuccess($message);
+        }
+    }
+
+    /**
+     * Check if HTTP/2 is supported (important for parallel tile
+     * loading).
+     */
+    protected function checkHttp2(): void
+    {
+        $services = $this->getServiceLocator();
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        $protocol = $_SERVER['SERVER_PROTOCOL'] ?? '';
+        // Behind a reverse proxy, the protocol may be HTTP/1.1 even
+        // if the client uses HTTP/2. Check the real protocol.
+        $h2 = stripos($protocol, '2') !== false
+            || !empty($_SERVER['HTTP2'])
+            || !empty($_SERVER['H2']);
+        if (!$h2) {
+            $message = new PsrMessage(
+                'The server does not appear to use HTTP/2. HTTP/2 allows parallel tile loading over a single connection, significantly improving viewer performance. Enable mod_http2 in Apache or equivalent in your web server.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
+    }
+
+    /**
+     * Check that PHP opcache is enabled.
+     */
+    protected function checkOpcache(): void
+    {
+        $services = $this->getServiceLocator();
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
+
+        if (!function_exists('opcache_get_status')) {
+            $message = new PsrMessage(
+                'PHP opcache is not available. Enable it for better performance (opcache.enable=1 in php.ini).' // @translate
+            );
+            $messenger->addWarning($message);
+            return;
+        }
+
+        $status = @opcache_get_status(false);
+        if (!$status || empty($status['opcache_enabled'])) {
+            $message = new PsrMessage(
+                'PHP opcache is installed but not enabled. Enable it for better performance (opcache.enable=1 in php.ini).' // @translate
+            );
+            $messenger->addWarning($message);
+        }
     }
 
     /**
