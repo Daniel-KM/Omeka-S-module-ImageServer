@@ -4,7 +4,9 @@
 //
 // Bypasses the full Omeka S MVC stack for maximum performance.
 // Handles region extraction and resizing via vips CLI with disk caching.
-// Subsequent requests for the same tile are served directly from cache.
+// Subsequent requests for the same tile are served from cache. When a tiled
+// TIFF or JP2 exists in files/tile/, it is used for fast random-access
+// extraction instead of the original.
 //
 // Requirements: vips cli (libvips-tools) or php-vips (jcupitt/vips).
 //
@@ -34,7 +36,11 @@ $autoloader = dirname(__DIR__, 4) . '/vendor/autoload.php';
 if (file_exists($autoloader)) {
     require_once $autoloader;
     if (class_exists('Jcupitt\Vips\Image')) {
-        $usePhpVips = true;
+        try {
+            \Jcupitt\Vips\Image::black(1, 1);
+            $usePhpVips = true;
+        } catch (\Throwable $e) {
+        }
     }
 }
 if (!$usePhpVips) {
@@ -178,10 +184,24 @@ if (strpos((string) $row['media_type'], 'image/') !== 0) {
     exit('Not an image.');
 }
 
+$storageId = $row['storage_id'];
 $ext = $row['extension'] ? '.' . $row['extension'] : '';
-$filepath = $filesPath . '/original/' . $row['storage_id'] . $ext;
+$filepath = $filesPath . '/original/' . $storageId . $ext;
 
-if (!file_exists($filepath)) {
+// Prefer tiled source (TIFF or JP2) over original for fast region extraction
+// with vips (random access, no full decode).
+$tiledPath = null;
+$tiledExts = ['.tif', '.jp2'];
+foreach ($tiledExts as $tExt) {
+    $candidate = $filesPath . '/tile/' . $storageId . $tExt;
+    if (file_exists($candidate)) {
+        $tiledPath = $candidate;
+        break;
+    }
+}
+if ($tiledPath) {
+    $filepath = $tiledPath;
+} elseif (!file_exists($filepath)) {
     http_response_code(404);
     exit('Image file not found.');
 }
@@ -357,7 +377,10 @@ $needsResize = $dW !== $rW || $dH !== $rH;
 if ($usePhpVips) {
     // --- php-vips: single process, no temp files, no shell ---
     try {
-        $image = \Jcupitt\Vips\Image::newFromFile($filepath, ['access' => 'sequential']);
+        // Use random access for tiled TIFF/JP2 (direct tile read), sequential
+        // for other formats (streams top-to-bottom).
+        $accessMode = $tiledPath ? 'random' : 'sequential';
+        $image = \Jcupitt\Vips\Image::newFromFile($filepath, ['access' => $accessMode]);
         $image = $image->autorot();
 
         if ($needsCrop) {
