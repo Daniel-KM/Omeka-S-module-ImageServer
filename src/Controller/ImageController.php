@@ -256,6 +256,10 @@ class ImageController extends AbstractActionController
             }
         }
 
+        // Tiles are immutable, so cache one day/one week.
+        $headers
+            ->addHeaderLine('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+
         // Redirect to the url when an existing file is available.
         if ($imageUrl) {
             // Header for CORS, required for access of IIIF.
