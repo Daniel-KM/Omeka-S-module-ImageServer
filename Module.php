@@ -511,8 +511,6 @@ class Module extends AbstractModule
 
     public function handleAfterSaveItem(Event $event): void
     {
-        // Don't run sizing during a batch edit of items, because it runs one
-        // job by item and it is slow. A batch process is always partial.
         /** @var \Omeka\Api\Request $request */
         $request = $event->getParam('request');
         if ($request->getOption('isPartial')) {
@@ -521,36 +519,35 @@ class Module extends AbstractModule
 
         /** @var \Omeka\Entity\Item $item */
         $item = $event->getParam('response')->getContent();
-
-        $medias = $item->getMedia();
-        if (!count($medias)) {
+        if (!count($item->getMedia())) {
             return;
         }
 
         $services = $this->getServiceLocator();
+        $tileMode = $services->get('Omeka\Settings')
+            ->get('imageserver_tile_mode', 'auto');
+        $jobClass = $tileMode === 'auto'
+            ? \ImageServer\Job\BulkSizerAndTiler::class
+            : \ImageServer\Job\BulkSizer::class;
 
-        // This is the most common case.
-        if (count($medias) === 1) {
-            $this->afterSaveMedia($medias->current());
-            return;
-        }
-
-        // Use bulk tiler instead of media tiler, to avoid to multiply jobs.
-        $params = [
-            'tasks' => ['size', 'tile'],
-            'query' => ['id' => $item->getId()],
-            'filter' => 'unsized',
-            'remove_destination' => 'skip',
-            'update_renderer' => false,
-        ];
-
-        /** @var \Omeka\Job\Dispatcher $dispatcher */
-        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-        // The tile mode may be "auto", "manual" or "external".
-        $tileMode = $services->get('Omeka\Settings')->get('imageserver_tile_mode', 'auto');
-        $tileMode === 'auto'
-            ? $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params)
-            : $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
+        $services->get('Common\DeferredJobDispatch')->defer(
+            $jobClass,
+            'imageserver_size_tile',
+            ['item_ids' => $item->getId()],
+            function (string $key, array $allParams): array {
+                $itemIds = [];
+                foreach ($allParams as $p) {
+                    $itemIds[] = $p['item_ids'];
+                }
+                return [
+                    'tasks' => ['size', 'tile'],
+                    'query' => ['id' => array_unique($itemIds)],
+                    'filter' => 'unsized',
+                    'remove_destination' => 'skip',
+                    'update_renderer' => false,
+                ];
+            }
+        );
     }
 
     public function handleAfterSaveMedia(Event $event): void
