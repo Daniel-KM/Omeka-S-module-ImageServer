@@ -853,7 +853,7 @@ class ImageController extends AbstractActionController
                     'feature' => 'sizeByW',
                     'upscale' => $upscale,
                     'width' => $destinationWidth,
-                    'height' => (int) ($transform['region']['height'] * $pctWidth),
+                    'height' => max(1, (int) round($transform['region']['height'] * $pctWidth)),
                 ];
             }
 
@@ -863,7 +863,7 @@ class ImageController extends AbstractActionController
                 $transform['size'] = [
                     'feature' => 'sizeByH',
                     'upscale' => $upscale,
-                    'width' => (int) ($transform['region']['width'] * $pctHeight),
+                    'width' => max(1, (int) round($transform['region']['width'] * $pctHeight)),
                     'height' => $destinationHeight,
                 ];
             }
