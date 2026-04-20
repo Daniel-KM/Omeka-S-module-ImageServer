@@ -69,6 +69,7 @@ return [
     ],
     'view_helpers' => [
         'factories' => [
+            'imageSize' => Service\ViewHelper\ImageSizeFactory::class,
             'tileInfo' => Service\ViewHelper\TileInfoFactory::class,
             'tileMediaInfo' => Service\ViewHelper\TileMediaInfoFactory::class,
         ],
@@ -98,6 +99,7 @@ return [
         'factories' => [
             'convertToImage' => Service\ControllerPlugin\ConvertToImageFactory::class,
             'imageServer' => Service\ControllerPlugin\ImageServerFactory::class,
+            'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,
             'sizer' => Service\ControllerPlugin\SizerFactory::class,
             'tileInfo' => Service\ControllerPlugin\TileInfoFactory::class,
             'tiler' => Service\ControllerPlugin\TilerFactory::class,

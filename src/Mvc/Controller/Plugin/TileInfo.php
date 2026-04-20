@@ -29,7 +29,7 @@
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
-use IiifServer\Mvc\Controller\Plugin\ImageSize;
+use ImageServer\Mvc\Controller\Plugin\ImageSize;
 use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Representation\MediaRepresentation;

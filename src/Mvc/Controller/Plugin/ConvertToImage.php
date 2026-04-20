@@ -3,7 +3,7 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use finfo;
-use IiifServer\Mvc\Controller\Plugin\ImageSize;
+use ImageServer\Mvc\Controller\Plugin\ImageSize;
 use ImageServer\ImageServer\AbstractImager;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 

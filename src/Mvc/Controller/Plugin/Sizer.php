@@ -4,7 +4,7 @@ namespace ImageServer\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
-use IiifServer\Mvc\Controller\Plugin\ImageSize;
+use ImageServer\Mvc\Controller\Plugin\ImageSize;
 use ImageServer\Job\SizerTrait;
 use Laminas\Log\LoggerInterface;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
