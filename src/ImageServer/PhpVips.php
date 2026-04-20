@@ -107,8 +107,6 @@ class PhpVips extends AbstractImager
         try {
             // Use random access for tiled sources (direct tile
             // read), sequential for other formats.
-            // Options are passed in the filename string for
-            // compatibility with all versions of ext-vips.
             $accessMode = empty($args['source']['skip_autorot'])
                 ? 'sequential' : 'random';
             $image = \Jcupitt\Vips\Image::newFromFile(
@@ -196,10 +194,7 @@ class PhpVips extends AbstractImager
                     return null;
             }
 
-            // Save. Options are passed in the filename string for
-            // compatibility with all versions of ext-vips.
-            $saveOptionsSuffix = $this->getSaveOptionsSuffix($args);
-            $image->writeToFile($destination . $saveOptionsSuffix);
+            $this->vipsWrite($image, $destination, $args);
         } catch (\Throwable $e) {
             $this->getLogger()->err(
                 'PhpVips failed to process "{file}": {message}', // @translate
@@ -214,7 +209,55 @@ class PhpVips extends AbstractImager
     }
 
     /**
-     * Build a filename suffix string for vips save options for compatibility.
+     * Write an image with save options across php-vips / libvips versions.
+     *
+     * Two syntaxes are used historically:
+     *   1. `writeToFile($path, $options)` — array form, primary in
+     *      modern php-vips (>= 1.0) and recent ext-vips.
+     *   2. `writeToFile($path . '[opt=val,...]')` — bracketed-suffix
+     *      form, used by older libvips bindings where the array form did not
+     *      propagate the options.
+     *
+     * On recent ext-vips (>= 1.0.13 tested), the bracketed form is NOT parsed:
+     * the brackets end up in the on-disk filename. On older ext-vips, the array
+     * form was silently ignored and the bracketed form was required.
+     *
+     * Strategy: try the array form first. If the file is missing after the
+     * call, fall back to the bracketed form. Finally, if the literal
+     * "path[opts]" file exists on disk (old-behaviour library on recent
+     * ext-vips, or the reverse), rename it to the intended destination.
+     */
+    protected function vipsWrite(
+        \Jcupitt\Vips\Image $image,
+        string $destination,
+        array $args
+    ): void {
+        $options = $this->getSaveOptions($args);
+        try {
+            $image->writeToFile($destination, $options);
+        } catch (\Throwable $e) {
+            // Old libvips rejected the array options parameter; retry with the
+            // bracketed-suffix form.
+            $image->writeToFile(
+                $destination . $this->getSaveOptionsSuffix($args)
+            );
+        }
+        if (file_exists($destination)) {
+            return;
+        }
+        // Recent ext-vips stored the brackets as literal filename characters.
+        // Check the bracketed path and rename.
+        $literal = $destination . $this->getSaveOptionsSuffix($args);
+        if (file_exists($literal)) {
+            @rename($literal, $destination);
+        }
+    }
+
+    /**
+     * Build a filename suffix string for vips save options.
+     *
+     * Used as a fallback for older libvips bindings where the array options
+     * parameter was not honoured by writeToFile().
      *
      * Example: "[Q=85,strip]" for JPEG.
      */
