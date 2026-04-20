@@ -46,6 +46,25 @@ available in Omeka `StoreInterface`.
 Installation
 ------------
 
+### Install scenarios
+
+Image Server and [Iiif Server] are two independent modules. Each one can be
+installed alone, or both together.
+
+- Image Server alone: serves the IIIF Image API (info.json + image requests)
+  from the Omeka files locally, without manifest generation. Useful when
+  manifests are provided by another tool, or when a IIIF viewer points directly
+  at the image endpoints.
+
+- Iiif Server alone: generates IIIF Presentation manifests only. An external
+  image server (Cantaloupe, IIP Image, etc.) must be configured in IiifServer
+  settings.
+
+- Both installed: IiifServer auto-detects Image Server and uses it as the local
+  IIIF image service in manifests.
+
+### Module
+
 See general end user documentation for [installing a module].
 
 This module requires the module [Common], that should be installed first.
@@ -59,10 +78,8 @@ php extension if possible, or as command line tool), but the more common
 (php extensions) are supported. Except vips, they are installed by default in
 most servers.
 
-The module [Iiif Server] is currently required and should be installed first.
-
-Note: To keep old options from [Universal Viewer], upgrade it to version 3.4.3
-before enabling ImageServer. Else, simply set them in the config form.
+The module [Iiif Server] is optional. Install it alongside Image Server to
+expose IIIF Presentation manifests in addition to the Image API.
 
 * From the zip
 
@@ -90,7 +107,7 @@ Run them from the root of Omeka:
 vendor/bin/phpunit -c modules/ImageServer/phpunit.xml --testdox
 ```
 
-### http/2
+### http/2 or http/3
 
 It is recommended to set the web server (usually Apache or Nginx) to serve files
 with protocol `http/2`, that allows to send multiple files during the same tcp
