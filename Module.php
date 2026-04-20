@@ -501,8 +501,15 @@ class Module extends AbstractModule
     {
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
-        $form = $services->get('FormElementManager')->get(ConfigForm::class);
-        $params = $controller->getRequest()->getPost();
+        $rawPost = $controller->getRequest()->getPost()->toArray();
+
+        // Dispatch bulk jobs first, before handleConfigFormAuto which may
+        // return false on form validation and block the dispatch.
+        if (!empty($rawPost['imageserver_bulk_prepare']['process'])
+            && !empty($rawPost['imageserver_bulk_prepare']['tasks'])
+        ) {
+            $this->dispatchBulkJob($controller, $rawPost);
+        }
 
         if (!$this->handleConfigFormAuto($controller)) {
             return false;
@@ -514,34 +521,41 @@ class Module extends AbstractModule
         $top = rtrim($urlHelper('top', [], ['force_canonical' => true]), '/') . '/';
         $settings->set('imageserver_base_url', $top);
 
-        // Form is already validated in parent.
-        $post = $params;
-        $form->init();
-        $form->setData($params);
+        // Get a fresh form instance for array-valued settings that
+        // handleConfigFormAuto cannot handle.
+        $form = $services->get('FormElementManager')
+            ->get(ConfigForm::class);
+        $form->setData($rawPost);
         $form->isValid();
         $params = $form->getData();
 
         $this->normalizeMediaApiSettings($params);
 
-        if (empty($post['imageserver_bulk_prepare']['process'])
-            || empty($post['imageserver_bulk_prepare']['tasks'])
-        ) {
-            return true;
-        }
+        return true;
+    }
 
-        $params = $post['imageserver_bulk_prepare'];
+    /**
+     * Dispatch the bulk sizing/tiling/cleaning job.
+     */
+    protected function dispatchBulkJob(
+        AbstractController $controller,
+        array $rawPost
+    ): void {
+        $services = $this->getServiceLocator();
+        $messenger = $services->get('ControllerPluginManager')
+            ->get('messenger');
 
-        $plugins = $services->get('ControllerPluginManager');
-        $messenger = $plugins->get('messenger');
+        $params = $rawPost['imageserver_bulk_prepare'];
 
         $query = [];
-        parse_str($params['query'], $query);
+        parse_str($params['query'] ?? '', $query);
         unset($query['submit']);
         $params['query'] = $query;
 
         $params['remove_destination'] ??= 'skip';
         $params['update_renderer'] = false;
-        $params['filter'] = empty($params['filter_sized']) ? 'all' : $params['filter_sized'];
+        $params['filter'] = empty($params['filter_sized'])
+            ? 'all' : $params['filter_sized'];
         $params = array_intersect_key($params, [
             'query' => null,
             'tasks' => null,
@@ -551,42 +565,62 @@ class Module extends AbstractModule
         ]);
 
         if (!$params['tasks']) {
-            $message = new PsrMessage(
+            $messenger->addError(new PsrMessage(
                 'No task defined.' // @translate
-            );
-            $messenger->addError($message);
-            return false;
+            ));
+            return;
         }
 
-        if (in_array('tile_clean', $params['tasks']) && count($params['tasks']) > 1) {
-            $message = new PsrMessage(
+        if (in_array('tile_clean', $params['tasks'])
+            && count($params['tasks']) > 1
+        ) {
+            $messenger->addError(new PsrMessage(
                 'The task to clean tiles should be run alone.' // @translate
-            );
-            $messenger->addError($message);
-            return false;
+            ));
+            return;
         }
 
-        $message = null;
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         if (in_array('tile_clean', $params['tasks'])) {
-            $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
-            $job = $dispatcher->dispatch(\ImageServer\Job\BulkTileClean::class, $params);
+            $params = array_intersect_key($params, [
+                'query' => null,
+                'remove_destination' => null,
+                'update_renderer' => null,
+            ]);
+            $job = $dispatcher->dispatch(
+                \ImageServer\Job\BulkTileClean::class, $params
+            );
             $message = 'Cleaning tiles and tile metadata attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
-        } elseif (in_array('tile', $params['tasks']) && in_array('size', $params['tasks'])) {
-            $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizerAndTiler::class, $params);
+        } elseif (in_array('tile', $params['tasks'])
+            && in_array('size', $params['tasks'])
+        ) {
+            $job = $dispatcher->dispatch(
+                \ImageServer\Job\BulkSizerAndTiler::class, $params
+            );
             $message = 'Creating tiles and dimensions for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
         } elseif (in_array('size', $params['tasks'])) {
-            $params = array_intersect_key($params, ['query' => null, 'filter' => null]);
-            $job = $dispatcher->dispatch(\ImageServer\Job\BulkSizer::class, $params);
+            $params = array_intersect_key($params, [
+                'query' => null, 'filter' => null,
+            ]);
+            $job = $dispatcher->dispatch(
+                \ImageServer\Job\BulkSizer::class, $params
+            );
             $message = 'Creating dimensions for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
         } elseif (in_array('tile', $params['tasks'])) {
-            $params = array_intersect_key($params, ['query' => null, 'remove_destination' => null, 'update_renderer' => null]);
-            $job = $dispatcher->dispatch(\ImageServer\Job\BulkTiler::class, $params);
+            $params = array_intersect_key($params, [
+                'query' => null,
+                'remove_destination' => null,
+                'update_renderer' => null,
+            ]);
+            $job = $dispatcher->dispatch(
+                \ImageServer\Job\BulkTiler::class, $params
+            );
             $message = 'Creating tiles for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
         } else {
-            return true;
+            return;
         }
 
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
         $message = new PsrMessage(
             $message,
             [
@@ -602,7 +636,6 @@ class Module extends AbstractModule
         );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
-        return true;
     }
 
     protected function checkTilingMode(): bool
@@ -1378,7 +1411,7 @@ class Module extends AbstractModule
                 $jobClass,
                 [
                     'tasks' => ['size', 'tile'],
-                    'query' => ['item_id' => [$item->getId()]],
+                    'query' => ['id' => [$item->getId()]],
                     'filter' => 'unsized',
                     'remove_destination' => 'skip',
                     'update_renderer' => false,
@@ -1425,11 +1458,12 @@ class Module extends AbstractModule
                 [$this, 'mergeSizeTileParams']
             );
         } else {
+            $itemId = $media->getItem()->getId();
             $services->get(\Omeka\Job\Dispatcher::class)->dispatch(
                 $jobClass,
                 [
                     'tasks' => ['size', 'tile'],
-                    'query' => ['id' => [$media->getId()]],
+                    'query' => ['id' => [$itemId]],
                     'filter' => 'unsized',
                     'remove_destination' => 'skip',
                     'update_renderer' => false,
@@ -1457,12 +1491,27 @@ class Module extends AbstractModule
                 $itemIds[] = $p['item_ids'];
             }
         }
+
+        // Resolve media IDs to their parent item IDs so the job query only uses
+        // the "id" key that the items API adapter actually recognizes. Using
+        // "item_id" would be silently ignored and return ALL items.
+        if ($mediaIds) {
+            $connection = $this->getServiceLocator()
+                ->get('Omeka\Connection');
+            $mediaIds = array_unique($mediaIds);
+            $placeholders = implode(',', array_fill(0, count($mediaIds), '?'));
+            $rows = $connection->fetchFirstColumn(
+                "SELECT DISTINCT item_id FROM media WHERE id IN ($placeholders)",
+                $mediaIds
+            );
+            foreach ($rows as $id) {
+                $itemIds[] = (int) $id;
+            }
+        }
+
         $query = [];
         if ($itemIds) {
-            $query['item_id'] = array_unique($itemIds);
-        }
-        if ($mediaIds) {
-            $query['id'] = array_unique($mediaIds);
+            $query['id'] = array_unique($itemIds);
         }
         return [
             'tasks' => ['size', 'tile'],
