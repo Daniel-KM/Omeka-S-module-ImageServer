@@ -13,7 +13,9 @@ class ConfigFormFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
-        $cli = $services->get('Omeka\Cli');
+        // Silent Cli for feature probes (config form is only used to detect
+        // which imagers are available on the host).
+        $cli = $services->get('ImageServer\Stdlib\CliNoLog');
 
         $imagers = [
             'Auto' => [

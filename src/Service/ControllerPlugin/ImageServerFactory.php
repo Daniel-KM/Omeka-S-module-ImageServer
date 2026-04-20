@@ -21,14 +21,19 @@ class ImageServerFactory implements FactoryInterface
         $settings = $services->get('Omeka\Settings');
 
         $cli = $services->get('Omeka\Cli');
+        // Silent Cli for feature probes: Omeka\Cli logs every failed `command
+        // -v` as an error, which is noise for optional binaries (magick, vips).
+        // Use the silent variant for detection, keep Omeka\Cli for real command
+        // execution.
+        $probeCli = $services->get('ImageServer\Stdlib\CliNoLog');
         $config = $services->get('Config');
         $convertDir = $config['thumbnails']['thumbnailer_options']['imagemagick_dir'];
         $vipsDir = $settings->get('imageserver_vips_dir', '');
 
         $commandLineArgs = [];
         $commandLineArgs['cli'] = $cli;
-        $commandLineArgs['convertPath'] = $this->getConvertPath($cli, $convertDir);
-        $commandLineArgs['vipsPath'] = $this->getPath($cli, $vipsDir, Vips::VIPS_COMMAND);
+        $commandLineArgs['convertPath'] = $this->getConvertPath($probeCli, $convertDir);
+        $commandLineArgs['vipsPath'] = $this->getPath($probeCli, $vipsDir, Vips::VIPS_COMMAND);
         // Skip warnings when an external image server is configured, since
         // local image processing tools are not needed in that case.
         // In "Auto" mode, warn only if no processor is available at all.

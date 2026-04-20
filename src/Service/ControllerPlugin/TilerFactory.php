@@ -21,6 +21,9 @@ class TilerFactory implements FactoryInterface
         }
 
         $cli = $services->get('Omeka\Cli');
+        // Silent Cli for feature probes: Omeka\Cli logs every failed `command
+        // -v` as an error, which is noise for optional binaries (magick, vips).
+        $probeCli = $services->get('ImageServer\Stdlib\CliNoLog');
         $config = $services->get('Config');
         $convertDir = $config['thumbnails']['thumbnailer_options']['imagemagick_dir'];
         $vipsDir = $settings->get('imageserver_vips_dir', '');
@@ -30,8 +33,8 @@ class TilerFactory implements FactoryInterface
         $params['tile_dir'] = $tileDir;
         $params['tile_type'] = $settings->get('imageserver_image_tile_type');
         $params['processor'] = $processor === 'Auto' ? '' : $processor;
-        $params['convertPath'] = $this->getConvertPath($cli, $convertDir);
-        $params['vipsPath'] = $this->getPath($cli, $vipsDir, Vips::VIPS_COMMAND);
+        $params['convertPath'] = $this->getConvertPath($probeCli, $convertDir);
+        $params['vipsPath'] = $this->getPath($probeCli, $vipsDir, Vips::VIPS_COMMAND);
         $logger = $services->get('Omeka\Logger');
         // Skip warnings when an external image server is configured, since
         // local image processing tools are not needed in that case.

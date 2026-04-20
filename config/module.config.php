@@ -43,6 +43,11 @@ if ($prefix) {
 }
 
 return [
+    'service_manager' => [
+        'factories' => [
+            Stdlib\CliNoLog::class => Service\CliNoLogFactory::class,
+        ],
+    ],
     'thumbnails' => [
         'thumbnailer_options' => [
             'vips_dir' => null,
