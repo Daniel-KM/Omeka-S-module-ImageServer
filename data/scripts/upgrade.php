@@ -337,3 +337,14 @@ if (version_compare($oldVersion, '3.6.24', '<')) {
     );
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.6.25', '<')) {
+    if (!$this->checkModuleActiveVersion('IiifServer', '3.6.32')) {
+        $message = new PsrMessage(
+            'The module {module} should be upgraded to version {version} or later.', // @translate
+            ['module' => 'IiifServer', 'version' => '3.6.32']
+        );
+        $messenger->addError($message);
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
+    }
+}
