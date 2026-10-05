@@ -26,81 +26,6 @@ $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
 $entityManager = $services->get('Omeka\EntityManager');
 
-/**
- * Dispatch a background job during module upgrade.
- *
- * During upgrade, module classes are not yet available to the background
- * process because the module state in the database is still
- * "needs_upgrade". This function temporarily sets the module version and
- * active flag so the spawned process can bootstrap the module, waits for
- * the job to start, then restores the original state. The Module Manager
- * will set the real version and state once upgrade() returns.
- *
- * @see \IiifServer upgrade.php
- */
-$dispatchJobDuringUpgrade = function (string $jobClass, array $args = [])
-    use ($services, $connection, $newVersion, $messenger): \Omeka\Entity\Job {
-    $moduleId = 'ImageServer';
-
-    // Load all required job files.
-    $baseJobPath = dirname(__DIR__, 2) . '/src/Job/';
-    foreach (['SizerTrait', 'TilerTrait'] as $trait) {
-        $file = $baseJobPath . $trait . '.php';
-        if (file_exists($file)) {
-            require_once $file;
-        }
-    }
-    $shortClass = substr(
-        strrchr('\\' . $jobClass, '\\'), 1
-    );
-    require_once $baseJobPath . $shortClass . '.php';
-
-    // Read current state.
-    $moduleRow = $connection->executeQuery(
-        'SELECT is_active FROM module WHERE id = :id',
-        ['id' => $moduleId]
-    )->fetchAssociative();
-    $wasActive = (bool) ($moduleRow['is_active'] ?? false);
-
-    // Temporarily mark the module as active with the new version so the
-    // background process bootstraps it.
-    $connection->executeStatement(
-        'UPDATE module SET version = :version, is_active = 1 WHERE id = :id',
-        ['version' => $newVersion, 'id' => $moduleId]
-    );
-
-    $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-    $job = $dispatcher->dispatch($jobClass, $args);
-
-    // Wait for the background process to bootstrap (read the module state)
-    // before restoring.
-    sleep(5);
-
-    // Check whether the job actually started.
-    $jobId = $job->getId();
-    $status = $connection->executeQuery(
-        'SELECT status FROM job WHERE id = :id',
-        ['id' => $jobId]
-    )->fetchOne();
-    if ($status === \Omeka\Entity\Job::STATUS_STARTING) {
-        $messenger->addWarning(new PsrMessage(
-            'The job #{job_id} is still starting after the sleep delay. It may need to be relaunched manually.', // @translate
-            ['job_id' => $jobId]
-        ));
-    }
-
-    // Restore is_active if the module was inactive. The version is not
-    // restored: the Module Manager overwrites it after upgrade() returns.
-    if (!$wasActive) {
-        $connection->executeStatement(
-            'UPDATE module SET is_active = 0 WHERE id = :id',
-            ['id' => $moduleId]
-        );
-    }
-
-    return $job;
-};
-
 if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.93')) {
     $message = new \Omeka\Stdlib\Message(
         $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
@@ -109,6 +34,22 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
     $messenger->addError($message);
     throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
+
+/**
+ * Dispatch a background job during module upgrade.
+ *
+ * The module state handling (temporarily activating the module so the spawned
+ * process can bootstrap it, then restoring its state) is centralized in the
+ * Common service; only the module-specific job files to load are provided.
+ */
+$upgradeJobDispatch = $services->get('Common\UpgradeJobDispatch');
+$jobDir = dirname(__DIR__, 2) . '/src/Job/';
+$dispatchJobDuringUpgrade = fn (string $jobClass, array $args = []): \Omeka\Entity\Job =>
+    $upgradeJobDispatch($jobClass, $args, [
+        $jobDir . 'SizerTrait.php',
+        $jobDir . 'TilerTrait.php',
+        $jobDir . substr(strrchr('\\' . $jobClass, '\\'), 1) . '.php',
+    ]);
 
 if (version_compare($oldVersion, '3.6.2', '<')) {
     $settings->set('imageserver_info_default_version', $settings->get('imageserver_manifest_version'));
@@ -344,4 +285,25 @@ if (version_compare($oldVersion, '3.6.25', '<')) {
         $messenger->addError($message);
         throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
     }
+}
+
+if (version_compare($oldVersion, '3.6.26', '<')) {
+    // The rights property is now a multi-valued select, like the IiifServer
+    // counterpart, since rights may be drawn from several properties. Normalize
+    // a legacy scalar value to an array, otherwise the config form crashes when
+    // binding it to the multiple select.
+    $value = $settings->get('imageserver_info_rights_property');
+    if (!is_array($value)) {
+        $settings->set('imageserver_info_rights_property', ($value === null || $value === '') ? [] : [$value]);
+    }
+
+    $message = new PsrMessage(
+        'The rights property option now accepts several properties.' // @translate
+    );
+    $messenger->addSuccess($message);
+
+    $message = new PsrMessage(
+        'The pages of the pdf files are now served as images, like Cantaloupe, with the identifier "file.pdf;2". Enable the option in the module Iiif Server to display them in the manifests, so the viewers can search in the ocr.' // @translate
+    );
+    $messenger->addSuccess($message);
 }
