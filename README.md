@@ -14,7 +14,7 @@ zoom, inside search, etc. may be managed too. Dynamic lists of records may be
 created, for example for browse pages.
 
 So it can replace in Omeka any external image server like [Cantaloupe] or [IIP Image],
-in particular when using the quick image processor [vips] as backend.
+in particular when using the quick image processor [libvips] as backend.
 
 The full specifications of the [International Image Interoperability Framework]
 standard are supported (versions 2 and 3), so any widget that supports it can
@@ -46,22 +46,14 @@ available in Omeka `StoreInterface`.
 Installation
 ------------
 
-### Install scenarios
+The installation depends on your infrastructure, your images and your rights:
 
-Image Server and [Iiif Server] are two independent modules. Each one can be
-installed alone, or both together.
-
-- Image Server alone: serves the IIIF Image API (info.json + image requests)
-  from the Omeka files locally, without manifest generation. Useful when
-  manifests are provided by another tool, or when a IIIF viewer points directly
-  at the image endpoints.
-
-- Iiif Server alone: generates IIIF Presentation manifests only. An external
-  image server (Cantaloupe, IIP Image, etc.) must be configured in IiifServer
-  settings.
-
-- Both installed: IiifServer auto-detects Image Server and uses it as the local
-  IIIF image service in manifests.
+- with or without external server,
+- with or without vips (fast image tiler),
+- with or without clean urls or arks identifier,
+- with or without control of rights via module Access,
+- with or without tiled images (pyramidal tiff/jpeg 2000),
+- with or without quick tiling via update of file .htaccess.
 
 ### Module
 
@@ -72,13 +64,13 @@ This module requires the module [Common], that should be installed first.
 PHP should be installed with the extension `exif` in order to get the size of
 images. This is the case for all major distributions and providers.
 
-For [performance reasons], the recommended image processor is [vips] (with the
-php extension [php-vips 1.0.x] if possible, or as command line tool). Installation instructions
-are further down in this readme.
+For [performance reasons], the recommended image processor is [libvips], used
+through the php library [jcupitt/vips] or as a command line tool. See below the
+three ways to install it.
 
-The more common [ImageMagick] (command line `magick` or legacy `convert`), [GD] or [Imagick]
-(php extensions) are supported as well. Unlike vips, these are installed by default in
-most servers.
+The more common [ImageMagick] (command line `magick` or legacy `convert`), [GD]
+or [Imagick] (php extensions) are supported as well. Unlike vips, they are
+installed by default on most servers.
 
 The module [Iiif Server] is optional. Install it alongside Image Server to
 expose IIIF Presentation manifests in addition to the Image API.
@@ -108,6 +100,25 @@ Run them from the root of Omeka:
 ```sh
 vendor/bin/phpunit -c modules/ImageServer/phpunit.xml --testdox
 ```
+
+### Install scenarios
+
+[Image Server] and [Iiif Server] are two independent modules. Each one can be
+installed alone, or both together.
+
+- Image Server alone: serve the IIIF Image API (info.json + image requests) from
+  the Omeka files locally, without manifest generation. Useful when manifests
+  are provided by another tool, or when a IIIF viewer points directly at the
+  image endpoints.
+
+- Iiif Server alone: generates IIIF Presentation manifests and provides image
+  sizing via the job "Media Dimensions". An external image server ([Cantaloupe],
+  IIP Image, etc.) must be configured in Iiif Server settings to handle all
+  image processing (tiling, dynamic transformations, region extraction).
+
+- Both installed: Iiif Server auto-detects Image Server and uses it as the local
+  IIIF image service in manifests. The image may still be provided by an
+  external image server, in particular to manage clean urls and ark identifiers.
 
 ### http/2 or http/3
 
@@ -160,61 +171,166 @@ directive `<Directory>`.
 
 To fix Amazon issues with cors, see the [aws documentation].
 
-### Image processor: Vips (command line)
+### Vips
 
-In order to use **"Vips (command line)"** as **Image processor** in the module config, we need to install 
-the command line [vips]. Recommended version is 8.10 or higher. Versions prior to 8.4 have not been
-tested.
+For performance, it is recommended to use [libvips] as the Omeka thumbnailer. A
+module allows to use it anywhere in Omeka, so it is recommended to use the
+module [Vips].
 
-Installation on Debian/Ubuntu, without the recommended graphical interface:
+If you don't want to install the module [Vips] but still want to use [libvips],
+you should install it.
+
+The library [libvips] can be used in three ways, selected in the module config
+as image processor. See the module [Vips] for more details.
+
+- The command line tool: a simple package available in all linux distributions.
+  It is used too for the images that require more memory than the php one.
+- The php library [jcupitt/vips] v1 with the php extension `ext-vips` (or
+  [php-vips]): two times quicker than the command line tool. **Recommended for
+  production.** The library v1 is included in the module.
+- The php library [jcupitt/vips] v2 with the php extension `ext-ffi`: slightly
+  better performance than v1, but complex in production: it requires `ffi.enable=true`
+  in php.ini, that allows php to call any C function and to bypass the options
+  `disable_functions` and `open_basedir`, so the php documentation
+  [recommends against enabling FFI globally in production].
+
+The two versions of the library have the same api and are detected
+automatically.
+
+#### Command line tool
+
+On Debian/Ubuntu, with option "--no-install-recommends" to avoid to install the
+heavy and useless graphical interface:
 
 ```sh
 sudo apt install --no-install-recommends libvips-tools
 ```
 
-Installation on CentOS/RedHat:
+On Centos/RedHat:
 
 ```sh
 sudo dnf install vips-tools
 ```
 
+Recommended version is 8.10 or higher. Versions prior to 8.4 have not been
+tested.
 
-### Image processor: PHP-Vips 1.0.x
+#### Php library v1 with ext-vips (recommended)
 
-In order to use **"php-vips (library, fastest)"** as **Image processor** in the module config, we need to install the php extension [php-vips 1.0.x] 
+Install the extension as a package when available:
 
-Installation on Debian/Ubuntu
-1. Install the `libvips-tools` library, just like in the command line scenario
-2. Install the php extension, with pecl:
 ```sh
+# Debian/Ubuntu
+sudo apt install --no-install-recommends php-vips
+# Centos/RedHat
+sudo dnf install php-vips
+```
+
+Else install it via [pecl], for example on Debian/Ubuntu (adapt the version of
+php):
+
+```sh
+sudo apt install --no-install-recommends libvips-dev php-dev php-pear
 sudo pecl install vips
+echo "extension=vips.so" | sudo tee /etc/php/8.1/mods-available/vips.ini
+sudo phpenmod vips
 ```
-3. Enable the extension in `php.ini` by adding this line:
-```ini
-extension=vips.so
-```
-4. The `jcupitt/vips` 1.0.x package is already provided by this module's composer.json, so we don't need to install it separately.
 
+Then restart the web server or php-fpm and check it with `php -m | grep vips`.
+The library [jcupitt/vips] v1 is already included in the module.
 
-### Fast tile script: PHP-Vips 2.x.x or Vips command line
+#### Php library v2 with ext-ffi
 
-A lightweight PHP script (`data/scripts/iiiftile.php`) can serve IIIF image
-tiles without loading the full Omeka S stack. It uses [php-vips 2.x.x] (not to be mistaken with `php-vips 1.0.x` that 
-was used as Image processor in the module config) or a fallback to vips command line. Both tools use disk caching for 
-optimal performance:
+The extension `ffi` is standard since php 7.4, but it should be enabled in
+php.ini with `ffi.enable=true` (the default value "preload" is not enough). For
+php 8.3 and higher, the key `zend.max_allowed_stack_size=-1` should be added
+too, since the library runs callbacks out of the main thread. Then install the
+library v2 instead of v1 (see the module [Vips]).
+
+### External image server (Cantaloupe): clean and ark identifiers
+
+The media identifier option "Filename with extension" lets an external
+Cantaloupe sharing the Omeka `files/original` directory resolve images directly,
+but it exposes the file extension in the IIIF url (`{id}.jpg`). To serve a clean
+(extension-less storage id) or a meaningful, permanent ark identifier instead,
+three strategies are available, depending on who resolves the identifier to the
+original file and on whether Cantaloupe shares the originals directory.
+
+| Strategy                             | Identifier      | Resolver                          | Cantaloupe        | Choose when                                                                  |
+|--------------------------------------|-----------------|-----------------------------------|-------------------|------------------------------------------------------------------------------|
+| A: `delegates/cantaloupe.rb`         | storage id      | filesystem stat (no db, no glob)  | shares originals  | Cantaloupe already shares the originals dir and you only want clean urls     |
+| B: `delegates/cantaloupe-resolve.rb` | clean / ark     | Omeka `/iiif-resolve`, cached     | shares originals  | permanent ark urls with maximum tile speed (tiles stay served by Cantaloupe) |
+| C: `scripts/iiifforward.php`         | clean / ark     | PHP, in front of Cantaloupe       | untouched         | keep Cantaloupe unaware of arks; resolution and forwarding stay in Omeka     |
+
+The pivot is the resolver: Cantaloupe resolves an identifier to a file on disk
+without a database, so a filename-derived identifier (A) needs no lookup, while
+an ark needs either a delegate that asks Omeka (B) or a PHP front that resolves
+then forwards (C). In all three, audio and video are not concerned: they are
+served by Iiif Server, not Cantaloupe, and the resolvers answer for images only.
+
+* A: storage id
+  Install `data/delegates/cantaloupe.rb`: it resolves the identifier to the
+  original file by probing the known image extensions with a direct stat (no
+  database, no directory glob, which matters since the originals directory is
+  flat and may hold hundreds of thousands of files). See the header of the
+  delegate for the install steps and for how to merge it with the module Access
+  delegate (Cantaloupe loads a single delegates.rb).
+
+* B: ark via Omeka
+  Install `data/delegates/cantaloupe-resolve.rb`: it asks Omeka, through the
+  `/iiif-resolve` endpoint, for the storage filename of the identifier, then
+  reads the file. The resolution reuses the Omeka/CleanUrl logic (no
+  reimplementation) and is cached in the delegate, so tiles stay served directly
+  by Cantaloupe. The endpoint is restricted to the ips of the setting
+  "External image server: trusted ips for identifier resolution"; add the
+  Cantaloupe host ip there.
+
+* C: ark via PHP forward
+  The script `data/scripts/iiifforward.php` resolves a clean or ark identifier
+  to the storage filename in PHP, forwards the request to an internal Cantaloupe
+  with that filename, and caches the response on disk. Cantaloupe stays
+  filename-based and never sees the public identifier, so the internal storage
+  name stays hidden. See the header of the script for the .htaccess rule and the
+  environment configuration.
+
+### Fast tile script
+
+A lightweight php script (`data/scripts/iiiftile.php`) serves the IIIF image
+tiles without loading the whole Omeka S stack:
 
 - Cache hit: ~5ms (vs ~200ms with Omeka S stack)
 - Cache miss: ~200ms (vips processing + cache write)
 - Pre-tiled images: still benefits from bypassing the Omeka S bootstrap
 
-The script checks `is_public` on each media via a lightweight DB query, and
-falls back to the standard Omeka S stack when vips is not available.
+It uses the php library [jcupitt/vips] when available, else the command line
+tool, else it hands over the request to Omeka S. It checks `is_public` of each
+media via a lightweight database query.
 
-Of course, if you use an external server, you don't need to create static or
-dynamic tiles (and in that case you don't need this module anyway).
+**Warning**: the script checks only if the media is public. It does not check
+the restrictions of the module [Access] (reserved or protected medias, embargo),
+so a reserved image is served to anybody. Do not enable the script when the
+module Access restricts some images.
+
+The library v1 included in the module is used, so only the php extension
+`ext-vips` is needed. To use the library v2 with `ext-ffi` instead, install it
+in the directory `vendor/` of Omeka, that is loaded first:
+
+```sh
+cd /path/to/omeka
+composer require jcupitt/vips:^2.0
+```
+
+Without the php library, the script uses the command line tool, that is
+installed with the package `libvips-tools` (Debian/Ubuntu) or `vips-tools`
+(Centos/RedHat).
+
+Of course, if you use an external image server, you don't need to create static
+or dynamic tiles (and in that case you don't need this module anyway).
 
 #### Setup
-1. The module adds these rules in `.htaccess` before the Omeka catch-all:
+
+The module adds these rules in `.htaccess` before the Omeka catch-all, that is
+the block starting with `RewriteCond %{REQUEST_FILENAME} -f`:
 
 ```apache
 # Fast IIIF tile server (bypass Omeka S stack).
@@ -222,36 +338,28 @@ RewriteCond %{REQUEST_URI} /iiif/([23]/)?[^/]+/[^/]+/[^/]+/[^/]+/[^.]+\.\w+$
 RewriteRule iiif/(.*) modules/ImageServer/data/scripts/iiiftile.php [END,E=IIIF_PATH:/iiif/$1]
 ```
 
-Warning: check if you install modules with composer (see [#2432]), replace
-"modules/" by "composer-addons/modules/".
+If you install modules with composer (see [#2432]), replace "modules/" by
+"composer-addons/modules/".
 
-2. Install `libvips-tools` (Ubuntu/Debian) or `vips-tools` (CentOS/RedHat) as described above in the command line scenario.
-3. `ffi` is set to 'preload' by default, but that is not supported by [php-vips 2.x.x]. Permanently enable the extension 
-in `php.ini` by adding this line:
-```ini
-ffi.enable=true
-```
-4. Install the `jcupitt/vips` package to the Omeka `vendor/` directory (not the module's vendor/ directory)
-```sh
-cd /path/to/omeka
-composer require jcupitt/vips
-```
-This allows the `data/scripts/iiiftile.php` script to find and use the [php-vips 2.x.x] library, which is faster than 
-the command line tool.
-
-5. Only for PHP 8.3 and higher: Disable stack overflow tests. php-vips executes FFI callbacks off the main thread and 
-this confuses those checks, at least in php 8.3.0. Add this line to `php.ini`:
-```ini
-zend.max_allowed_stack_size=-1
-```
-
+The rules are not added when the option `imageserver_htaccess_skip` is set, or
+when the file `.htaccess` is not writeable by the web server, for example when
+it is mounted read-only in a container. In that case, add them manually after
+`RewriteEngine On`, or in the config of the virtual host. When a proxy sends the
+iiif urls to an external image server (Cantaloupe), the requests do not reach
+Omeka, so the proxy should send them to Omeka first.
 
 ### Tile formats
 
-Four formats are proposed to create tiles: DeepZoom, Zoomify, Jpeg 2000 and
-pyramidal Tiff. If vips is available, the recommended format is tiled tiff. If
-jpeg 2000 is available, use it. Else, use DeepZoom or Zoomify. For Jpeg 2000 and
-pyramidal tiff, some other tools may be required.
+Four formats are proposed to create tiles: DeepZoom, Zoomify, pyramidal tiff,
+Jpeg 2000. If vips is available, the recommended format is tiled tiff. If
+jpeg 2000 is available, use it. Else, use DeepZoom or Zoomify. For pyramidal
+tiff and Jpeg 2000, some other tools may be required.
+
+#### Tiled pyramidal tiff
+
+Tiled pyramidal tiff is supported by ImageMagick, Imagick, GD and vips. However,
+only vips can efficiently extract a small region without reading the whole file,
+so it is recommended to use [libvips] for dynamic extraction of tiled tiff.
 
 #### Jpeg 2000
 
@@ -273,22 +381,6 @@ convert identify -list format | grep JP2
 # Vips
 vips jp2kload
 ```
-
-#### Tiled pyramidal tiff
-
-Tiled pyramidal tiff is supported by ImageMagick, Imagick, GD and vips. However,
-only vips can efficiently extract a small region without reading the whole file,
-so it is recommended to use [vips] for dynamic extraction of tiled tiff.
-
-#### External image server Cantaloupe
-
-This module is not required if you use an external image server like [Cantaloupe],
-since the module [Iiif Server] already provides image sizing via the job
-"Media Dimensions", and the external server handles all image processing
-(tiling, dynamic transformations, region extraction).
-
-If you want to use vips as the Omeka thumbnailer, it is recommended to use the
-module [Vips].
 
 
 Image Server
@@ -331,8 +423,6 @@ modes are available:
 This is independent of IIIF viewers (Universal Viewer, Mirador, Diva) and works
 without them. It provides a simple zoom experience on any item/media page,
 similar to the admin media show page.
-
-
 
 ### Creation of static tiles
 
@@ -391,6 +481,28 @@ of ImageMagick, that is not limited by the php memory.
 Furthermore, the limit of the size (10000000 bytes by default) can be increased
 if you have enough memory, so images won't appear blurry even if they are not
 tiled. Vips bypasses this limitation.
+
+### Pages of pdf files
+
+Each page of a pdf can be served as an image, like with [Cantaloupe], with the
+identifier of the pdf and the number of the page separated with `;`, for example
+`iiif/3/xxx.pdf;2/info.json`. So the viewers can display the pdf as images, with
+the search and the annotations of the ocr of the module [Iiif Search]. Enable the
+option "Display the pages of the pdf files as images of the image server" in the
+module [Iiif Server] to set the pages in the manifests.
+
+The page is rendered once with vips at the resolution set in the module Iiif
+Server (150 dpi by default), in the directory `files/tile/pdf/`, then processed
+like any image, by Omeka or by the fast tile script. Vips (command line tool or
+php library) is required, with the support of pdf (poppler or pdfium), that is
+included in the standard packages. The rendered pages are removed with the
+media.
+
+Performance on a scanned page (680 × 1092 at 150 dpi): about 150 ms to render a
+page with vips, then the page is processed like a jpeg, with the cache of the
+fast tile script.
+
+The character `;` must not be url-encoded, so check the rules of the proxy.
 
 ### Display of standard and tiled images
 
@@ -479,7 +591,7 @@ TODO / Bugs
 - [x] Use the tiled images when available for arbitrary size request (ok for vips/tiled tiff).
 - [ ] Update tiling pipeline to use `StoreInterface` instead of `AmazonS3`-specific methods, so any S3-compatible store can be used for tile creation/deletion.
 - [ ] Add a limit (width/height) for dynamic extraction (used with zoning and annotations).
-- [ ] Add a processor for [php-vips 1.0.x] (currently cli-only, add support for the php extension/library).
+- [x] Add a processor for [php-vips].
 - [x] Use vips as Omeka thumbnailer.
 - [ ] Add auto as default type of tiles and thumbnailer (so choose tiled tiff if vips is installed, and select thumbnailer according to input format, etc.).
 - [ ] For jpeg2000, use library [OpenJpeg] instead of ImageMagick or Vips: a dedicated decoder (`opj_decompress`/`kdu_expand`) getting internal tile directly is better for large jp2 (see [gitlab#7]).
@@ -489,7 +601,6 @@ TODO / Bugs
 - [x] Check why zoomify and deepzoom arounds (or overlap) are different (deepzoom is more compliant with OpenSeadragon). By design: DeepZoom uses 1px overlap, Zoomify uses 0.
 - [ ] Check why zoomify create bigger thumbnails.
 - [ ] Fix conversion of some iiif tiles for zoomify.
-
 
 See module [Iiif Server].
 
@@ -563,6 +674,8 @@ support the [Deep Zoom Image] tile format.
 [Cantaloupe]: https://cantaloupe-project.github.io
 [IIP Image]: https://iipimage.sourceforge.io
 [Iiif Server]: https://gitlab.com/Daniel-KM/Omeka-S-module-IiifServer
+[Iiif Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-IiifSearch
+[Access]: https://gitlab.com/Daniel-KM/Omeka-S-module-Access
 [OpenSeadragon]: https://openseadragon.github.io
 [Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Mirador]: https://gitlab.com/Daniel-KM/Omeka-S-module-Mirador
@@ -572,9 +685,11 @@ support the [Deep Zoom Image] tile format.
 [Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
 [performance reasons]: https://github.com/libvips/libvips/wiki/Speed-and-memory-use
 [Vips]: https://gitlab.com/Daniel-KM/Omeka-S-module-Vips
-[vips]: https://libvips.github.io/libvips
-[php-vips 1.0.x]: https://github.com/libvips/php-vips-ext
-[php-vips 2.x.x]: https://github.com/libvips/php-vips
+[libvips]: https://libvips.github.io/libvips
+[php-vips]: https://github.com/libvips/php-vips-ext
+[jcupitt/vips]: https://github.com/libvips/php-vips
+[pecl]: https://pecl.php.net/package/vips
+[recommends against enabling FFI globally in production]: https://www.php.net/manual/en/ffi.configuration.php
 [ImageMagick]: https://www.imagemagick.org
 [GD]: https://secure.php.net/manual/en/book.image.php
 [Imagick]: https://php.net/manual/en/book.imagick.php
@@ -600,7 +715,6 @@ support the [Deep Zoom Image] tile format.
 [default thumbnailer]: https://omeka.org/s/docs/user-manual/configuration/#thumbnails
 [performance]: https://cantaloupe-project.github.io/manual/4.0/images.html
 [OpenJpeg]: https://github.com/uclouvain/openjpeg
-[libvips]: https://libvips.github.io/libvips
 [#2432]: https://github.com/omeka/omeka-s/pull/2432
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
