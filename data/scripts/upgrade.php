@@ -101,10 +101,10 @@ $dispatchJobDuringUpgrade = function (string $jobClass, array $args = [])
     return $job;
 };
 
-if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.84')) {
+if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.93')) {
     $message = new \Omeka\Stdlib\Message(
-        $translate('The module {module} should be upgraded to version {version} or later.'), // @translate
-        'Common', '3.4.84'
+        $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+        'Common', '3.4.93'
     );
     $messenger->addError($message);
     throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
