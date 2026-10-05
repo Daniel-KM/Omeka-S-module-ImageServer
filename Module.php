@@ -341,6 +341,8 @@ class Module extends AbstractModule
 
     public function getConfigForm(PhpRenderer $renderer)
     {
+        $this->appendConfigApplyAsset($renderer);
+
         $services = $this->getServiceLocator();
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
@@ -354,8 +356,8 @@ class Module extends AbstractModule
         $messenger->clear();
         $this->runDiagnostics();
 
-        // Collect diagnostic messages and clear them from the flash
-        // messenger so they appear only in the audit tab.
+        // Collect diagnostic messages and clear them from the flash messenger
+        // so they appear only in the audit tab.
         $diagnostics = $messenger->get();
         $messenger->clear();
 
@@ -388,7 +390,6 @@ class Module extends AbstractModule
         } else {
             $form = $formManager->get(ConfigForm::class);
             $form->init();
-            $form->setData($data);
         }
 
         // Update bulk note with current tile type.
@@ -407,6 +408,9 @@ class Module extends AbstractModule
             ['format' => $tileTypeLabels[$currentTileType] ?? $currentTileType]
         );
         $note->setOption('text', $noteText);
+        if (!$this->invalidConfigForm) {
+            $form->setData($data);
+        }
         $form->prepare();
 
         // --- Audit tab ---
@@ -547,6 +551,7 @@ class Module extends AbstractModule
 
         $this->normalizeMediaApiSettings($params);
 
+        $this->redirectToConfigFormOnApply($controller);
         return true;
     }
 
