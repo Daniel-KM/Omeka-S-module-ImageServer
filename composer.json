@@ -36,9 +36,7 @@
         "ext-vips": "Php extension for vips, recommended for performance."
     },
     "provide": {
-        "lsolesen/pel": "*",
-        "ext-vips": "*",
-        "psr/log": "*"
+        "ext-vips": "*"
     },
     "autoload": {
         "psr-4": {
