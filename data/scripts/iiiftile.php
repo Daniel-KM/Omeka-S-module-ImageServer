@@ -197,15 +197,25 @@ try {
     exit('Database connection failed.');
 }
 
+// A page of a pdf has the identifier of the pdf and the page ("file.pdf;2").
+require_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/PdfPage.php';
+[$mediaIdentifier, $page] = \ImageServer\Mvc\Controller\Plugin\PdfPage::parseIdentifier($identifier);
+$dpi = 150;
+if ($page) {
+    $stmt = $pdo->prepare("SELECT `value` FROM `setting` WHERE `id` = 'iiifserver_manifest_pdf_pages_dpi'");
+    $stmt->execute();
+    $dpi = (int) json_decode((string) $stmt->fetchColumn()) ?: 150;
+}
+
 // Lookup by numeric media ID or by storage filename.
-if (ctype_digit($identifier)) {
+if (ctype_digit($mediaIdentifier)) {
     $stmt = $pdo->prepare(<<<'SQL'
         SELECT m.storage_id, m.extension, r.is_public, m.media_type
         FROM media m JOIN resource r ON m.id = r.id
         WHERE m.id = ? LIMIT 1
         SQL
     );
-    $stmt->execute([(int) $identifier]);
+    $stmt->execute([(int) $mediaIdentifier]);
 } else {
     // Filename identifier: strip extension to get the storage_id, or match with
     // extension.
@@ -217,7 +227,7 @@ if (ctype_digit($identifier)) {
         LIMIT 1
         SQL
     );
-    $stmt->execute([$identifier, $identifier]);
+    $stmt->execute([$mediaIdentifier, $mediaIdentifier]);
 }
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 $pdo = null;
@@ -230,7 +240,7 @@ if (!$row['is_public']) {
     http_response_code(403);
     exit('Forbidden.');
 }
-if (strpos((string) $row['media_type'], 'image/') !== 0) {
+if ($page ? $row['media_type'] !== 'application/pdf' : strpos((string) $row['media_type'], 'image/') !== 0) {
     http_response_code(400);
     exit('Not an image.');
 }
@@ -239,10 +249,37 @@ $storageId = $row['storage_id'];
 $ext = $row['extension'] ? '.' . $row['extension'] : '';
 $filepath = $filesPath . '/original/' . $storageId . $ext;
 
+// The page of a pdf is rendered once as an image, then processed like it.
+if ($page) {
+    $source = $filepath;
+    $filepath = \ImageServer\Mvc\Controller\Plugin\PdfPage::filepath($filesPath, 'tile', $storageId, $page);
+    if (!file_exists($filepath)) {
+        $dirpath = dirname($filepath);
+        if (!is_dir($dirpath)) {
+            @mkdir($dirpath, 0775, true);
+        }
+        $tempPath = $dirpath . '/.' . $page . '.' . bin2hex(random_bytes(4)) . '.jpg';
+        try {
+            if ($vips) {
+                runCommand(\ImageServer\Mvc\Controller\Plugin\PdfPage::renderCommand($vips, $source, $page, $dpi, $tempPath));
+            } else {
+                \Jcupitt\Vips\Image::newFromFile($source, ['page' => $page - 1, 'dpi' => $dpi])
+                    ->writeToFile($tempPath, ['Q' => 90, 'strip' => true]);
+            }
+        } catch (\Throwable $e) {
+        }
+        if (!is_file($tempPath) || !filesize($tempPath) || !@rename($tempPath, $filepath)) {
+            @unlink($tempPath);
+            http_response_code(404);
+            exit('Page not found.');
+        }
+    }
+}
+
 // Prefer tiled source (TIFF or JP2) over original for fast region extraction
 // with vips (random access, no full decode).
 $tiledPath = null;
-$tiledExts = ['.tif', '.jp2'];
+$tiledExts = $page ? [] : ['.tif', '.jp2'];
 foreach ($tiledExts as $tExt) {
     $candidate = $filesPath . '/tile/' . $storageId . $tExt;
     if (file_exists($candidate)) {

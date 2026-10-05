@@ -1679,5 +1679,8 @@ class Module extends AbstractModule
         $tileRemover = $services->get('ControllerPluginManager')->get('tileRemover');
         $media = $event->getTarget();
         $tileRemover($media);
+        if ($media->getMediaType() === 'application/pdf') {
+            $services->get('ControllerPluginManager')->get('pdfPage')->remove((string) $media->getStorageId());
+        }
     }
 }

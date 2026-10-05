@@ -48,7 +48,24 @@ use Omeka\Api\Representation\MediaRepresentation;
  */
 class ImageController extends AbstractActionController
 {
-    use IiifServerControllerTrait;
+    use IiifServerControllerTrait {
+        idAction as protected traitIdAction;
+        infoAction as protected traitInfoAction;
+    }
+
+    /**
+     * The requested page of a pdf, from 1, or 0.
+     *
+     * @var int
+     */
+    protected $pdfPage = 0;
+
+    /**
+     * The image of the requested page of a pdf.
+     *
+     * @var array|null
+     */
+    protected $pdfPageSource;
 
     /**
      * @var \Access\Mvc\Controller\Plugin\IsAllowedMediaContent
@@ -86,6 +103,111 @@ class ImageController extends AbstractActionController
     ) {
         $this->basePath = $basePath;
         $this->isAllowedMediaContent = $isAllowedMediaContent;
+    }
+
+    /**
+     * Extract the page of a pdf from the identifier ("file.pdf;2").
+     */
+    public function onDispatch(\Laminas\Mvc\MvcEvent $e)
+    {
+        $routeMatch = $e->getRouteMatch();
+        $identifier = (string) $routeMatch->getParam('id');
+        [$identifier, $this->pdfPage] = \ImageServer\Mvc\Controller\Plugin\PdfPage::parseIdentifier(rawurldecode($identifier));
+        if ($this->pdfPage) {
+            $routeMatch->setParam('id', $identifier);
+        }
+        return parent::onDispatch($e);
+    }
+
+    public function idAction()
+    {
+        if (!$this->pdfPage) {
+            return $this->traitIdAction();
+        }
+        $media = $this->fetchResource('media');
+        if (!$media) {
+            return $this->jsonError(new PsrMessage(
+                'Media "{media_id}" not found.', // @translate
+                ['media_id' => $this->params('id')]
+            ), \Laminas\Http\Response::STATUS_CODE_404);
+        }
+        $url = $this->viewHelpers()->get('iiifMediaUrl')
+            ->__invoke($media, 'imageserver/info', $this->requestedVersionMedia(), ['page' => $this->pdfPage]);
+        // The specification requires a 303 redirect to the info.json.
+        return $this->redirect()->toUrl($url)->setStatusCode(303);
+    }
+
+    /**
+     * Info of an image, or of a page of a pdf rendered as an image.
+     */
+    public function infoAction()
+    {
+        if (!$this->pdfPage) {
+            return $this->traitInfoAction();
+        }
+
+        $media = $this->fetchResource('media');
+        $source = $media ? $this->preparePdfPage($media) : null;
+        if (!$source) {
+            return $this->jsonError(new PsrMessage(
+                'Page {page} of media "{media_id}" not found.', // @translate
+                ['page' => $this->pdfPage, 'media_id' => $this->params('id')]
+            ), \Laminas\Http\Response::STATUS_CODE_404);
+        }
+
+        $version = $this->requestedVersionMedia();
+        $id = $this->viewHelpers()->get('iiifMediaUrl')
+            ->__invoke($media, 'imageserver/id', $version, ['page' => $this->pdfPage]);
+        $width = $source['width'];
+        $height = $source['height'];
+
+        // The tiles are extracted dynamically from the rendered page.
+        $scaleFactors = [1];
+        while (max($width, $height) / end($scaleFactors) > 256) {
+            $scaleFactors[] = end($scaleFactors) * 2;
+        }
+        $sizes = [];
+        foreach (array_reverse($scaleFactors) as $factor) {
+            $sizes[] = ['width' => (int) ceil($width / $factor), 'height' => (int) ceil($height / $factor)];
+        }
+        $tiles = [['width' => 256, 'height' => 256, 'scaleFactors' => $scaleFactors]];
+
+        $info = $version === '3'
+            ? [
+                '@context' => 'http://iiif.io/api/image/3/context.json',
+                'id' => $id,
+                'type' => 'ImageService3',
+                'protocol' => 'http://iiif.io/api/image',
+                'profile' => 'level2',
+                'width' => $width,
+                'height' => $height,
+                'sizes' => $sizes,
+                'tiles' => $tiles,
+            ]
+            : [
+                '@context' => 'http://iiif.io/api/image/2/context.json',
+                '@id' => $id,
+                'protocol' => 'http://iiif.io/api/image',
+                'width' => $width,
+                'height' => $height,
+                'sizes' => $sizes,
+                'tiles' => $tiles,
+                'profile' => ['http://iiif.io/api/image/2/level2.json'],
+            ];
+
+        $this->getResponse()->getHeaders()
+            ->addHeaderLine('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+
+        return $this->iiifImageJsonLd($info, $version);
+    }
+
+    /**
+     * Get the rendered image of the requested page of a pdf.
+     */
+    protected function preparePdfPage(AbstractResourceEntityRepresentation $media): ?array
+    {
+        $this->pdfPageSource = $this->pdfPage()->render($media, $this->pdfPage);
+        return $this->pdfPageSource;
     }
 
     /**
@@ -163,8 +285,16 @@ class ImageController extends AbstractActionController
         $response = $this->getResponse();
         $headers = $response->getHeaders();
 
+        // A page of a pdf is rendered as an image.
+        if ($this->pdfPage && !$this->preparePdfPage($media)) {
+            return $this->viewError(new PsrMessage(
+                'Page {page} of media "{media_id}" not found.', // @translate
+                ['page' => $this->pdfPage, 'media_id' => $media->id()]
+            ), \Laminas\Http\Response::STATUS_CODE_404);
+        }
+
         // Check if the original file is an image.
-        if (strpos($media->mediaType(), 'image/') !== 0) {
+        if (!$this->pdfPageSource && strpos($media->mediaType(), 'image/') !== 0) {
             return $this->viewError(new PsrMessage(
                 'The media "{media_id}" is not an image', // @translate
                 ['media_id' => $media->id()]
@@ -208,8 +338,13 @@ class ImageController extends AbstractActionController
         $imageUrl = '';
         $imagePath = '';
 
+        // A page of a pdf is always transformed from its rendered image.
+        if ($this->pdfPageSource) {
+            $imagePath = $this->imageServer()->transform($transform);
+        }
+
         // A quick check when there is no transformation.
-        if ($transform['region']['feature'] == 'full'
+        elseif ($transform['region']['feature'] == 'full'
             && $transform['size']['feature'] == 'max'
             && $transform['mirror']['feature'] == 'default'
             && $transform['rotation']['feature'] == 'noRotation'
@@ -516,12 +651,19 @@ class ImageController extends AbstractActionController
         $transform['version'] = $this->requestedApiVersion;
 
         $transform['source']['type'] = 'original';
-        $transform['source']['filepath'] = $this->getImagePath($media, 'original');
-        $transform['source']['media_type'] = $media->mediaType();
-
-        $imageSize = $this->imageSize($media, 'original');
-        $sourceWidth = $imageSize['width'];
-        $sourceHeight = $imageSize['height'];
+        if ($this->pdfPageSource) {
+            $transform['source']['filepath'] = $this->pdfPageSource['filepath'];
+            $transform['source']['media_type'] = 'image/jpeg';
+            $transform['source']['skip_autorot'] = true;
+            $sourceWidth = $this->pdfPageSource['width'];
+            $sourceHeight = $this->pdfPageSource['height'];
+        } else {
+            $transform['source']['filepath'] = $this->getImagePath($media, 'original');
+            $transform['source']['media_type'] = $media->mediaType();
+            $imageSize = $this->imageSize($media, 'original');
+            $sourceWidth = $imageSize['width'];
+            $sourceHeight = $imageSize['height'];
+        }
         $transform['source']['width'] = $sourceWidth;
         $transform['source']['height'] = $sourceHeight;
 
