@@ -586,6 +586,7 @@ class Module extends AbstractModule
             'remove_destination' => null,
             'filter' => null,
             'update_renderer' => null,
+            'scope' => null,
         ]);
 
         if (!$params['tasks']) {
@@ -610,6 +611,7 @@ class Module extends AbstractModule
                 'query' => null,
                 'remove_destination' => null,
                 'update_renderer' => null,
+                'scope' => null,
             ]);
             $job = $dispatcher->dispatch(
                 \ImageServer\Job\BulkTileClean::class, $params
@@ -624,7 +626,7 @@ class Module extends AbstractModule
             $message = 'Creating tiles and dimensions for images attached to specified items, in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}).'; // @translate
         } elseif (in_array('size', $params['tasks'])) {
             $params = array_intersect_key($params, [
-                'query' => null, 'filter' => null,
+                'query' => null, 'filter' => null, 'scope' => null,
             ]);
             $job = $dispatcher->dispatch(
                 \ImageServer\Job\BulkSizer::class, $params
@@ -635,6 +637,7 @@ class Module extends AbstractModule
                 'query' => null,
                 'remove_destination' => null,
                 'update_renderer' => null,
+                'scope' => null,
             ]);
             $job = $dispatcher->dispatch(
                 \ImageServer\Job\BulkTiler::class, $params

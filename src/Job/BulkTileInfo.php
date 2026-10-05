@@ -73,11 +73,22 @@ class BulkTileInfo extends AbstractJob
         $referenceIdProcessor->setReferenceId('imageserver/bulk-tile-info/job_' . $this->job->getId());
         $this->logger->addProcessor($referenceIdProcessor);
         $this->entityManager = $services->get('Omeka\EntityManager');
-        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
+        // Use Resource repository to support both Media and DigitalObject.
+        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Resource::class);
         $this->tileInfo = $services->get('ControllerPluginManager')->get('tileInfo');
         $api = $services->get('Omeka\ApiManager');
 
         $query = $this->getArg('query', []);
+        $scope = (array) $this->getArg('scope', ['items', 'digital_objects']);
+        $scope = array_values(array_intersect($scope, ['items', 'digital_objects']));
+        if (!$scope) {
+            $this->logger->warn(
+                'No scope selected (items / digital objects). Nothing to do.' // @translate
+            );
+            return;
+        }
+        $doItems = in_array('items', $scope, true);
+        $doDigitalObjects = in_array('digital_objects', $scope, true);
 
         $response = $api->search('items', ['limit' => 0] + $query);
         $this->totalToProcess = $response->getTotalResults();
@@ -118,28 +129,34 @@ class BulkTileInfo extends AbstractJob
                     break 2;
                 }
 
-                /** @var \Omeka\Api\Representation\MediaRepresentation $media */
-                foreach ($item->media() as $media) {
-                    if (strtok((string) $media->mediaType(), '/') !== 'image'
-                        // For ingester bulk_upload, wait that the process is
-                        // finished, else the thumbnails won't be available and
-                        // the size of derivative will be the fallback ones.
-                        || $media->ingester() === 'bulk_upload'
-                    ) {
+                if ($doItems) {
+                    /** @var \Omeka\Api\Representation\MediaRepresentation $media */
+                    foreach ($item->media() as $media) {
+                        if (strtok((string) $media->mediaType(), '/') !== 'image'
+                            // For ingester bulk_upload, wait that the process
+                            // is finished, else the thumbnails won't be
+                            // available and the size of derivative will be the
+                            // fallback ones.
+                            || $media->ingester() === 'bulk_upload'
+                        ) {
+                            unset($media);
+                            continue;
+                        }
+                        ++$this->totalImages;
+                        $this->prepareTileInfo($media);
                         unset($media);
-                        continue;
                     }
-                    ++$this->totalImages;
-                    $this->prepareTileInfo($media);
-                    unset($media);
                 }
 
-                // Collect DigitalObjects referenced by this item via values.
-                foreach ($item->values() as $property) {
-                    foreach ($property['values'] as $value) {
-                        $vr = $value->valueResource();
-                        if ($vr && $vr->resourceName() === 'digital_objects') {
-                            $doIds[$vr->id()] = true;
+                if ($doDigitalObjects) {
+                    // Collect DigitalObjects referenced by this item via
+                    // values.
+                    foreach ($item->values() as $property) {
+                        foreach ($property['values'] as $value) {
+                            $vr = $value->valueResource();
+                            if ($vr && $vr->resourceName() === 'digital_objects') {
+                                $doIds[$vr->id()] = true;
+                            }
                         }
                     }
                 }

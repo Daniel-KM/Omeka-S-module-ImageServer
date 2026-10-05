@@ -46,6 +46,16 @@ class BulkTiler extends AbstractJob
         $api = $services->get('Omeka\ApiManager');
 
         $query = $this->getArg('query', []);
+        $scope = (array) $this->getArg('scope', ['items', 'digital_objects']);
+        $scope = array_values(array_intersect($scope, ['items', 'digital_objects']));
+        if (!$scope) {
+            $this->logger->warn(
+                'No scope selected (items / digital objects). Nothing to do.' // @translate
+            );
+            return;
+        }
+        $doItems = in_array('items', $scope, true);
+        $doDigitalObjects = in_array('digital_objects', $scope, true);
 
         $response = $api->search('items', $query);
         $this->totalToProcess = $response->getTotalResults();
@@ -88,19 +98,28 @@ class BulkTiler extends AbstractJob
                     break 2;
                 }
 
-                /** @var \Omeka\Api\Representation\MediaRepresentation $media */
-                foreach ($item->media() as $media) {
-                    if ($media->hasOriginal()
-                        && strtok((string) $media->mediaType(), '/') === 'image'
-                        // For ingester bulk_upload, wait that the process is
-                        // finished, else the thumbnails won't be available and
-                        // the size of derivative will be the fallback ones.
-                        && $media->ingester() !== 'bulk_upload'
-                    ) {
-                        ++$this->totalImages;
-                        $this->prepareTile($media);
+                if ($doItems) {
+                    /** @var \Omeka\Api\Representation\MediaRepresentation $media */
+                    foreach ($item->media() as $media) {
+                        if ($media->hasOriginal()
+                            && strtok((string) $media->mediaType(), '/') === 'image'
+                            // For ingester bulk_upload, wait that the process
+                            // is finished, else the thumbnails won't be
+                            // available and the size of derivative will be the
+                            // fallback.
+                            && $media->ingester() !== 'bulk_upload'
+                        ) {
+                            ++$this->totalImages;
+                            $this->prepareTile($media);
+                        }
+                        unset($media);
                     }
-                    unset($media);
+                }
+
+                if (!$doDigitalObjects) {
+                    unset($item);
+                    ++$this->totalProcessed;
+                    continue;
                 }
 
                 // Collect DigitalObjects referenced by this item via values.

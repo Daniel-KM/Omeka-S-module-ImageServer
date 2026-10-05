@@ -78,6 +78,16 @@ class BulkTileClean extends AbstractJob
         $tileRemover = $plugins->get('tileRemover');
 
         $query = $this->getArg('query', []);
+        $scope = (array) $this->getArg('scope', ['items', 'digital_objects']);
+        $scope = array_values(array_intersect($scope, ['items', 'digital_objects']));
+        if (!$scope) {
+            $this->logger->warn(
+                'No scope selected (items / digital objects). Nothing to do.' // @translate
+            );
+            return;
+        }
+        $doItems = in_array('items', $scope, true);
+        $doDigitalObjects = in_array('digital_objects', $scope, true);
 
         $response = $api->search('items', ['limit' => 0] + $query);
         $this->totalToProcess = $response->getTotalResults();
@@ -118,32 +128,38 @@ class BulkTileClean extends AbstractJob
                     break 2;
                 }
 
-                /** @var \Omeka\Api\Representation\MediaRepresentation $media */
-                foreach ($item->media() as $media) {
-                    if (strtok((string) $media->mediaType(), '/') !== 'image'
-                        // For ingester bulk_upload, wait that the process is
-                        // finished, else the thumbnails won't be available and
-                        // the size of derivative will be the fallback ones.
-                        || $media->ingester() === 'bulk_upload'
-                    ) {
+                if ($doItems) {
+                    /** @var \Omeka\Api\Representation\MediaRepresentation $media */
+                    foreach ($item->media() as $media) {
+                        if (strtok((string) $media->mediaType(), '/') !== 'image'
+                            // For ingester bulk_upload, wait that the process
+                            // is finished, else the thumbnails won't be
+                            // available and the size of derivative will be the
+                            // fallback ones.
+                            || $media->ingester() === 'bulk_upload'
+                        ) {
+                            unset($media);
+                            continue;
+                        }
+                        ++$this->totalImages;
+
+                        $mediaEntity = $this->mediaRepository->find($media->id());
+                        $tileRemover($mediaEntity);
+                        $this->removeMediaDataTile($mediaEntity);
+
                         unset($media);
-                        continue;
                     }
-                    ++$this->totalImages;
-
-                    $mediaEntity = $this->mediaRepository->find($media->id());
-                    $tileRemover($mediaEntity);
-                    $this->removeMediaDataTile($mediaEntity);
-
-                    unset($media);
                 }
 
-                // Collect DigitalObjects referenced by this item via values.
-                foreach ($item->values() as $property) {
-                    foreach ($property['values'] as $value) {
-                        $vr = $value->valueResource();
-                        if ($vr && $vr->resourceName() === 'digital_objects') {
-                            $doIds[$vr->id()] = true;
+                if ($doDigitalObjects) {
+                    // Collect DigitalObjects referenced by this item via
+                    // values.
+                    foreach ($item->values() as $property) {
+                        foreach ($property['values'] as $value) {
+                            $vr = $value->valueResource();
+                            if ($vr && $vr->resourceName() === 'digital_objects') {
+                                $doIds[$vr->id()] = true;
+                            }
                         }
                     }
                 }

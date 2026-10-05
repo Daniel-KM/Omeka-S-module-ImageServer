@@ -467,11 +467,27 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'scope',
+                'type' => CommonElement\OptionalMultiCheckbox::class,
+                'options' => [
+                    'label' => 'Scope', // @translate
+                    'info' => 'Choose what to process. At least one must be checked.', // @translate
+                    'value_options' => [
+                        'items' => 'Media attached to items', // @translate
+                        'digital_objects' => 'Digital objects', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'scope',
+                    'value' => ['items', 'digital_objects'],
+                ],
+            ])
+            ->add([
                 'name' => 'query',
                 'type' => OmekaElement\Query::class,
                 'options' => [
                     'label' => 'Filter items (optional)', // @translate
-                    'info' => 'Restrict processing to specific items. Leave empty to process all items.', // @translate
+                    'info' => 'Restrict processing to specific items. Leave empty to process all items. Ignored when scope is "Digital objects only".', // @translate
                     'query_resource_type' => 'items',
                     'query_partial_excludelist' => [
                         'common/advanced-search/sort',

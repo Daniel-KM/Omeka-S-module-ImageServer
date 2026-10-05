@@ -41,6 +41,25 @@ class BulkSizer extends AbstractJob
         $api = $services->get('Omeka\ApiManager');
 
         $query = $this->getArg('query', []);
+        $scope = (array) $this->getArg('scope', ['items', 'digital_objects']);
+        $scope = array_values(array_intersect($scope, ['items', 'digital_objects']));
+        if (!$scope) {
+            $this->logger->warn(
+                'No scope selected (items / digital objects). Nothing to do.' // @translate
+            );
+            return;
+        }
+        $doItems = in_array('items', $scope, true);
+        $doDigitalObjects = in_array('digital_objects', $scope, true);
+
+        $this->prepareSizer();
+
+        $this->totalToProcess = 0;
+        $this->totalImages = 0;
+        $this->totalProcessed = 0;
+        $this->totalSucceed = 0;
+        $this->totalFailed = 0;
+        $this->totalSkipped = 0;
 
         $response = $api->search('items', $query);
         $this->totalToProcess = $response->getTotalResults();
@@ -51,19 +70,16 @@ class BulkSizer extends AbstractJob
             return;
         }
 
-        $this->prepareSizer();
-
         $this->logger->info(
-            'Starting bulk sizing for {total} items ({filter} media).', // @translate
-            ['total' => $this->totalToProcess, 'filter' => $this->filter]
+            'Starting bulk sizing for {total} items ({filter} media, scope: {scope}).', // @translate
+            ['total' => $this->totalToProcess, 'filter' => $this->filter, 'scope' => implode(', ', $scope)]
         );
 
+        // Collect ids of digital objects referenced by items, to deduplicate
+        // across items (a DO can be shared by many items).
+        $doIds = [];
+
         $offset = 0;
-        $this->totalImages = 0;
-        $this->totalProcessed = 0;
-        $this->totalSucceed = 0;
-        $this->totalFailed = 0;
-        $this->totalSkipped = 0;
         while (true) {
             /** @var \Omeka\Api\Representation\ItemRepresentation[] $items */
             $items = $api
@@ -82,19 +98,34 @@ class BulkSizer extends AbstractJob
                     break 2;
                 }
 
-                /** @var \Omeka\Api\Representation\MediaRepresentation $media */
-                foreach ($item->media() as $media) {
-                    if (strtok((string) $media->mediaType(), '/') === 'image'
-                        // For ingester bulk_upload, wait that the process is
-                        // finished, else the thumbnails won't be available and
-                        // the size of derivative will be the fallback ones.
-                        && $media->ingester() !== 'bulk_upload'
-                    ) {
-                        ++$this->totalImages;
-                        $this->prepareSize($media);
+                if ($doItems) {
+                    /** @var \Omeka\Api\Representation\MediaRepresentation $media */
+                    foreach ($item->media() as $media) {
+                        if (strtok((string) $media->mediaType(), '/') === 'image'
+                            // For ingester bulk_upload, wait that the process
+                            // is finished, else the thumbnails won't be
+                            // available and the size of derivative will be the
+                            // fallback.
+                            && $media->ingester() !== 'bulk_upload'
+                        ) {
+                            ++$this->totalImages;
+                            $this->prepareSize($media);
+                        }
+                        unset($media);
                     }
-                    unset($media);
                 }
+
+                if ($doDigitalObjects) {
+                    foreach ($item->values() as $property) {
+                        foreach ($property['values'] as $value) {
+                            $vr = $value->valueResource();
+                            if ($vr && $vr->resourceName() === 'digital_objects') {
+                                $doIds[$vr->id()] = true;
+                            }
+                        }
+                    }
+                }
+
                 unset($item);
 
                 ++$this->totalProcessed;
@@ -104,15 +135,16 @@ class BulkSizer extends AbstractJob
             $offset += self::SQL_LIMIT;
         }
 
-        // Second pass: digital objects, when the module is installed. They are
-        // not attached to items so they must be enumerated independently.
-        try {
-            $doOffset = 0;
-            while (true) {
-                $dos = $api
-                    ->search('digital_objects', ['limit' => self::SQL_LIMIT, 'offset' => $doOffset])
-                    ->getContent();
-                if (empty($dos)) {
+        // Second pass: digital objects referenced by the matched items.
+        if ($doDigitalObjects && $doIds) {
+            $doIds = array_keys($doIds);
+            foreach (array_chunk($doIds, self::SQL_LIMIT) as $chunk) {
+                if ($this->shouldStop()) {
+                    break;
+                }
+                try {
+                    $dos = $api->search('digital_objects', ['id' => $chunk])->getContent();
+                } catch (\Omeka\Api\Exception\BadRequestException $e) {
                     break;
                 }
                 foreach ($dos as $do) {
@@ -126,10 +158,7 @@ class BulkSizer extends AbstractJob
                     unset($do);
                 }
                 $this->entityManager->clear();
-                $doOffset += self::SQL_LIMIT;
             }
-        } catch (\Omeka\Api\Exception\BadRequestException $e) {
-            // Module DigitalObject is not installed.
         }
 
         $this->logger->notice(
