@@ -58,10 +58,20 @@ function runCommand(string $command): ?array
 
 // Resolve Omeka root from script location: the module is in "modules/" or, when
 // installed with composer, in "composer-addons/modules/".
-$omekaPath = dirname(__DIR__, 4);
-if (basename($omekaPath) === 'composer-addons') {
-    $omekaPath = dirname($omekaPath);
+// The path of the script is used first, because __DIR__ is the real path, that
+// is outside of Omeka when the module is a symbolic link.
+$omekaPath = null;
+foreach ([dirname((string) ($_SERVER['SCRIPT_FILENAME'] ?? '')), __DIR__] as $scriptDir) {
+    $path = dirname($scriptDir, 4);
+    if (basename($path) === 'composer-addons') {
+        $path = dirname($path);
+    }
+    if (is_file($path . '/config/database.ini')) {
+        $omekaPath = $path;
+        break;
+    }
 }
+$omekaPath ??= dirname(__DIR__, 4);
 
 // Detect vips: prefer php-vips library, then cli, else fall back to Omeka S
 // standard stack.
@@ -515,6 +525,14 @@ if ($usePhpVips) {
             $image = $image->colourspace('b-w');
         }
 
+        $saveOptions = [
+            'gif' => [],
+            'jp2' => [],
+            'jpg' => ['Q' => 85, 'strip' => true],
+            'png' => ['compression' => 6, 'strip' => true],
+            'tif' => ['compression' => 'jpeg', 'Q' => 85, 'strip' => true],
+            'webp' => ['Q' => 85, 'strip' => true],
+        ];
         $saveSuffix = [
             'gif' => '',
             'jp2' => '',
@@ -523,7 +541,17 @@ if ($usePhpVips) {
             'tif' => '[compression=jpeg,Q=85,strip]',
             'webp' => '[Q=85,strip]',
         ];
-        $image->writeToFile($cacheFile . ($saveSuffix[$outputFormat] ?? ''));
+        // Recent ext-vips does not parse the options appended to the filename,
+        // but older ones ignore the array of options (see PhpVips::vipsWrite()).
+        try {
+            $image->writeToFile($cacheFile, $saveOptions[$outputFormat] ?? []);
+        } catch (\Throwable $e) {
+            $image->writeToFile($cacheFile . ($saveSuffix[$outputFormat] ?? ''));
+        }
+        $literal = $cacheFile . ($saveSuffix[$outputFormat] ?? '');
+        if (!file_exists($cacheFile) && file_exists($literal)) {
+            @rename($literal, $cacheFile);
+        }
     } catch (\Throwable $e) {
         http_response_code(500);
         header('Content-Type: text/plain');
