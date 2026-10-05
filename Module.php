@@ -188,8 +188,11 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
 
-        // Remove the fast tile script rule from .htaccess.
-        $this->removeFastTileHtaccess();
+        // Remove the fast tile script rule from .htaccess (skipped when
+        // automatic management is disabled in config).
+        if (!$settings->get('imageserver_htaccess_skip')) {
+            $this->removeFastTileHtaccess();
+        }
 
         // Convert all media tile ingesters and renderers into upload/file.
         $connection = $services->get('Omeka\Connection');
@@ -1003,6 +1006,15 @@ class Module extends AbstractModule
         $settings = $services->get('Omeka\Settings');
         $messenger = $services->get('ControllerPluginManager')
             ->get('messenger');
+
+        // Skip when automatic management of .htaccess is disabled in config
+        // (rule managed in vhost or by another tool).
+        if ($settings->get('imageserver_htaccess_skip')) {
+            $messenger->addWarning(new PsrMessage(
+                'Automatic management of .htaccess is disabled in config (imageserver_htaccess_skip). The fast IIIF tile rule must be configured manually (vhost, or another tool).' // @translate
+            ));
+            return;
+        }
 
         // Skip when an external image server (Cantaloupe, IIPImage…) is
         // configured: the admin most likely intercepts /iiif/ via vhost

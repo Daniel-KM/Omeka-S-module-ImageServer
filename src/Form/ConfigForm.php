@@ -57,6 +57,19 @@ class ConfigForm extends Form
             ])
 
             ->add([
+                'name' => 'imageserver_htaccess_skip',
+                'type' => CommonElement\OptionalCheckbox::class,
+                'options' => [
+                    'element_group' => 'infra',
+                    'label' => 'Do not modify .htaccess (manage Apache redirections manually)', // @translate
+                    'info' => 'When checked, the module will not write or update the fast IIIF tile rule in the root .htaccess. Add the rules manually (vhost or .htaccess) to redirect /iiif/ requests to the fast tile script.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_htaccess_skip',
+                ],
+            ])
+
+            ->add([
                 'name' => 'iiifserver_media_api_default_version',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [

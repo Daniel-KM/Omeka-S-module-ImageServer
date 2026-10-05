@@ -309,6 +309,9 @@ return [
             // This param may be changed locally.
             // If updated, the path for the ArchiveRepertory ingester should be changed.
             'imageserver_image_tile_dir' => 'tile',
+            // Disable automatic management of .htaccess (rule managed in vhost
+            // or by another tool). Set in local.config.php only.
+            'imageserver_htaccess_skip' => false,
         ],
         'settings' => [
             'imageserver_default_thumbnail_type' => 'large',
