@@ -457,85 +457,16 @@ class Module extends AbstractModule
                 . '</p>';
         }
 
-        // --- Collect elements by group ---
-        $elementGroups = $form->getOption('element_groups') ?: [];
-        $elementsInGroups = [];
-        $elementsNotInGroups = [];
-        foreach ($form as $element) {
-            if ($element instanceof \Laminas\Form\FieldsetInterface) {
-                continue;
-            }
-            $group = $element->getOption('element_group');
-            if ($group && isset($elementGroups[$group])) {
-                $elementsInGroups[$group][] = $element;
-            } else {
-                $elementsNotInGroups[] = $element;
-            }
-        }
+        // Diagnostics are shown in a dedicated first tab; the remaining tabs
+        // are derived declaratively from the form option "element_tabs" by the
+        // formTabs helper of module Common.
+        $tabsHelper = $view->getHelperPluginManager()->get('formTabs');
+        $tabs = $tabsHelper->tabsFromOption($form);
+        $tabs['audit']['content_before'] = $auditHtml;
 
-        // Render a group as a fieldset with legend.
-        $renderGroup = function (string $groupName) use ($elementsInGroups, $elementGroups, $escape, $translate, $view): string {
-            if (empty($elementsInGroups[$groupName])) {
-                return '';
-            }
-            $html = sprintf(
-                '<fieldset id="%s"><legend>%s</legend>',
-                $escape($groupName),
-                $escape($translate($elementGroups[$groupName]))
-            );
-            foreach ($elementsInGroups[$groupName] as $el) {
-                $html .= $view->formRow($el);
-            }
-            return $html . '</fieldset>';
-        };
+        $moduleNav = $view->moduleConfigNav(['IiifServer', 'IiifSearch', 'ImageServer'], 'ImageServer');
 
-        // --- Configuration tab: infra + tiling ---
-        $configHtml = '';
-        foreach ($elementsNotInGroups as $el) {
-            $configHtml .= $view->formRow($el);
-        }
-        $configHtml .= $renderGroup('infra');
-        $configHtml .= $renderGroup('tiling');
-
-        // --- Metadata tab ---
-        $metadataHtml = $renderGroup('metadata');
-
-        // --- Bulk tab ---
-        $bulkFieldset = $form->get('imageserver_bulk_prepare');
-        $bulkHtml = $view->formCollection($bulkFieldset);
-
-        // --- Module navigation bar ---
-        $iiifModules = ['IiifServer', 'ImageServer', 'IiifSearch'];
-        $moduleNav = $view->moduleConfigNav($iiifModules, 'ImageServer');
-
-        // --- Tabbed layout ---
-        return $moduleNav
-            . '<ul class="section-nav" style="list-style:none;padding:0;">'
-            . '<li class="active"><a href="#imageserver-audit">'
-            . $escape($translate('Audit'))
-            . '</a></li>'
-            . '<li><a href="#imageserver-config">'
-            . $escape($translate('Configuration'))
-            . '</a></li>'
-            . '<li><a href="#imageserver-metadata">'
-            . $escape($translate('Metadata'))
-            . '</a></li>'
-            . '<li><a href="#imageserver-bulk">'
-            . $escape($translate('Bulk processing'))
-            . '</a></li>'
-            . '</ul>'
-            . '<div id="imageserver-audit" class="section active">'
-            . $auditHtml
-            . '</div>'
-            . '<div id="imageserver-config" class="section">'
-            . $configHtml
-            . '</div>'
-            . '<div id="imageserver-metadata" class="section">'
-            . $metadataHtml
-            . '</div>'
-            . '<div id="imageserver-bulk" class="section">'
-            . $bulkHtml
-            . '</div>';
+        return $moduleNav . $view->formTabs($form, $tabs);
     }
 
     public function handleConfigForm(AbstractController $controller)

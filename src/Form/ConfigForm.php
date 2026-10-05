@@ -27,6 +27,12 @@ class ConfigForm extends Form
     protected $supportTiledTiff;
 
     protected $elementGroups = [
+        'imageserver_api_versions' => 'Image API versions', // @translate
+        'imageserver_urls' => 'Advanced options for urls', // @translate
+    ];
+
+    protected $elementTabs = [
+        'audit' => 'Audit', // @translate
         'infra' => 'Infrastructure', // @translate
         'tiling' => 'Tiling', // @translate
         'metadata' => 'Metadata and rights', // @translate
@@ -44,6 +50,7 @@ class ConfigForm extends Form
 
         $this
             ->setOption('element_groups', $this->elementGroups)
+            ->setOption('element_tabs', $this->elementTabs)
 
             // Use the same name than the module Iiif Server for simplicity.
             // Except "iiifserver_media_api_url", that is hidden.
@@ -60,7 +67,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_htaccess_skip',
                 'type' => CommonElement\OptionalCheckbox::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
                     'label' => 'Do not modify .htaccess (manage Apache redirections manually)', // @translate
                     'info' => 'When checked, the module will not write or update the fast IIIF tile rule in the root .htaccess. Add the rules manually (vhost or .htaccess) to redirect /iiif/ requests to the fast tile script.', // @translate
                 ],
@@ -73,7 +80,8 @@ class ConfigForm extends Form
                 'name' => 'iiifserver_media_api_default_version',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
+                    'element_group' => 'imageserver_api_versions',
                     'label' => 'Default IIIF image api version', // @translate
                     'info' => 'Set the version of the iiif info.json to provide. The image server should support it.', // @translate
                     'value_options' => [
@@ -93,7 +101,8 @@ class ConfigForm extends Form
                 'name' => 'iiifserver_media_api_supported_version_1',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
+                    'element_group' => 'imageserver_api_versions',
                     'label' => 'Image API 1: max compliance level', // @translate
                     'label_attributes' => [
                         'style' => 'display: inline; margin-right: 1em;',
@@ -108,7 +117,8 @@ class ConfigForm extends Form
                 'name' => 'iiifserver_media_api_supported_version_2',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
+                    'element_group' => 'imageserver_api_versions',
                     'label' => 'Image API 2: max compliance level', // @translate
                     'label_attributes' => [
                         'style' => 'display: inline; margin-right: 1em;',
@@ -123,7 +133,8 @@ class ConfigForm extends Form
                 'name' => 'iiifserver_media_api_supported_version_3',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
+                    'element_group' => 'imageserver_api_versions',
                     'label' => 'Image API 3: max compliance level', // @translate
                     'label_attributes' => [
                         'style' => 'display: inline; margin-right: 1em;',
@@ -139,7 +150,8 @@ class ConfigForm extends Form
                 'name' => 'iiifserver_media_api_version_append',
                 'type' => CommonElement\OptionalCheckbox::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
+                    'element_group' => 'imageserver_urls',
                     'label' => 'Append the version to the url (to be set inside module.config.php currently)', // @translate
                     'info' => 'If set, the version will be appended to the url of the server: "iiif/3".', // @translate
                 ],
@@ -166,7 +178,8 @@ class ConfigForm extends Form
                 'name' => 'iiifserver_media_api_identifier',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
+                    'element_group' => 'imageserver_urls',
                     'label' => 'Media identifier', // @translate
                     'info' => 'Using the full filename with extension for images allows to use an image server like Cantaloupe sharing the Omeka original files directory. In other cases, this option is not recommended because the identifier should not have an extension.', // @translate
                     'value_options' => [
@@ -187,7 +200,8 @@ class ConfigForm extends Form
                 'name' => 'imageserver_external_resolver_ips',
                 'type' => Element\Text::class,
                 'options' => [
-                    'element_group' => 'infra',
+                    'tab' => 'infra',
+                    'element_group' => 'imageserver_urls',
                     'label' => 'External image server: trusted ips for identifier resolution', // @translate
                     'info' => 'Comma-separated ips allowed to call the identifier resolver endpoint (/iiif-resolve), used by an external image server delegate (Cantaloupe) to map a clean or ark identifier to the original file. Empty disables the endpoint.', // @translate
                 ],
@@ -201,7 +215,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_tile_mode',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'element_group' => 'tiling',
+                    'tab' => 'tiling',
                     'label' => 'Tile processing mode', // @translate
                     'info' => 'If set manual, to run the task below will be required to create tiles. Unless in the case of an external server, it is recommended to set automatic tiling once all existing items are tiled to avoid to overload the server. So bulk tile all items first below.', // @translate
                     'value_options' => [
@@ -218,7 +232,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_image_tile_type',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [
-                    'element_group' => 'tiling',
+                    'tab' => 'tiling',
                     'label' => 'Tiling type', // @translate
                     'info' => <<<'TXT'
                         If vips is available, the recommended processor strategy is "Tiled tiff". If jpeg2000 is available, use "Jpeg 2000". Else, use Deepzoom or Zoomify.
@@ -260,7 +274,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_imager',
                 'type' => CommonElement\OptionalSelect::class,
                 'options' => [
-                    'element_group' => 'tiling',
+                    'tab' => 'tiling',
                     'label' => 'Image processor', // @translate
                     'info' => <<<'TXT'
                         Vips is the quickest in all cases, then GD is a little faster than ImageMagick, but ImageMagick manages more formats.
@@ -277,7 +291,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_image_max_size',
                 'type' => Element\Text::class,
                 'options' => [
-                    'element_group' => 'tiling',
+                    'tab' => 'tiling',
                     'label' => 'Max dynamic size for images', // @translate
                     'info' => <<<'TXT'
                         Set the maximum size in bytes for the dynamic processing of images.
@@ -295,7 +309,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights',
                 'type' => CommonElement\OptionalSelect::class,
                 'options' => [
-                    'element_group' => 'metadata',
+                    'tab' => 'metadata',
                     'label' => 'Rights source', // @translate
                     'info' => 'For IIIF v3, the value must be a URL from creativecommons.org or rightsstatements.org.', // @translate
                     'value_options' => [
@@ -328,7 +342,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights_property',
                 'type' => CommonElement\OptionalPropertySelect::class,
                 'options' => [
-                    'element_group' => 'metadata',
+                    'tab' => 'metadata',
                     'label' => 'Rights property', // @translate
                     'empty_option' => '',
                     'term_as_value' => true,
@@ -344,7 +358,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights_uri',
                 'type' => CommonElement\OptionalSelect::class,
                 'options' => [
-                    'element_group' => 'metadata',
+                    'tab' => 'metadata',
                     'label' => 'Default rights URL', // @translate
                     'value_options' => [
                         '' => 'Uri below', // @translate
@@ -408,7 +422,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights_url',
                 'type' => CommonElement\OptionalUrl::class,
                 'options' => [
-                    'element_group' => 'metadata',
+                    'tab' => 'metadata',
                     'label' => 'Custom rights URL (if not selected above)', // @translate
                 ],
                 'attributes' => [
@@ -419,7 +433,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_info_rights_text',
                 'type' => Element\Text::class,
                 'options' => [
-                    'element_group' => 'metadata',
+                    'tab' => 'metadata',
                     'label' => 'Default rights text (IIIF v2 only)', // @translate
                 ],
                 'attributes' => [
@@ -435,7 +449,7 @@ class ConfigForm extends Form
                 'name' => 'imageserver_bulk_prepare',
                 'type' => Fieldset::class,
                 'options' => [
-                    'label' => 'Bulk processing', // @translate
+                    'tab' => 'bulk',
                 ],
                 'attributes' => [
                     'id' => 'imageserver_bulk_prepare',
