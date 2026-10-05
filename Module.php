@@ -868,8 +868,31 @@ class Module extends AbstractModule
     {
         $services = $this->getServiceLocator();
         $connection = $services->get('Omeka\Connection');
+        $settings = $services->get('Omeka\Settings');
         $messenger = $services->get('ControllerPluginManager')
             ->get('messenger');
+
+        // Three COUNTs over the full media table — including two JSON_EXTRACT
+        // scans — used to take seconds on installations with hundreds of
+        // thousands of images. Cache the answer 30 min in
+        // imageserver_audit_tiling_status; reopening the form reads the dict in
+        // memory. The LIKE pattern on the JSON text column avoids per-row JSON
+        // parsing.
+        $cached = $settings->get('imageserver_audit_tiling_status');
+        if (is_array($cached)
+            && isset($cached['at'])
+            && (time() - (int) $cached['at']) < 1800
+        ) {
+            $totalImages = (int) ($cached['total'] ?? 0);
+            $tiledImages = (int) ($cached['tiled'] ?? 0);
+            $maxSize = (int) $settings->get('imageserver_image_max_size', 5000000);
+            $largeUntiled = (int) ($cached['large_untiled'] ?? 0);
+            if (!$totalImages) {
+                return;
+            }
+            $this->renderTilingStatus($messenger, $totalImages, $tiledImages, $largeUntiled, $maxSize);
+            return;
+        }
 
         // Count image media with and without tile data.
         $totalImages = (int) $connection->fetchOne(<<<'SQL'
@@ -879,19 +902,56 @@ class Module extends AbstractModule
             SQL
         );
         if (!$totalImages) {
+            $settings->set('imageserver_audit_tiling_status', [
+                'at' => time(), 'total' => 0, 'tiled' => 0, 'large_untiled' => 0,
+            ]);
             return;
         }
 
-        // Tile info is stored in data.tile (deepzoom, zoomify,
-        // tiled_tiff, or jpeg2000).
+        // Tile info is stored in data.tile (deepzoom, zoomify, tiled_tiff, or
+        // jpeg2000). LIKE on the JSON text column scans the bytes without
+        // invoking the JSON parser per row, which is significantly faster than
+        // JSON_EXTRACT on large tables.
         $tiledImages = (int) $connection->fetchOne(<<<'SQL'
             SELECT COUNT(*) FROM media
             WHERE media_type LIKE 'image/%'
                 AND media_type != 'image/svg+xml'
-                AND JSON_EXTRACT(data, '$.tile') IS NOT NULL
+                AND data LIKE '%"tile":{%'
             SQL
         );
 
+        $maxSize = (int) $settings->get('imageserver_image_max_size', 5000000);
+        $largeUntiled = (int) $connection->fetchOne(<<<'SQL'
+            SELECT COUNT(*) FROM media
+            WHERE media_type LIKE 'image/%'
+                AND media_type != 'image/svg+xml'
+                AND size > ?
+                AND data NOT LIKE '%"tile":{%'
+            SQL,
+            [$maxSize]
+        );
+
+        $settings->set('imageserver_audit_tiling_status', [
+            'at' => time(),
+            'total' => $totalImages,
+            'tiled' => $tiledImages,
+            'large_untiled' => $largeUntiled,
+        ]);
+
+        $this->renderTilingStatus($messenger, $totalImages, $tiledImages, $largeUntiled, $maxSize);
+    }
+
+    /**
+     * Render the tiling audit result. Extracted so the cached and
+     * freshly-computed paths share the same messenger output.
+     */
+    protected function renderTilingStatus(
+        $messenger,
+        int $totalImages,
+        int $tiledImages,
+        int $largeUntiled,
+        int $maxSize
+    ): void {
         $untiled = $totalImages - $tiledImages;
         if ($untiled === 0) {
             $message = new PsrMessage(
