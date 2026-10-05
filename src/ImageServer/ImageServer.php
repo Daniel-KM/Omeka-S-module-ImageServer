@@ -87,6 +87,17 @@ class ImageServer implements LoggerAwareInterface
         $this->setLogger($logger);
         $imagerClass = $settings->get('imageserver_imager', 'Auto');
         $this->setImager('\\ImageServer\\ImageServer\\' . $imagerClass);
+        // Fall back to Auto when the explicitly selected imager is unusable
+        // at runtime (e.g. PhpVips selected but libvips/ext-ffi missing,
+        // ImageMagick selected but the binary is absent). Otherwise the
+        // controller hits a hard 500 with no recovery path.
+        if ($imagerClass !== 'Auto' && !$this->imager->getSupportedFormats()) {
+            $logger->warn((string) new PsrMessage(
+                'ImageServer: configured imager "{imager}" is not available at runtime; falling back to Auto.', // @translate
+                ['imager' => $imagerClass]
+            ));
+            $this->setImager('\\ImageServer\\ImageServer\\Auto');
+        }
     }
 
     public function setImager($imagerClass): self
