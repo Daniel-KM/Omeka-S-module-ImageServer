@@ -25,6 +25,37 @@
 // @link https://iiif.io/api/image/2.1/
 // @link https://iiif.io/api/image/3.0/
 
+/**
+ * Run a command with proc_open(), else exec(), like the cli of Omeka.
+ *
+ * The functions to run a command may be disabled, for example on a shared
+ * hosting, so the first available one is used. The error output is merged.
+ *
+ * @return array|null Output lines and exit code, or null when no function can
+ *   run a command.
+ */
+function runCommand(string $command): ?array
+{
+    if (function_exists('proc_open')) {
+        $pipes = [];
+        $process = proc_open($command . ' 2>&1', [1 => ['pipe', 'w']], $pipes);
+        if (!is_resource($process)) {
+            return null;
+        }
+        $output = trim((string) stream_get_contents($pipes[1]));
+        fclose($pipes[1]);
+        $exitCode = proc_close($process);
+        return [$output === '' ? [] : explode("\n", $output), $exitCode];
+    }
+    if (function_exists('exec')) {
+        $output = [];
+        $exitCode = 0;
+        exec($command . ' 2>&1', $output, $exitCode);
+        return [$output, $exitCode];
+    }
+    return null;
+}
+
 // Resolve Omeka root from script location: the module is in "modules/" or, when
 // installed with composer, in "composer-addons/modules/".
 $omekaPath = dirname(__DIR__, 4);
@@ -54,9 +85,8 @@ if (class_exists('Jcupitt\Vips\Image')) {
 if (!$usePhpVips) {
     // The functions to run a command may be disabled, for example on a shared
     // hosting: Omeka serves the tile then.
-    $vips = function_exists('shell_exec') && function_exists('exec')
-        ? trim((string) shell_exec('which vips 2>/dev/null'))
-        : '';
+    $result = runCommand('command -v vips');
+    $vips = $result && $result[1] === 0 ? trim((string) reset($result[0])) : '';
     if (!$vips) {
         require $omekaPath . '/index.php';
         return;
@@ -426,7 +456,7 @@ if ($tiledPath && $needsCrop && !$needsResize && !$mirror
             escapeshellarg($cacheFile . ($formatOptionsCli[$outputFormat] ?? '[Q=85,strip]')),
             $rX, $rY, $rW, $rH
         );
-        exec($cmd . ' 2>&1', $output, $returnCode);
+        [$output, $returnCode] = runCommand($cmd) ?? [[], 1];
         $ok = $returnCode === 0 && file_exists($cacheFile);
     }
 
@@ -615,7 +645,7 @@ if ($usePhpVips) {
     );
 
     $fullCmd = implode(' && ', $commands);
-    exec($fullCmd . ' 2>&1', $output, $returnCode);
+    [$output, $returnCode] = runCommand($fullCmd) ?? [[], 1];
 
     // Cleanup temp files.
     foreach ($tempFiles as $f) {
