@@ -122,17 +122,35 @@ class ImageSize extends AbstractPlugin
             return $cache[$cacheKey];
         }
 
+        $mediaData = $media->mediaData() ?: [];
+
         // Check if size is already stored. Stored dimensions may contain null
         // values (legacy records), in which case we must fall through to the
         // file-based computation instead of returning the cached null tuple.
         if (!$force) {
-            $mediaData = $media->mediaData();
-            if (is_array($mediaData)
-                && !empty($mediaData['dimensions'][$type]['width'])
+            if (!empty($mediaData['dimensions'][$type]['width'])
                 && !empty($mediaData['dimensions'][$type]['height'])
             ) {
                 $cache[$cacheKey] = $mediaData['dimensions'][$type];
                 return $mediaData['dimensions'][$type];
+            }
+        }
+
+        // Remote IIIF medias (Omeka IIIF / IiifPresentation ingester) ship with
+        // their info.json or canvas payload in mediaData. Use width and height
+        // when available to avoid an HTTP probe of the original.
+        if ($type === 'original' && !$force) {
+            $infoDim = $this->extractIiifDimensions($mediaData);
+            if ($infoDim) {
+                $result = $infoDim;
+                if ($mediaId) {
+                    $table = $media->resourceName() === 'digital_objects'
+                        ? 'digital_object'
+                        : 'media';
+                    $this->cacheMediaDimensions($mediaId, $type, $result, $table);
+                    $cache[$cacheKey] = $result;
+                }
+                return $result;
             }
         }
 
@@ -176,6 +194,45 @@ class ImageSize extends AbstractPlugin
             return $result;
         }
         return $this->getWidthAndHeightUrl($asset->assetUrl());
+    }
+
+    /**
+     * Read width/height from a mediaData payload deposited by a IIIF ingester.
+     *
+     * Probes, in order:
+     *   - top-level width/height (Image API v1/v2/v3 info.json, Presentation
+     *     API v2/v3 canvas);
+     *   - largest entry of `sizes[]` (Image API v2/v3 alternative).
+     *
+     * @return array{width:int,height:int}|null
+     */
+    protected function extractIiifDimensions(array $mediaData): ?array
+    {
+        $w = $mediaData['width'] ?? null;
+        $h = $mediaData['height'] ?? null;
+        if ($w && $h) {
+            return ['width' => (int) $w, 'height' => (int) $h];
+        }
+        $sizes = $mediaData['sizes'] ?? null;
+        if (is_array($sizes) && $sizes) {
+            $best = null;
+            foreach ($sizes as $size) {
+                if (!is_array($size)) {
+                    continue;
+                }
+                $sw = (int) ($size['width'] ?? 0);
+                $sh = (int) ($size['height'] ?? 0);
+                if ($sw > 0 && $sh > 0
+                    && (!$best || $sw > $best['width'])
+                ) {
+                    $best = ['width' => $sw, 'height' => $sh];
+                }
+            }
+            if ($best) {
+                return $best;
+            }
+        }
+        return null;
     }
 
     /**

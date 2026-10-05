@@ -83,16 +83,24 @@ trait SizerTrait
 
         // Keep possible data added by another module.
         $mediaData = $media->mediaData() ?: [];
-        if ($this->filter === 'sized') {
-            if (empty($mediaData['dimensions']['large']['width'])) {
-                ++$this->totalSkipped;
-                return;
+
+        // A type counts as "sized" when its width pivot is non-empty. The
+        // 'unsized' filter processes medias where at least one expected type is
+        // missing; 'sized' processes only medias where every type is already
+        // filled (refresh path).
+        $missing = [];
+        foreach ($this->imageTypes as $type) {
+            if (empty($mediaData['dimensions'][$type]['width'])) {
+                $missing[] = $type;
             }
-        } elseif ($this->filter === 'unsized') {
-            if (!empty($mediaData['dimensions']['large']['width'])) {
-                ++$this->totalSkipped;
-                return;
-            }
+        }
+        if ($this->filter === 'unsized' && !$missing) {
+            ++$this->totalSkipped;
+            return;
+        }
+        if ($this->filter === 'sized' && count($missing) === count($this->imageTypes)) {
+            ++$this->totalSkipped;
+            return;
         }
 
         /** @var \Omeka\Entity\Media $mediaEntity */
