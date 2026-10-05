@@ -207,6 +207,25 @@ class ImageController extends AbstractActionController
             else {
                 // Check if the image is pre-tiled.
                 $pretiled = $this->usePreTiled($media, $transform);
+                // Pyramidal TIFF/JP2 pre-tiles are only readable by vips:
+                // GD and Imagick choke on them. When the effective imager
+                // is not vips, fall through to the dynamic branch (which
+                // will use the original).
+                if ($pretiled && in_array($pretiled['source']['media_type'] ?? '', ['image/tiff', 'image/jp2'], true)) {
+                    $imagerSetting = $settings->get('imageserver_imager');
+                    $effective = $imagerSetting;
+                    if ($effective === 'Auto') {
+                        $imagerObj = $this->imageServer()->getImager()->getImager($transform);
+                        if ($imagerObj instanceof \ImageServer\ImageServer\Vips
+                            || $imagerObj instanceof \ImageServer\ImageServer\PhpVips
+                        ) {
+                            $effective = 'Vips';
+                        }
+                    }
+                    if (!in_array($effective, ['Vips', 'PhpVips'], true)) {
+                        $pretiled = null;
+                    }
+                }
                 if ($pretiled) {
                     // Warning: Currently, the tile server does not manage
                     // regions or special size, so it is possible to process the
@@ -236,30 +255,10 @@ class ImageController extends AbstractActionController
 
                 // The image needs to be transformed dynamically.
                 else {
-                    // Prefer tiled TIFF/JP2 source over original for
-                    // fast region extraction with vips.
-                    $tileDir = $settings->get('imageserver_image_tile_dir', 'tile');
-                    $config = $this->getEvent()->getApplication()
-                        ->getServiceManager()->get('Config');
-                    $basePath = $config['file_store']['local']['base_path']
-                        ?: (OMEKA_PATH . '/files');
-                    $storageId = $media->storageId();
-                    $tiledSource = null;
-                    foreach (['.tif', '.jp2'] as $tExt) {
-                        $candidate = $basePath . '/' . $tileDir . '/' . $storageId . $tExt;
-                        if (file_exists($candidate)) {
-                            $tiledSource = $candidate;
-                            break;
-                        }
-                    }
-                    if ($tiledSource) {
-                        $transform['source']['filepath'] = $tiledSource;
-                        // Tiled sources are created by vips: no EXIF
-                        // rotation, dimensions are already correct.
-                        $transform['source']['skip_autorot'] = true;
-                    }
-
-                    // Vips can manage any size, so skip the size check.
+                    // Resolve the effective imager. Pyramidal TIFF/JP2 tiled
+                    // sources are only readable by vips; GD/Imagick choke on
+                    // them, so the .tif/.jp2 candidate is only used when the
+                    // selected imager is Vips/PhpVips.
                     $imager = $settings->get('imageserver_imager');
                     if ($imager === 'Auto') {
                         $imagerObj = $this->imageServer()->getImager()->getImager($transform);
@@ -269,7 +268,28 @@ class ImageController extends AbstractActionController
                             $imager = 'Vips';
                         }
                     }
-                    if (!in_array($imager, ['Vips', 'PhpVips'])) {
+                    if (in_array($imager, ['Vips', 'PhpVips'])) {
+                        $tileDir = $settings->get('imageserver_image_tile_dir', 'tile');
+                        $config = $this->getEvent()->getApplication()
+                            ->getServiceManager()->get('Config');
+                        $basePath = $config['file_store']['local']['base_path']
+                            ?: (OMEKA_PATH . '/files');
+                        $storageId = $media->storageId();
+                        $tiledSource = null;
+                        foreach (['.tif', '.jp2'] as $tExt) {
+                            $candidate = $basePath . '/' . $tileDir . '/' . $storageId . $tExt;
+                            if (file_exists($candidate)) {
+                                $tiledSource = $candidate;
+                                break;
+                            }
+                        }
+                        if ($tiledSource) {
+                            $transform['source']['filepath'] = $tiledSource;
+                            // Tiled sources are created by vips: no EXIF
+                            // rotation, dimensions are already correct.
+                            $transform['source']['skip_autorot'] = true;
+                        }
+                    } else {
                         $maxFileSize = (int) $settings->get('imageserver_image_max_size');
                         if ($maxFileSize) {
                             // Use pixel dimensions if available (more
