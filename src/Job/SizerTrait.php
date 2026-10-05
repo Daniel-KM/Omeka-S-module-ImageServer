@@ -13,7 +13,7 @@ trait SizerTrait
     protected $logger;
 
     /**
-     * @var \IiifServer\Mvc\Controller\Plugin\ImageSize
+     * @var \ImageServer\Mvc\Controller\Plugin\ImageSize
      */
     protected $imageSize;
 

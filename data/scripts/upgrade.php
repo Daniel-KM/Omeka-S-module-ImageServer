@@ -147,14 +147,13 @@ The conversion of the renderer from "tile" to the standard "file" can be done wi
     $message = new PsrMessage(
         'Storing tile info for images in background ({link}job #{job_id}{link_end}, {link_log}logs{link_end}). This process will take a while.', // @translate
         [
-            'link' => sprintf('<a href="%s">',
-                htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+            'link' => sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
             ),
             'job_id' => $job->getId(),
             'link_end' => '</a>',
             'link_log' => class_exists('Log\Module', false)
-                ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
-                : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
+                ? sprintf('<a href="%1$s">', htmlspecialchars($urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]])))
+                : sprintf('<a href="%1$s" target="_blank" rel="noopener noreferrer">', htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()]))),
         ]
     );
     $message->setEscapeHtml(false);

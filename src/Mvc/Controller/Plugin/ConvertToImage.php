@@ -15,7 +15,7 @@ class ConvertToImage extends AbstractPlugin
     protected $imager;
 
     /**
-     * @var \IiifServer\Mvc\Controller\Plugin\ImageSize
+     * @var \ImageServer\Mvc\Controller\Plugin\ImageSize
      */
     protected $imageSize;
 

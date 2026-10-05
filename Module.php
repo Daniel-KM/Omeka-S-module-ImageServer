@@ -192,8 +192,8 @@ class Module extends AbstractModule
             ));
         }
 
-        // Keep deepzoom as default tile type: static files served
-        // directly by Apache (~0.5ms per tile) without PHP.
+        // Keep deepzoom as default tile type: static files are served directly
+        // and quicker by Apache without PHP.
 
         // Set base url.
         $urlHelper = $services->get('ViewHelperManager')->get('url');
@@ -600,14 +600,13 @@ class Module extends AbstractModule
         $message = new PsrMessage(
             $message,
             [
-                'link' => sprintf('<a href="%s">',
-                    htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                'link' => sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
                 ),
                 'job_id' => $job->getId(),
                 'link_end' => '</a>',
                 'link_log' => class_exists('Log\Module', false)
-                    ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
-                    : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
+                    ? sprintf('<a href="%1$s">', htmlspecialchars($urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]])))
+                    : sprintf('<a href="%1$s" target="_blank" rel="noopener noreferrer">', htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()]))),
             ]
         );
         $message->setEscapeHtml(false);
@@ -1001,8 +1000,8 @@ class Module extends AbstractModule
         );
 
         if (strpos($htaccess, 'iiiftile.php') !== false) {
-            // Check that the path in .htaccess matches the current
-            // module location (modules/ vs composer-addons/modules/).
+            // Check that the path in .htaccess matches the current module
+            // location (modules/ vs composer-addons/modules/).
             if (strpos($htaccess, $relativeScript) !== false) {
                 $message = new PsrMessage(
                     'The fast IIIF tile script is active in .htaccess.' // @translate

@@ -63,7 +63,7 @@ class Tile extends AbstractType
     {
         $this->resource = $resource;
 
-        $isDo = class_exists(\DigitalObject\Api\Representation\DigitalObjectRepresentation::class, false)
+        $isDo = class_exists('DigitalObject\Module', false)
             && $resource instanceof \DigitalObject\Api\Representation\DigitalObjectRepresentation;
         if (!$resource instanceof MediaRepresentation && !$isDo) {
             $message = new PsrMessage(

@@ -83,7 +83,7 @@ class ImageSize extends AbstractPlugin
         if (strpos($type, '/..') !== false || strpos($type, '../') !== false) {
             return $this->emptySize;
         } elseif ($image instanceof MediaRepresentation
-            || (class_exists(\DigitalObject\Api\Representation\DigitalObjectRepresentation::class, false)
+            || (class_exists('DigitalObject\Module', false)
                 && $image instanceof \DigitalObject\Api\Representation\DigitalObjectRepresentation)
         ) {
             return $this->sizeMedia($image, $type, $force);
