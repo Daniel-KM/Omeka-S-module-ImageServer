@@ -347,6 +347,11 @@ class Module extends AbstractModule
         $plugins = $services->get('ControllerPluginManager');
         $messenger = $plugins->get('messenger');
 
+        // Preserve pending flash messages (e.g. form validation errors after a
+        // failed submit): they are restored below, after the diagnostics are
+        // collected into the audit tab via the messenger as a temporary buffer.
+        $pending = $messenger->get();
+
         // Clear any previous messages, then run diagnostics.
         $messenger->clear();
         $this->runDiagnostics();
@@ -355,6 +360,13 @@ class Module extends AbstractModule
         // messenger so they appear only in the audit tab.
         $diagnostics = $messenger->get();
         $messenger->clear();
+
+        // Restore pending flash messages so they still display.
+        foreach ($pending as $type => $msgs) {
+            foreach ($msgs as $msg) {
+                $messenger->add($type, $msg);
+            }
+        }
 
         $settings = $services->get('Omeka\Settings');
         $formManager = $services->get('FormElementManager');
@@ -371,8 +383,15 @@ class Module extends AbstractModule
         $translate = $view->plugin('translate');
         $escape = $view->plugin('escapeHtml');
 
-        $form = $formManager->get(ConfigForm::class);
-        $form->init();
+        if ($this->invalidConfigForm) {
+            // Reuse the failed-submit form so its per-field error messages
+            // remain attached and the submitted values are not lost.
+            $form = $this->invalidConfigForm;
+        } else {
+            $form = $formManager->get(ConfigForm::class);
+            $form->init();
+            $form->setData($data);
+        }
 
         // Update bulk note with current tile type.
         $tileTypeLabels = [
@@ -390,7 +409,6 @@ class Module extends AbstractModule
             ['format' => $tileTypeLabels[$currentTileType] ?? $currentTileType]
         );
         $note->setOption('text', $noteText);
-        $form->setData($data);
         $form->prepare();
 
         // --- Audit tab ---

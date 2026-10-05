@@ -284,7 +284,7 @@ class ConfigForm extends Form
             ])
             ->add([
                 'name' => 'imageserver_info_rights_property',
-                'type' => OmekaElement\PropertySelect::class,
+                'type' => CommonElement\OptionalPropertySelect::class,
                 'options' => [
                     'element_group' => 'metadata',
                     'label' => 'Rights property', // @translate
@@ -363,7 +363,7 @@ class ConfigForm extends Form
             ])
             ->add([
                 'name' => 'imageserver_info_rights_url',
-                'type' => Element\Url::class,
+                'type' => CommonElement\OptionalUrl::class,
                 'options' => [
                     'element_group' => 'metadata',
                     'label' => 'Custom rights URL (if not selected above)', // @translate
