@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Api\Representation\AssetRepresentation;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Entity\Asset;
 use Omeka\Entity\Media;
@@ -81,7 +82,10 @@ class ImageSize extends AbstractPlugin
         // A security check. Useful?
         if (strpos($type, '/..') !== false || strpos($type, '../') !== false) {
             return $this->emptySize;
-        } elseif ($image instanceof MediaRepresentation) {
+        } elseif ($image instanceof MediaRepresentation
+            || (class_exists(\DigitalObject\Api\Representation\DigitalObjectRepresentation::class, false)
+                && $image instanceof \DigitalObject\Api\Representation\DigitalObjectRepresentation)
+        ) {
             return $this->sizeMedia($image, $type, $force);
         } elseif ($image instanceof AssetRepresentation) {
             return $this->sizeAsset($image, $force);
@@ -99,7 +103,7 @@ class ImageSize extends AbstractPlugin
     /**
      * Get an array of the width and height of the image file from a media.
      */
-    protected function sizeMedia(MediaRepresentation $media, string $type, bool $force): array
+    protected function sizeMedia(AbstractResourceEntityRepresentation $media, string $type, bool $force): array
     {
         // Check if this is an image for type original.
         if ($type === 'original') {
@@ -151,7 +155,8 @@ class ImageSize extends AbstractPlugin
 
         // Cache dimensions in media data to avoid computation on next request.
         if ($result['width'] && $result['height'] && $mediaId) {
-            $this->cacheMediaDimensions($mediaId, $type, $result);
+            $table = $media->resourceName() === 'digital_objects' ? 'digital_object' : 'media';
+            $this->cacheMediaDimensions($mediaId, $type, $result, $table);
             $cache[$cacheKey] = $result;
         }
 
@@ -274,15 +279,20 @@ class ImageSize extends AbstractPlugin
     protected function cacheMediaDimensions(
         int $mediaId,
         string $type,
-        array $dimensions
+        array $dimensions,
+        string $table = 'media'
     ): void {
         // Only safe type values (original, large, medium, square).
         if (!preg_match('/^[a-zA-Z][\w-]*$/', $type)) {
             return;
         }
+        // Allow-list table names to avoid SQL injection via the parameter.
+        if (!in_array($table, ['media', 'digital_object'], true)) {
+            return;
+        }
         try {
             $raw = $this->connection->fetchOne(
-                'SELECT `data` FROM `media` WHERE `id` = ?',
+                "SELECT `data` FROM `$table` WHERE `id` = ?",
                 [$mediaId]
             );
             $mediaData = $raw ? json_decode($raw, true) : [];
@@ -294,7 +304,7 @@ class ImageSize extends AbstractPlugin
                 'height' => $dimensions['height'] ? (int) $dimensions['height'] : null,
             ];
             $this->connection->executeStatement(
-                'UPDATE `media` SET `data` = ? WHERE `id` = ?',
+                "UPDATE `$table` SET `data` = ? WHERE `id` = ?",
                 [json_encode($mediaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $mediaId]
             );
         } catch (\Throwable $e) {

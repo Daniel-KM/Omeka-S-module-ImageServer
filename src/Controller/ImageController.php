@@ -36,6 +36,7 @@ use IiifServer\Controller\IiifServerControllerTrait;
 use ImageServer\ImageServer\ImageServer;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 
 /**
@@ -146,7 +147,7 @@ class ImageController extends AbstractActionController
      */
     public function fetchAction()
     {
-        /** @var \Omeka\Api\Representation\MediaRepresentation $media */
+        /** @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation $media */
         $media = $this->fetchResource('media');
         if (!$media) {
             return $this->viewError(new PsrMessage(
@@ -508,7 +509,7 @@ class ImageController extends AbstractActionController
      * @param MediaRepresentation $media
      * @return array|null Array of cleaned requested image, else null.
      */
-    protected function cleanRequest(MediaRepresentation $media): ?array
+    protected function cleanRequest(AbstractResourceEntityRepresentation $media): ?array
     {
         $transform = [];
 
@@ -1044,7 +1045,7 @@ class ImageController extends AbstractActionController
      * @return array|null Associative array with the file path, the derivative
      * type, the width and the height. Null if none.
      */
-    protected function useOmekaDerivative(MediaRepresentation $media, array $transform): ?array
+    protected function useOmekaDerivative(AbstractResourceEntityRepresentation $media, array $transform): ?array
     {
         // Some requirements to get tiles.
         if ($transform['region']['feature'] != 'full') {
@@ -1139,7 +1140,7 @@ class ImageController extends AbstractActionController
      * @return array|null Associative array with the file path, the derivative
      * type, the width and the height. Null if none.
      */
-    protected function usePreTiled(MediaRepresentation $media, array $transform): ?array
+    protected function usePreTiled(AbstractResourceEntityRepresentation $media, array $transform): ?array
     {
         $tileInfo = $this->tileMediaInfo($media);
         return $tileInfo
@@ -1147,7 +1148,7 @@ class ImageController extends AbstractActionController
             : null;
     }
 
-    protected function mediaPath(MediaRepresentation $media, string $imageType = 'original'): string
+    protected function mediaPath(AbstractResourceEntityRepresentation $media, string $imageType = 'original'): string
     {
         $storagePath = $imageType == 'original'
             ? $this->getStoragePath($imageType, $media->filename())
@@ -1168,7 +1169,7 @@ class ImageController extends AbstractActionController
      * @param string $imageType
      * @return string|null Null if not exists.
      */
-    protected function getImagePath(MediaRepresentation $media, string $imageType = 'original'): ?string
+    protected function getImagePath(AbstractResourceEntityRepresentation $media, string $imageType = 'original'): ?string
     {
         return strpos($media->mediaType(), 'image/') === 0
             ? $this->mediaPath($media, $imageType)

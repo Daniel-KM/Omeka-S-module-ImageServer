@@ -2,6 +2,7 @@
 
 namespace ImageServer\Job;
 
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 
 trait TilerTrait
@@ -68,21 +69,22 @@ trait TilerTrait
         $this->tiler = $services->get('ControllerPluginManager')->get('tiler');
         // The api cannot update value "renderer", so use entity manager.
         $this->entityManager = $services->get('Omeka\EntityManager');
-        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
+        // Use Resource repository to support both Media and DigitalObject.
+        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Resource::class);
 
         $this->removeDestination = $this->getArg('remove_destination', 'skip') ?: 'skip';
         $this->updateRenderer = $this->getArg('update_renderer', false) ?: false;
         $this->tileType = $services->get('Omeka\Settings')->get('imageserver_image_tile_type', '');
     }
 
-    protected function prepareTile(MediaRepresentation $media): void
+    protected function prepareTile(AbstractResourceEntityRepresentation $media): void
     {
         if (!$media->hasOriginal()
             || strtok((string) $media->mediaType(), '/') !== 'image'
             // For ingester bulk_upload, wait that the process is finished, else
             // the thumbnails won't be available and the size of derivative will
-            // be the fallback ones.
-            || $media->ingester() === 'bulk_upload'
+            // be the fallback ones. DigitalObjects have no bulk ingester.
+            || ($media instanceof MediaRepresentation && $media->ingester() === 'bulk_upload')
         ) {
             return;
         }
@@ -93,14 +95,18 @@ trait TilerTrait
             if (!empty($result['skipped'])) {
                 ++$this->totalSkipped;
             } else {
-                $renderer = $media->renderer();
-                if ($this->updateRenderer && $renderer !== $this->updateRenderer) {
-                    /** @var \Omeka\Entity\Media $mediaEntity  */
-                    $mediaEntity = $this->mediaRepository->find($media->id());
-                    $mediaEntity->setRenderer($this->updateRenderer);
-                    $this->entityManager->persist($mediaEntity);
-                    $this->entityManager->flush();
-                    unset($mediaEntity);
+                // updateRenderer only applies to Media entities (DOs are always
+                // rendered as 'file').
+                if ($media instanceof MediaRepresentation) {
+                    $renderer = $media->renderer();
+                    if ($this->updateRenderer && $renderer !== $this->updateRenderer) {
+                        /** @var \Omeka\Entity\Media $mediaEntity */
+                        $mediaEntity = $this->mediaRepository->find($media->id());
+                        $mediaEntity->setRenderer($this->updateRenderer);
+                        $this->entityManager->persist($mediaEntity);
+                        $this->entityManager->flush();
+                        unset($mediaEntity);
+                    }
                 }
                 ++$this->totalSucceed;
             }

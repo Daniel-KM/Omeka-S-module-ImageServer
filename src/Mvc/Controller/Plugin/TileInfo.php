@@ -32,6 +32,7 @@ namespace ImageServer\Mvc\Controller\Plugin;
 use ImageServer\Mvc\Controller\Plugin\ImageSize;
 use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 
 class TileInfo extends AbstractPlugin
@@ -120,10 +121,12 @@ class TileInfo extends AbstractPlugin
      * @param string|null $format If not set, get the first format it finds.
      * @return array|null
      */
-    public function __invoke(MediaRepresentation $media, ?string $format = null): ?array
+    public function __invoke(AbstractResourceEntityRepresentation $media, ?string $format = null): ?array
     {
         // Quick check for possible issue when used outside of the Image Server.
-        $mediaType = $media->mediaType();
+        // Accept DigitalObjectRepresentation too since DigitalObject shares the
+        // storageId / mediaData layout that getTilingData consumes.
+        $mediaType = (string) $media->mediaType();
         if (substr($mediaType, 0, 6) !== 'image/') {
             return null;
         }
@@ -147,7 +150,7 @@ class TileInfo extends AbstractPlugin
      * @param string|null $format
      * @return array|null
      */
-    protected function getTilingData(MediaRepresentation $media, ?string $format = null): ?array
+    protected function getTilingData(AbstractResourceEntityRepresentation $media, ?string $format = null): ?array
     {
         $basename = $media->storageId();
 
@@ -340,7 +343,7 @@ class TileInfo extends AbstractPlugin
      * @param MediaRepresentation $media
      * @return array|null
      */
-    protected function getTilingDataMedia($path, $tileType, MediaRepresentation $media): ?array
+    protected function getTilingDataMedia($path, $tileType, AbstractResourceEntityRepresentation $media): ?array
     {
         $imageSize = $this->imageSize->__invoke($media);
         if (!$imageSize['width'] || !$imageSize['height']) {

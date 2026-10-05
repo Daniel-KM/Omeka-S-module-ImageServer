@@ -98,6 +98,7 @@ class BulkSizerAndTiler extends AbstractJob
                 break;
             }
 
+            $doIds ??= [];
             foreach ($items as $key => $item) {
                 if ($this->shouldStop()) {
                     $this->logger->warn(
@@ -120,33 +121,18 @@ class BulkSizerAndTiler extends AbstractJob
                     }
 
                     ++$this->totalImages;
-
-                    $skipped = $this->totalSkipped;
-                    $failed = $this->totalFailed;
-                    $succeed = $this->totalSucceed;
-
-                    if (in_array('size', $tasks)) {
-                        $this->prepareSize($media);
-                    }
-
-                    if (in_array('tile', $tasks)) {
-                        $this->prepareTile($media);
-                    } elseif (in_array('tile_info', $tasks)) {
-                        $this->prepareTileInfo($media);
-                    }
-
-                    // Quick avoid double count of skip/fail/success.
-                    if ($this->totalSkipped !== $skipped) {
-                        $this->totalSkipped = ++$skipped;
-                    }
-                    if ($this->totalFailed !== $failed) {
-                        $this->totalFailed = ++$failed;
-                    }
-                    if ($this->totalSucceed !== $succeed) {
-                        $this->totalSucceed = ++$succeed;
-                    }
-
+                    $this->processResource($media, $tasks);
                     unset($media);
+                }
+
+                // Collect DigitalObjects referenced by this item via values.
+                foreach ($item->values() as $property) {
+                    foreach ($property['values'] as $value) {
+                        $vr = $value->valueResource();
+                        if ($vr && $vr->resourceName() === 'digital_objects') {
+                            $doIds[$vr->id()] = true;
+                        }
+                    }
                 }
                 unset($item);
 
@@ -160,6 +146,34 @@ class BulkSizerAndTiler extends AbstractJob
 
             $this->entityManager->clear();
             $offset += self::SQL_LIMIT;
+        }
+
+        // Second pass: digital objects referenced by the matched items.
+        if (!empty($doIds)) {
+            $doIds = array_keys($doIds);
+            foreach (array_chunk($doIds, self::SQL_LIMIT) as $chunk) {
+                if ($this->shouldStop()) {
+                    break;
+                }
+                try {
+                    $dos = $api->search('digital_objects', ['id' => $chunk])->getContent();
+                } catch (\Omeka\Api\Exception\BadRequestException $e) {
+                    break;
+                }
+                foreach ($dos as $do) {
+                    if ($this->shouldStop()) {
+                        break 2;
+                    }
+                    if (strtok((string) $do->mediaType(), '/') !== 'image') {
+                        unset($do);
+                        continue;
+                    }
+                    ++$this->totalImages;
+                    $this->processResource($do, $tasks);
+                    unset($do);
+                }
+                $this->entityManager->clear();
+            }
         }
 
         $this->logger->notice(
@@ -181,7 +195,35 @@ class BulkSizerAndTiler extends AbstractJob
      *
      * @param MediaRepresentation $media
      */
-    protected function prepareTileInfo(MediaRepresentation $media): void
+    protected function processResource(\Omeka\Api\Representation\AbstractResourceEntityRepresentation $media, array $tasks): void
+    {
+        $skipped = $this->totalSkipped;
+        $failed = $this->totalFailed;
+        $succeed = $this->totalSucceed;
+
+        if (in_array('size', $tasks)) {
+            $this->prepareSize($media);
+        }
+
+        if (in_array('tile', $tasks)) {
+            $this->prepareTile($media);
+        } elseif (in_array('tile_info', $tasks)) {
+            $this->prepareTileInfo($media);
+        }
+
+        // Avoid double counting skip/fail/success.
+        if ($this->totalSkipped !== $skipped) {
+            $this->totalSkipped = ++$skipped;
+        }
+        if ($this->totalFailed !== $failed) {
+            $this->totalFailed = ++$failed;
+        }
+        if ($this->totalSucceed !== $succeed) {
+            $this->totalSucceed = ++$succeed;
+        }
+    }
+
+    protected function prepareTileInfo(\Omeka\Api\Representation\AbstractResourceEntityRepresentation $media): void
     {
         $this->logger->info(
             'Media #{media_id}: Store tile info', // @translate

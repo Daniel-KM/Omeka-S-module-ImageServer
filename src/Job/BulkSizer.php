@@ -104,6 +104,34 @@ class BulkSizer extends AbstractJob
             $offset += self::SQL_LIMIT;
         }
 
+        // Second pass: digital objects, when the module is installed. They are
+        // not attached to items so they must be enumerated independently.
+        try {
+            $doOffset = 0;
+            while (true) {
+                $dos = $api
+                    ->search('digital_objects', ['limit' => self::SQL_LIMIT, 'offset' => $doOffset])
+                    ->getContent();
+                if (empty($dos)) {
+                    break;
+                }
+                foreach ($dos as $do) {
+                    if ($this->shouldStop()) {
+                        break 2;
+                    }
+                    if (strtok((string) $do->mediaType(), '/') === 'image') {
+                        ++$this->totalImages;
+                        $this->prepareSize($do);
+                    }
+                    unset($do);
+                }
+                $this->entityManager->clear();
+                $doOffset += self::SQL_LIMIT;
+            }
+        } catch (\Omeka\Api\Exception\BadRequestException $e) {
+            // Module DigitalObject is not installed.
+        }
+
         $this->logger->notice(
             'End of bulk sizing: {count}/{total} items processed, {total_images} images checked, {total_succeed} sized, {total_skipped} already sized (skipped), {total_failed} errors.', // @translate
             [

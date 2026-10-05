@@ -108,6 +108,7 @@ class BulkTileInfo extends AbstractJob
                 break;
             }
 
+            $doIds ??= [];
             foreach ($items as $key => $item) {
                 if ($this->shouldStop()) {
                     $this->logger->warn(
@@ -132,6 +133,16 @@ class BulkTileInfo extends AbstractJob
                     $this->prepareTileInfo($media);
                     unset($media);
                 }
+
+                // Collect DigitalObjects referenced by this item via values.
+                foreach ($item->values() as $property) {
+                    foreach ($property['values'] as $value) {
+                        $vr = $value->valueResource();
+                        if ($vr && $vr->resourceName() === 'digital_objects') {
+                            $doIds[$vr->id()] = true;
+                        }
+                    }
+                }
                 unset($item);
 
                 ++$this->totalProcessed;
@@ -148,6 +159,33 @@ class BulkTileInfo extends AbstractJob
             $offset += self::SQL_LIMIT;
         }
 
+        // Second pass: digital objects referenced by the matched items.
+        if (!empty($doIds)) {
+            $doIds = array_keys($doIds);
+            foreach (array_chunk($doIds, self::SQL_LIMIT) as $chunk) {
+                if ($this->shouldStop()) {
+                    break;
+                }
+                try {
+                    $dos = $api->search('digital_objects', ['id' => $chunk])->getContent();
+                } catch (\Omeka\Api\Exception\BadRequestException $e) {
+                    break;
+                }
+                foreach ($dos as $do) {
+                    if ($this->shouldStop()) {
+                        break 2;
+                    }
+                    if (strtok((string) $do->mediaType(), '/') === 'image') {
+                        ++$this->totalImages;
+                        $this->prepareTileInfo($do);
+                    }
+                    unset($do);
+                }
+                $this->entityManager->flush();
+                $this->entityManager->clear();
+            }
+        }
+
         $this->logger->notice(
             'End of bulk tile info: {count}/{total} items processed, {total_images} images checked, {total_succeed} updated, {total_skipped} skipped, {total_failed} errors.', // @translate
             [
@@ -161,7 +199,7 @@ class BulkTileInfo extends AbstractJob
         );
     }
 
-    protected function prepareTileInfo(MediaRepresentation $media): void
+    protected function prepareTileInfo(\Omeka\Api\Representation\AbstractResourceEntityRepresentation $media): void
     {
         $mediaData = $media->mediaData();
         if ($mediaData === null) {

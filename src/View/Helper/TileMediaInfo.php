@@ -3,6 +3,7 @@
 namespace ImageServer\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 
 class TileMediaInfo extends AbstractHelper
@@ -21,12 +22,11 @@ class TileMediaInfo extends AbstractHelper
     }
 
     /**
-     * Retrieve info about the tiling of an image.
-     *
-     * @param MediaRepresentation $media
-     * @return array|null
+     * Retrieve info about the tiling of an image. Accepts any resource that
+     * carries the same storageId / mediaData layout, including DigitalObject
+     * canvases produced by the IiifSearch / IiifServer pipeline.
      */
-    public function __invoke(MediaRepresentation $media): ?array
+    public function __invoke(AbstractResourceEntityRepresentation $media): ?array
     {
         return $this->tileMediaInfoPlugin->__invoke($media);
     }

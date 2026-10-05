@@ -2,6 +2,7 @@
 
 namespace ImageServer\Job;
 
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 
 trait SizerTrait
@@ -58,7 +59,8 @@ trait SizerTrait
         $this->imageSize = $services->get('ControllerPluginManager')->get('imageSize');
         // The api cannot update value "data", so use entity manager.
         $this->entityManager = $services->get('Omeka\EntityManager');
-        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
+        // Use Resource repository to support both Media and DigitalObject.
+        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Resource::class);
 
         $this->filter = $this->getArg('filter', 'all');
         if (!in_array($this->filter, ['all', 'sized', 'unsized'])) {
@@ -68,13 +70,13 @@ trait SizerTrait
         array_unshift($this->imageTypes, 'original');
     }
 
-    protected function prepareSize(MediaRepresentation $media): void
+    protected function prepareSize(AbstractResourceEntityRepresentation $media): void
     {
         if (strtok((string) $media->mediaType(), '/') !== 'image'
             // For ingester bulk_upload, wait that the process is finished, else
             // the thumbnails won't be available and the size of derivative will
-            // be the fallback ones.
-            || $media->ingester() === 'bulk_upload'
+            // be the fallback ones. DigitalObjects have no ingester.
+            || ($media instanceof MediaRepresentation && $media->ingester() === 'bulk_upload')
         ) {
             return;
         }

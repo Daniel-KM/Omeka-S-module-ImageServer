@@ -30,18 +30,19 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
 
 class TileMediaInfo extends AbstractPlugin
 {
     /**
-     * Retrieve info about the tiling of an image.
+     * Retrieve info about the tiling of an image. Accepts any resource that
+     * carries the same storageId / mediaData layout, including DigitalObject
+     * canvases.
      *
-     * @param MediaRepresentation $media
      * @param string|null $format If not set, get the first format it finds.
-     * @return array|null
      */
-    public function __invoke(MediaRepresentation $media, ?string $format = null): ?array
+    public function __invoke(AbstractResourceEntityRepresentation $media, ?string $format = null): ?array
     {
         $tileData = $media->mediaData();
         if (empty($tileData['tile'])) {

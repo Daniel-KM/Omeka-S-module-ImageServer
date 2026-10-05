@@ -63,9 +63,11 @@ class Tile extends AbstractType
     {
         $this->resource = $resource;
 
-        if (!$resource instanceof MediaRepresentation) {
+        $isDo = class_exists(\DigitalObject\Api\Representation\DigitalObjectRepresentation::class, false)
+            && $resource instanceof \DigitalObject\Api\Representation\DigitalObjectRepresentation;
+        if (!$resource instanceof MediaRepresentation && !$isDo) {
             $message = new PsrMessage(
-                'Resource #{resource_id}: A media is required to build a Tile.', // @translate
+                'Resource #{resource_id}: A media or a digital object is required to build a Tile.', // @translate
                 ['resource_id' => $resource->id()]
             );
             $this->logger->err(

@@ -69,6 +69,7 @@ class BulkTiler extends AbstractJob
         $this->totalSucceed = 0;
         $this->totalFailed = 0;
         $this->totalSkipped = 0;
+        $doIds = [];
         while (true) {
             /** @var \Omeka\Api\Representation\ItemRepresentation[] $items */
             $items = $api
@@ -101,6 +102,16 @@ class BulkTiler extends AbstractJob
                     }
                     unset($media);
                 }
+
+                // Collect DigitalObjects referenced by this item via values.
+                foreach ($item->values() as $property) {
+                    foreach ($property['values'] as $value) {
+                        $vr = $value->valueResource();
+                        if ($vr && $vr->resourceName() === 'digital_objects') {
+                            $doIds[$vr->id()] = true;
+                        }
+                    }
+                }
                 unset($item);
 
                 ++$this->totalProcessed;
@@ -113,6 +124,34 @@ class BulkTiler extends AbstractJob
 
             $this->entityManager->clear();
             $offset += self::SQL_LIMIT;
+        }
+
+        // Second pass: digital objects referenced by the matched items.
+        if ($doIds) {
+            $doIds = array_keys($doIds);
+            foreach (array_chunk($doIds, self::SQL_LIMIT) as $chunk) {
+                if ($this->shouldStop()) {
+                    break;
+                }
+                try {
+                    $dos = $api->search('digital_objects', ['id' => $chunk])->getContent();
+                } catch (\Omeka\Api\Exception\BadRequestException $e) {
+                    break;
+                }
+                foreach ($dos as $do) {
+                    if ($this->shouldStop()) {
+                        break 2;
+                    }
+                    if ($do->hasOriginal()
+                        && strtok((string) $do->mediaType(), '/') === 'image'
+                    ) {
+                        ++$this->totalImages;
+                        $this->prepareTile($do);
+                    }
+                    unset($do);
+                }
+                $this->entityManager->clear();
+            }
         }
 
         $this->logger->notice(

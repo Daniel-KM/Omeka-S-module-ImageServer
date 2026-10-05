@@ -72,7 +72,8 @@ class BulkTileClean extends AbstractJob
         $referenceIdProcessor->setReferenceId('imageserver/bulk-tile-clean/job_' . $this->job->getId());
         $this->logger->addProcessor($referenceIdProcessor);
         $this->entityManager = $services->get('Omeka\EntityManager');
-        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Media::class);
+        // Use Resource repository to support both Media and DigitalObject.
+        $this->mediaRepository = $this->entityManager->getRepository(\Omeka\Entity\Resource::class);
         $api = $services->get('Omeka\ApiManager');
         $tileRemover = $plugins->get('tileRemover');
 
@@ -107,6 +108,7 @@ class BulkTileClean extends AbstractJob
                 break;
             }
 
+            $doIds ??= [];
             foreach ($items as $key => $item) {
                 if ($this->shouldStop()) {
                     $this->logger->warn(
@@ -135,6 +137,16 @@ class BulkTileClean extends AbstractJob
 
                     unset($media);
                 }
+
+                // Collect DigitalObjects referenced by this item via values.
+                foreach ($item->values() as $property) {
+                    foreach ($property['values'] as $value) {
+                        $vr = $value->valueResource();
+                        if ($vr && $vr->resourceName() === 'digital_objects') {
+                            $doIds[$vr->id()] = true;
+                        }
+                    }
+                }
                 unset($item);
 
                 ++$this->totalProcessed;
@@ -151,6 +163,37 @@ class BulkTileClean extends AbstractJob
             $offset += self::SQL_LIMIT;
         }
 
+        // Second pass: digital objects referenced by the matched items.
+        if (!empty($doIds)) {
+            $doIds = array_keys($doIds);
+            foreach (array_chunk($doIds, self::SQL_LIMIT) as $chunk) {
+                if ($this->shouldStop()) {
+                    break;
+                }
+                try {
+                    $dos = $api->search('digital_objects', ['id' => $chunk])->getContent();
+                } catch (\Omeka\Api\Exception\BadRequestException $e) {
+                    break;
+                }
+                foreach ($dos as $do) {
+                    if ($this->shouldStop()) {
+                        break 2;
+                    }
+                    if (strtok((string) $do->mediaType(), '/') !== 'image') {
+                        unset($do);
+                        continue;
+                    }
+                    ++$this->totalImages;
+                    $doEntity = $this->mediaRepository->find($do->id());
+                    $tileRemover($doEntity);
+                    $this->removeMediaDataTile($doEntity);
+                    unset($do);
+                }
+                $this->entityManager->flush();
+                $this->entityManager->clear();
+            }
+        }
+
         $this->logger->notice(
             'End of bulk tile cleaning: {count}/{total} items processed, {total_images} images checked, {total_succeed} cleaned, {total_skipped} skipped, {total_failed} errors.', // @translate
             [
@@ -164,8 +207,9 @@ class BulkTileClean extends AbstractJob
         );
     }
 
-    protected function removeMediaDataTile(Media $media): void
+    protected function removeMediaDataTile($media): void
     {
+        // Accept Media or DigitalObject entity (both expose getData/setData).
         $mediaData = $media->getData();
         if ($mediaData === null || !array_key_exists('tile', $mediaData)) {
             return;
