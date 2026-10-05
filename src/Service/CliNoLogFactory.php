@@ -24,7 +24,6 @@ class CliNoLogFactory implements FactoryInterface
     {
         $logger = new Logger();
         $logger->addWriter(new Noop());
-        $config = $services->get('Config');
-        return new CliNoLog($logger, $config['cli']['execute_strategy']);
+        return CliNoLog::fromCli($services->get('Omeka\Cli'), $logger);
     }
 }

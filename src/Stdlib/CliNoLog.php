@@ -2,6 +2,7 @@
 
 namespace ImageServer\Stdlib;
 
+use Laminas\Log\LoggerInterface;
 use Omeka\Stdlib\Cli;
 
 /**
@@ -16,4 +17,15 @@ use Omeka\Stdlib\Cli;
  */
 class CliNoLog extends Cli
 {
+    /**
+     * Build a silent cli with the same execute strategy than another one.
+     *
+     * The strategy of the cli of Omeka is resolved from the config ("auto" is
+     * replaced by "proc_open" or "exec" according to the available functions),
+     * so it is reused as is.
+     */
+    public static function fromCli(Cli $cli, LoggerInterface $logger): self
+    {
+        return new self($logger, $cli->executeStrategy);
+    }
 }
