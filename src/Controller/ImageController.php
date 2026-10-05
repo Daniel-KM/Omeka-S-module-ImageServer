@@ -88,6 +88,54 @@ class ImageController extends AbstractActionController
     }
 
     /**
+     * Resolve a IIIF identifier to the internal storage filename.
+     *
+     * Used by an external image server (Cantaloupe) delegate to map a clean or
+     * ark identifier to the original file, so the file extension and the
+     * internal storage name stay hidden from the public IIIF url. Restricted to
+     * trusted ips. Images only: audio and video are served by Iiif Server.
+     */
+    public function resolveAction()
+    {
+        if (!$this->isTrustedResolverClient()) {
+            return $this->resolverResponse('', \Laminas\Http\Response::STATUS_CODE_403);
+        }
+
+        $identifier = (string) $this->params()->fromQuery('identifier', '');
+        if ($identifier === '') {
+            return $this->resolverResponse('', \Laminas\Http\Response::STATUS_CODE_404);
+        }
+
+        // Reuse the shared resolver, which handles every identifier scheme
+        // (clean/ark, media id, storage id, filename with extension).
+        $this->getEvent()->getRouteMatch()->setParam('id', $identifier);
+        $media = $this->fetchResource('media');
+        if (!$media instanceof MediaRepresentation || !$this->isImageResource($media)) {
+            return $this->resolverResponse('', \Laminas\Http\Response::STATUS_CODE_404);
+        }
+
+        return $this->resolverResponse((string) $media->filename());
+    }
+
+    protected function isTrustedResolverClient(): bool
+    {
+        $ips = array_filter(array_map(
+            'trim',
+            explode(',', (string) $this->settings()->get('imageserver_external_resolver_ips', ''))
+        ));
+        return $ips && in_array($_SERVER['REMOTE_ADDR'] ?? '', $ips, true);
+    }
+
+    protected function resolverResponse(string $content, int $statusCode = 200)
+    {
+        $response = $this->getResponse();
+        $response->setStatusCode($statusCode);
+        $response->getHeaders()->addHeaderLine('Content-Type', 'text/plain; charset=utf-8');
+        $response->setContent($content);
+        return $response;
+    }
+
+    /**
      * Returns sized image for the current file.
      *
      * @see \Access\Controller\AccessFileController::sendFile()

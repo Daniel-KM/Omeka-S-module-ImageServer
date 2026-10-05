@@ -156,6 +156,20 @@ class ConfigForm extends Form
             ])
 
             ->add([
+                'name' => 'imageserver_external_resolver_ips',
+                'type' => Element\Text::class,
+                'options' => [
+                    'element_group' => 'infra',
+                    'label' => 'External image server: trusted ips for identifier resolution', // @translate
+                    'info' => 'Comma-separated ips allowed to call the identifier resolver endpoint (/iiif-resolve), used by an external image server delegate (Cantaloupe) to map a clean or ark identifier to the original file. Empty disables the endpoint.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver_external_resolver_ips',
+                    'placeholder' => '172.20.0.5, 172.20.0.6',
+                ],
+            ])
+
+            ->add([
                 'name' => 'imageserver_tile_mode',
                 'type' => CommonElement\OptionalRadio::class,
                 'options' => [

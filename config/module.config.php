@@ -152,9 +152,23 @@ return [
                             ],
                         ],
                     ],
-                    // This route is a garbage collector that allows to return an error 400 or 501 to
-                    // invalid or not implemented requests, as required by specification.
-                    // This route should be set before the imageserver/media in order to be
+                    // Resolve a clean/ark identifier to the internal storage
+                    // filename for an external image server (Cantaloupe). The
+                    // identifier is passed as a query argument to avoid slash
+                    // encoding issues. Restricted to trusted ips.
+                    'resolve' => [
+                        'type' => \Laminas\Router\Http\Literal::class,
+                        'options' => [
+                            'route' => '-resolve',
+                            'defaults' => [
+                                'action' => 'resolve',
+                            ],
+                        ],
+                    ],
+                    // This route is a garbage collector that allows to return
+                    // an error 400 or 501 to invalid or not implemented
+                    // requests, as required by specification. This route should
+                    // be set before the imageserver/media in order to be
                     // processed after it.
                     // TODO Simplify to any number of sub elements.
                     'media-bad' => [
@@ -289,6 +303,10 @@ return [
             'imageserver_image_tile_type' => 'deepzoom',
             // Internal option to get Omeka url in background process.
             'imageserver_base_url' => '',
+            // Comma-separated ips allowed to call the identifier resolver
+            // endpoint (the external image server, e.g. the Cantaloupe host).
+            // Empty means the endpoint is disabled.
+            'imageserver_external_resolver_ips' => '',
             // This param may be changed locally.
             // If updated, the path for the ArchiveRepertory ingester should be changed.
             'imageserver_image_tile_dir' => 'tile',
