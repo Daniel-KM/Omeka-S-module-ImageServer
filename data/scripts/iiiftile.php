@@ -25,22 +25,30 @@
 // @link https://iiif.io/api/image/2.1/
 // @link https://iiif.io/api/image/3.0/
 
+// Resolve Omeka root from script location: the module is in "modules/" or, when
+// installed with composer, in "composer-addons/modules/".
+$omekaPath = dirname(__DIR__, 4);
+if (basename($omekaPath) === 'composer-addons') {
+    $omekaPath = dirname($omekaPath);
+}
+
 // Detect vips: prefer php-vips library, then cli, else fall back to Omeka S
 // standard stack.
-// php-vips v1 (ext-vips) or v2 (ext-ffi) are loaded via Composer autoloader
-// from the Omeka vendor directory.
+// php-vips v1 (ext-vips) or v2 (ext-ffi) are loaded via the Composer autoloader
+// of Omeka, else of the module, that includes the library v1.
 
 $usePhpVips = false;
 $vips = '';
-$autoloader = dirname(__DIR__, 4) . '/vendor/autoload.php';
-if (file_exists($autoloader)) {
-    require_once $autoloader;
-    if (class_exists('Jcupitt\Vips\Image')) {
-        try {
-            \Jcupitt\Vips\Image::black(1, 1);
-            $usePhpVips = true;
-        } catch (\Throwable $e) {
-        }
+foreach ([$omekaPath . '/vendor/autoload.php', dirname(__DIR__, 2) . '/vendor/autoload.php'] as $autoloader) {
+    if (file_exists($autoloader)) {
+        require_once $autoloader;
+    }
+}
+if (class_exists('Jcupitt\Vips\Image')) {
+    try {
+        \Jcupitt\Vips\Image::black(1, 1);
+        $usePhpVips = true;
+    } catch (\Throwable $e) {
     }
 }
 if (!$usePhpVips) {
@@ -50,13 +58,12 @@ if (!$usePhpVips) {
         ? trim((string) shell_exec('which vips 2>/dev/null'))
         : '';
     if (!$vips) {
-        require dirname(__DIR__, 4) . '/index.php';
+        require $omekaPath . '/index.php';
         return;
     }
 }
 
-// Resolve Omeka root from script location.
-define('OMEKA_PATH', dirname(__DIR__, 4));
+define('OMEKA_PATH', $omekaPath);
 
 define('MEDIA_TYPES', [
     'gif' => 'image/gif',
