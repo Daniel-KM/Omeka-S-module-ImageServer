@@ -44,7 +44,11 @@ if (file_exists($autoloader)) {
     }
 }
 if (!$usePhpVips) {
-    $vips = trim(shell_exec('which vips 2>/dev/null') ?? '');
+    // The functions to run a command may be disabled, for example on a shared
+    // hosting: Omeka serves the tile then.
+    $vips = function_exists('shell_exec') && function_exists('exec')
+        ? trim((string) shell_exec('which vips 2>/dev/null'))
+        : '';
     if (!$vips) {
         require dirname(__DIR__, 4) . '/index.php';
         return;

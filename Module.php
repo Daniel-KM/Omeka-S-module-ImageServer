@@ -159,9 +159,7 @@ class Module extends AbstractModule
             ->get('messenger');
 
         $hasPhpVips = $this->isPhpVipsAvailable();
-        $hasVipsCli = (bool) trim(
-            (string) shell_exec('which vips 2>/dev/null')
-        );
+        $hasVipsCli = $this->vipsCliVersion() !== null;
 
         // Auto-select best imager.
         if ($hasPhpVips) {
@@ -746,7 +744,7 @@ class Module extends AbstractModule
 
         $tileType = $settings->get('imageserver_image_tile_type', 'deepzoom');
         $hasVips = $this->isPhpVipsAvailable()
-            || (bool) trim((string) shell_exec('which vips 2>/dev/null'));
+            || $this->vipsCliVersion() !== null;
 
         if ($tileType === 'tiled_tiff' && !$hasVips) {
             $message = new PsrMessage(
@@ -796,18 +794,15 @@ class Module extends AbstractModule
 
         $imager = $settings->get('imageserver_imager', 'Auto');
 
-        $hasVipsCli = (bool) trim(
-            (string) shell_exec('which vips 2>/dev/null')
-        );
+        $vipsVersion = $this->vipsCliVersion();
+        $hasVipsCli = $vipsVersion !== null;
         $hasPhpVips = $this->isPhpVipsAvailable();
         $hasImagick = extension_loaded('imagick');
         $hasGd = extension_loaded('gd');
 
         $available = [];
         if ($hasVipsCli) {
-            $version = trim(
-                (string) shell_exec('vips --version 2>/dev/null')
-            );
+            $version = $vipsVersion;
             $available[] = 'vips CLI (' . $version . ')';
             if (version_compare($version, 'vips-8.10', '<')) {
                 $message = new PsrMessage(
@@ -926,7 +921,7 @@ class Module extends AbstractModule
         );
         if ($largeUntiled) {
             $hasVips = $this->isPhpVipsAvailable()
-                || (bool) trim((string) shell_exec('which vips 2>/dev/null'));
+                || $this->vipsCliVersion() !== null;
             if ($hasVips) {
                 $message = new PsrMessage(
                     '{count} large images (> {size} bytes) are not tiled. Vips handles them dynamically, but pre-tiling is recommended for best performance.', // @translate
@@ -1293,6 +1288,31 @@ class Module extends AbstractModule
      * ffi.enable=true. The class may exist via Composer but fail at
      * runtime without the underlying extension.
      */
+    /**
+     * Get the version of the command vips, or null when it is not available.
+     *
+     * The command is run through the cli of Omeka, like the jobs, and not via
+     * shell_exec(), that is disabled on many shared hostings. The silent cli of
+     * the module avoids to log the absence of vips as an error. It is built
+     * directly, since the services of the module are not registered during
+     * install.
+     */
+    protected function vipsCliVersion(): ?string
+    {
+        static $version = false;
+        if ($version !== false) {
+            return $version;
+        }
+        $cli = (new \ImageServer\Service\CliNoLogFactory())(
+            $this->getServiceLocator(),
+            \ImageServer\Stdlib\CliNoLog::class
+        );
+        $version = $cli->getCommandPath('vips')
+            ? trim((string) $cli->execute('vips --version')) ?: 'vips'
+            : null;
+        return $version;
+    }
+
     protected function isPhpVipsAvailable(): bool
     {
         static $available;

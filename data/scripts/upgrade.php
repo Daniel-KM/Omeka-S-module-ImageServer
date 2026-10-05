@@ -295,9 +295,7 @@ if (version_compare($oldVersion, '3.6.24', '<')) {
         } catch (\Throwable $e) {
         }
     }
-    $hasVipsCli = (bool) trim(
-        (string) shell_exec('which vips 2>/dev/null')
-    );
+    $hasVipsCli = $this->vipsCliVersion() !== null;
     if ($imager === 'Auto' && $hasPhpVips) {
         $settings->set('imageserver_imager', 'PhpVips');
         $message = new PsrMessage(
