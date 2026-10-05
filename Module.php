@@ -934,13 +934,23 @@ class Module extends AbstractModule
 
     /**
      * Check if the fast tile script is set up in .htaccess.
+     *
      * If writable, add the rule automatically.
      */
     protected function checkFastTileScript(): void
     {
         $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
         $messenger = $services->get('ControllerPluginManager')
             ->get('messenger');
+
+        // Skip when an external image server (Cantaloupe, IIPImage…) is
+        // configured: the admin most likely intercepts /iiif/ via vhost
+        // ProxyPass or .htaccess [P,L] and the local fast-tile rule would
+        // either be unreachable (vhost wins) or conflict (.htaccess race).
+        if ((string) $settings->get('iiifserver_media_api_url', '') !== '') {
+            return;
+        }
 
         $scriptPath = __DIR__ . '/data/scripts/iiiftile.php';
         if (!file_exists($scriptPath)) {
