@@ -308,6 +308,7 @@ class ConfigForm extends Form
                 'attributes' => [
                     'id' => 'imageserver_info_rights_property',
                     'class' => 'chosen-select',
+                    'multiple' => true,
                     'data-placeholder' => 'Select a media property…', // @translate
                 ],
             ])

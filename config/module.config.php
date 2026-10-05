@@ -293,7 +293,7 @@ return [
             ],
             // Content of the info.json.
             'imageserver_info_rights' => 'property_or_url',
-            'imageserver_info_rights_property' => 'dcterms:license',
+            'imageserver_info_rights_property' => ['dcterms:license'],
             'imageserver_info_rights_uri' => 'https://rightsstatements.org/vocab/CNE/1.0/',
             'imageserver_info_rights_url' => '',
             'imageserver_info_rights_text' => '',
