@@ -1024,6 +1024,7 @@ class Module extends AbstractModule
         }
 
         $marker = '# Module ImageServer: fast IIIF tile server.';
+        $markerEnd = '# /Module ImageServer: fast IIIF tile server.';
 
         // Determine the script path relative to the Omeka root.
         // Modules may be in modules/ or composer-addons/modules/.
@@ -1068,7 +1069,8 @@ class Module extends AbstractModule
 
         $rule = "$marker\n"
             . "RewriteCond %{REQUEST_URI} /iiif/([23]/)?[^/]+/[^/]+/[^/]+/[^/]+/[^.]+\.\w+$\n"
-            . "RewriteRule iiif/(.*) $relativeScript [END,E=IIIF_PATH:/iiif/\$1]\n";
+            . "RewriteRule iiif/(.*) $relativeScript [END,E=IIIF_PATH:/iiif/\$1]\n"
+            . "$markerEnd\n";
 
         if (!is_writable($htaccessPath)) {
             $message = new PsrMessage(
@@ -1100,6 +1102,12 @@ class Module extends AbstractModule
 
     /**
      * Remove the fast tile script rule from .htaccess on uninstall.
+     *
+     * The block is delimited by an explicit start and end marker so the removal
+     * cannot accidentally swallow neighbouring rewrite rules (for instance an
+     * admin `RewriteRule ^iiif/(.*)$ ... [P,L]` proxy to a Cantaloupe instance,
+     * which used to be eaten by the previous "first RewriteRule after marker"
+     * heuristic).
      */
     protected function removeFastTileHtaccess(): void
     {
@@ -1110,6 +1118,7 @@ class Module extends AbstractModule
         }
 
         $marker = '# Module ImageServer: fast IIIF tile server.';
+        $markerEnd = '# /Module ImageServer: fast IIIF tile server.';
         if (strpos($htaccess, $marker) === false) {
             return;
         }
@@ -1124,14 +1133,34 @@ class Module extends AbstractModule
             return;
         }
 
-        // Remove the marker line and the two following rewrite lines.
-        $htaccess = preg_replace(
-            '/' . preg_quote($marker, '/') . '\s*\n'
-            . '(?:\s*RewriteCond\s+[^\n]*\n)?'
-            . '(?:\s*RewriteRule\s+[^\n]*\n)?/',
-            '',
-            $htaccess
-        );
+        $hasEndMarker = strpos($htaccess, $markerEnd) !== false;
+        if ($hasEndMarker) {
+            // Safe path: bounded removal between explicit markers.
+            $htaccess = preg_replace(
+                '/'
+                . preg_quote($marker, '/')
+                . '.*?'
+                . preg_quote($markerEnd, '/')
+                . '\s*\n?/s',
+                '',
+                $htaccess
+            );
+        } else {
+            // Legacy block (no end marker): only remove the start marker plus
+            // the two specific rewrite lines that we originally inserted, and
+            // only if they reference the iiiftile.php script. This is
+            // intentionally narrower than the previous heuristic, which could
+            // swallow an admin own RewriteRule placed right after the marker.
+            $htaccess = preg_replace(
+                '/'
+                . preg_quote($marker, '/') . '\s*\n'
+                . '(?:\s*RewriteCond\s+%\{REQUEST_URI\}\s+\/iiif\/[^\n]*\n)?'
+                . '\s*RewriteRule\s+iiif\/[^\n]*iiiftile\.php[^\n]*\n/',
+                '',
+                $htaccess
+            );
+        }
+
         file_put_contents($htaccessPath, $htaccess);
     }
 
