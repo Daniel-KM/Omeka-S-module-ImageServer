@@ -278,10 +278,9 @@ return [
             // Hidden key.
             'iiifserver_media_api_url' => '',
             'iiifserver_media_api_default_version' => '3',
-            'iiifserver_media_api_supported_versions' => [
-                '2/2',
-                '3/2',
-            ],
+            'iiifserver_media_api_supported_version_1' => '',
+            'iiifserver_media_api_supported_version_2' => '2',
+            'iiifserver_media_api_supported_version_3' => '2',
             // The version and the prefix should be set in module config routing for now.
             'iiifserver_media_api_version_append' => false,
             'iiifserver_media_api_prefix' => '',

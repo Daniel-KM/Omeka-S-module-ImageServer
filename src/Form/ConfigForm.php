@@ -35,6 +35,13 @@ class ConfigForm extends Form
 
     public function init(): void
     {
+        $levelOptions = [
+            '' => 'Not supported', // @translate
+            '0' => 'Level 0', // @translate
+            '1' => 'Level 1', // @translate
+            '2' => 'Level 2', // @translate
+        ];
+
         $this
             ->setOption('element_groups', $this->elementGroups)
 
@@ -70,40 +77,48 @@ class ConfigForm extends Form
             ])
 
             ->add([
-                'name' => 'iiifserver_media_api_supported_versions',
-                'type' => CommonElement\OptionalMultiCheckbox::class,
+                'name' => 'iiifserver_media_api_supported_version_1',
+                'type' => CommonElement\OptionalRadio::class,
                 'options' => [
                     'element_group' => 'infra',
-                    'label' => 'Supported IIIF image api versions and max compliance level', // @translate
-                    'value_options' => [
-                        'v1' => [
-                            'label' => 'Image API 1',
-                            'options' => [
-                                '1/0' => 'Level 0', // @translate
-                                '1/1' => 'Level 1', // @translate
-                                '1/2' => 'Level 2', // @translate
-                            ],
-                        ],
-                        'v2' => [
-                            'label' => 'Image API 2',
-                            'options' => [
-                                '2/0' => 'Level 0', // @translate
-                                '2/1' => 'Level 1', // @translate
-                                '2/2' => 'Level 2', // @translate
-                            ],
-                        ],
-                        'v3' => [
-                            'label' => 'Image API 3',
-                            'options' => [
-                                '3/0' => 'Level 0', // @translate
-                                '3/1' => 'Level 1', // @translate
-                                '3/2' => 'Level 2', // @translate
-                            ],
-                        ],
+                    'label' => 'Image API 1: max compliance level', // @translate
+                    'label_attributes' => [
+                        'style' => 'display: inline; margin-right: 1em;',
                     ],
+                    'value_options' => $levelOptions,
                 ],
                 'attributes' => [
-                    'id' => 'iiifserver_media_api_supported_versions',
+                    'id' => 'iiifserver_media_api_supported_version_1',
+                ],
+            ])
+            ->add([
+                'name' => 'iiifserver_media_api_supported_version_2',
+                'type' => CommonElement\OptionalRadio::class,
+                'options' => [
+                    'element_group' => 'infra',
+                    'label' => 'Image API 2: max compliance level', // @translate
+                    'label_attributes' => [
+                        'style' => 'display: inline; margin-right: 1em;',
+                    ],
+                    'value_options' => $levelOptions,
+                ],
+                'attributes' => [
+                    'id' => 'iiifserver_media_api_supported_version_2',
+                ],
+            ])
+            ->add([
+                'name' => 'iiifserver_media_api_supported_version_3',
+                'type' => CommonElement\OptionalRadio::class,
+                'options' => [
+                    'element_group' => 'infra',
+                    'label' => 'Image API 3: max compliance level', // @translate
+                    'label_attributes' => [
+                        'style' => 'display: inline; margin-right: 1em;',
+                    ],
+                    'value_options' => $levelOptions,
+                ],
+                'attributes' => [
+                    'id' => 'iiifserver_media_api_supported_version_3',
                 ],
             ])
 

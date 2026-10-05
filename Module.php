@@ -908,17 +908,6 @@ class Module extends AbstractModule
         }
 
         // Warn about large untiled images.
-        $settings = $services->get('Omeka\Settings');
-        $maxSize = (int) $settings->get('imageserver_image_max_size', 5000000);
-        $largeUntiled = (int) $connection->fetchOne(<<<'SQL'
-            SELECT COUNT(*) FROM media
-            WHERE media_type LIKE 'image/%'
-                AND media_type != 'image/svg+xml'
-                AND size > ?
-                AND JSON_EXTRACT(data, '$.tile') IS NULL
-            SQL,
-            [$maxSize]
-        );
         if ($largeUntiled) {
             $hasVips = $this->isPhpVipsAvailable()
                 || $this->vipsCliVersion() !== null;
@@ -1176,8 +1165,9 @@ class Module extends AbstractModule
             $messenger->addWarning($message);
         }
 
-        $supported = $settings->get('iiifserver_media_api_supported_versions', []);
-        if (!in_array('2/2', $supported) || !in_array('3/2', $supported)) {
+        if ($settings->get('iiifserver_media_api_supported_version_2') !== '2'
+            || $settings->get('iiifserver_media_api_supported_version_3') !== '2'
+        ) {
             $message = new PsrMessage(
                 'For full viewer compatibility, enable at least Image API 2 level 2 and Image API 3 level 2 in supported versions.' // @translate
             );
@@ -1341,17 +1331,18 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
 
-        // Check and normalize image api versions.
+        // Check and normalize image api versions. Each version has a single max
+        // compliance level, or an empty value when the version is not
+        // supported.
         $defaultVersion = $params['iiifserver_media_api_default_version'] ?: '0';
         $has = ['1' => null, '2' => null, '3' => null];
-        foreach ($params['iiifserver_media_api_supported_versions'] ?? [] as $supportedVersion) {
-            $service = strtok($supportedVersion, '/');
-            $level = strtok('/') ?: '0';
-            $has[$service] = isset($has[$service]) && $has[$service] > $level
-                ? $has[$service]
-                : $level;
+        foreach (array_keys($has) as $version) {
+            $level = (string) ($params['iiifserver_media_api_supported_version_' . $version] ?? '');
+            if ($level !== '') {
+                $has[$version] = $level;
+            }
         }
-        $has = array_filter($has);
+        $has = array_filter($has, fn ($level) => $level !== null);
         if ($defaultVersion && !isset($has[$defaultVersion])) {
             $has[$defaultVersion] = '0';
         }
@@ -1361,7 +1352,6 @@ class Module extends AbstractModule
             $supportedVersions[] = $service . '/' . $level;
         }
         $settings->set('iiifserver_media_api_default_version', $defaultVersion);
-        $settings->set('iiifserver_media_api_supported_versions', $supportedVersions);
 
         // Avoid to do the computation each time for manifest v2, that supports
         // only one service.
