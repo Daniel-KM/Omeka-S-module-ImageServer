@@ -302,6 +302,13 @@ if (version_compare($oldVersion, '3.6.26', '<')) {
     );
     $messenger->addSuccess($message);
 
+    // The rendered pages of the pdf files are read only by the image server,
+    // that checks the rights, so the direct web access is denied.
+    $config = $services->get('Config');
+    $basePath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+    $tileDir = $settings->get('imageserver_image_tile_dir', 'tile') ?: 'tile';
+    $services->get('Common\DirectoryManager')->checkDestinationDir($basePath . '/' . $tileDir . '/pdf', true);
+
     $message = new PsrMessage(
         'The pages of the pdf files are now served as images, like Cantaloupe, with the identifier "file.pdf;2". Enable the option in the module Iiif Server to display them in the manifests, so the viewers can search in the ocr.' // @translate
     );

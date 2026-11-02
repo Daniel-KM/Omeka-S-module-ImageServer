@@ -2,6 +2,7 @@
 
 namespace ImageServer\Mvc\Controller\Plugin;
 
+use Common\Stdlib\DirectoryManager;
 use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
@@ -14,7 +15,9 @@ use Omeka\Stdlib\Cli;
  * page, separated with ";", for example "file.pdf;2". The page is rendered once
  * with vips at the resolution of the option of the module Iiif Server, and
  * cached as jpeg in the directory of the tiles, so the image server processes
- * it like any image.
+ * it like any image. The directory is protected from a direct web access,
+ * because the page may be reserved by the module Access, while the image server
+ * checks the rights.
  */
 class PdfPage extends AbstractPlugin
 {
@@ -48,13 +51,19 @@ class PdfPage extends AbstractPlugin
      */
     protected $logger;
 
+    /**
+     * @var \Common\Stdlib\DirectoryManager
+     */
+    protected $directoryManager;
+
     public function __construct(
         string $basePath,
         string $tileDir,
         Cli $cli,
         string $vipsPath,
         int $dpi,
-        Logger $logger
+        Logger $logger,
+        DirectoryManager $directoryManager
     ) {
         $this->basePath = $basePath;
         $this->tileDir = $tileDir;
@@ -62,6 +71,7 @@ class PdfPage extends AbstractPlugin
         $this->vipsPath = $vipsPath;
         $this->dpi = $dpi ?: 150;
         $this->logger = $logger;
+        $this->directoryManager = $directoryManager;
     }
 
     public function __invoke(): self
@@ -156,8 +166,9 @@ class PdfPage extends AbstractPlugin
 
         $source = $this->basePath . '/original/' . $media->filename();
         $dirpath = dirname($filepath);
-        if (!is_readable($source)
-            || (!is_dir($dirpath) && !@mkdir($dirpath, 0775, true) && !is_dir($dirpath))
+        if (!$this->directoryManager->checkDestinationDir($this->basePath . '/' . $this->tileDir . '/pdf', true)
+            || !is_readable($source)
+            || !$this->directoryManager->checkDestinationDir($dirpath)
         ) {
             return false;
         }

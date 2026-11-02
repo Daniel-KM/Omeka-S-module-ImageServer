@@ -24,7 +24,8 @@ class PdfPageFactory implements FactoryInterface
             $cli,
             $vipsPath,
             (int) $settings->get('iiifserver_manifest_pdf_pages_dpi', 150),
-            $services->get('Omeka\Logger')
+            $services->get('Omeka\Logger'),
+            $services->get('Common\DirectoryManager')
         );
     }
 }
