@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "daniel-km/deepzoom",
-            "version": "1.1.0",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://gitlab.com/Daniel-KM/LibraryDeepzoom.git",
-                "reference": "4c54fb67108c200fb793efc41d7f9622e21d52fa"
+                "reference": "0b76c6ca97c7053a637f05e47faf690d31a10ca7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryDeepzoom/repository/archive.zip?sha=4c54fb67108c200fb793efc41d7f9622e21d52fa",
-                "reference": "4c54fb67108c200fb793efc41d7f9622e21d52fa",
+                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryDeepzoom/repository/archive.zip?sha=0b76c6ca97c7053a637f05e47faf690d31a10ca7",
+                "reference": "0b76c6ca97c7053a637f05e47faf690d31a10ca7",
                 "shasum": ""
             },
             "require": {
@@ -76,20 +76,20 @@
                 "issues": "https://gitlab.com/Daniel-KM/LibraryDeepzoom/-/issues",
                 "source": "https://gitlab.com/Daniel-KM/LibraryDeepzoom"
             },
-            "time": "2026-03-02T00:00:00+00:00"
+            "time": "2026-10-21T00:00:00+00:00"
         },
         {
             "name": "daniel-km/zoomify",
-            "version": "1.1.0",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://gitlab.com/Daniel-KM/LibraryZoomify.git",
-                "reference": "64c72924a1585574a97ec94fd361f8cac1759080"
+                "reference": "75a0ed255413e070ace40a6995d3a650679cf7c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryZoomify/repository/archive.zip?sha=64c72924a1585574a97ec94fd361f8cac1759080",
-                "reference": "64c72924a1585574a97ec94fd361f8cac1759080",
+                "url": "https://gitlab.com/api/v4/projects/Daniel-KM%2FLibraryZoomify/repository/archive.zip?sha=75a0ed255413e070ace40a6995d3a650679cf7c4",
+                "reference": "75a0ed255413e070ace40a6995d3a650679cf7c4",
                 "shasum": ""
             },
             "require": {
@@ -153,7 +153,7 @@
                 "issues": "https://gitlab.com/Daniel-KM/LibraryZoomify/-/issues",
                 "source": "https://gitlab.com/Daniel-KM/LibraryZoomify"
             },
-            "time": "2026-03-02T00:00:00+00:00"
+            "time": "2026-10-21T00:00:00+00:00"
         },
         {
             "name": "jcupitt/vips",
