@@ -3,6 +3,7 @@
 namespace ImageServer\Mvc\Controller\Plugin;
 
 use Common\Stdlib\DirectoryManager;
+use Common\Stdlib\FileLock;
 use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
@@ -21,6 +22,11 @@ use Omeka\Stdlib\Cli;
  */
 class PdfPage extends AbstractPlugin
 {
+    /**
+     * Max seconds to wait for the rendering of a page by another process.
+     */
+    const RENDER_TIMEOUT = 30;
+
     /**
      * @var string
      */
@@ -115,6 +121,35 @@ class PdfPage extends AbstractPlugin
     }
 
     /**
+     * Get the lock to build a file, else wait for the file built by another.
+     *
+     * A viewer requests all the tiles of a page at once, so the page is
+     * rendered by the first request and the other ones wait for it instead of
+     * failing.
+     *
+     * @return bool True when the lock is acquired and the file is missing, so
+     *   the caller builds it and releases the lock.
+     */
+    public static function lockOrWait(FileLock $fileLock, string $filepath, int $timeout = self::RENDER_TIMEOUT): bool
+    {
+        if (!is_writeable(dirname($filepath))) {
+            return false;
+        }
+        $end = microtime(true) + $timeout;
+        while (!$fileLock->acquire($filepath)) {
+            if (is_file($filepath) || microtime(true) > $end) {
+                return false;
+            }
+            usleep(100000);
+        }
+        if (is_file($filepath)) {
+            $fileLock->release($filepath);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Get the image of a page of a pdf, rendered if needed.
      *
      * @return array{filepath: string, width: int, height: int}|null Null when
@@ -173,12 +208,17 @@ class PdfPage extends AbstractPlugin
             return false;
         }
 
-        // Render in a temporary file, so a concurrent request never reads a
-        // partial image.
-        $tempPath = $dirpath . '/.' . $page . '.' . bin2hex(random_bytes(4)) . '.jpg';
+        // Render once in a temp file, so a concurrent request never reads a
+        // partial image and waits for it instead of rendering it again.
+        $fileLock = new FileLock();
+        if (!self::lockOrWait($fileLock, $filepath)) {
+            return is_file($filepath);
+        }
+        $tempPath = $fileLock->tempFilepath($filepath);
         $this->cli->execute(self::renderCommand($this->vipsPath, $source, $page, $this->dpi, $tempPath));
-        if (!is_file($tempPath) || !filesize($tempPath) || !@rename($tempPath, $filepath)) {
-            @unlink($tempPath);
+        $result = $fileLock->commit($tempPath, $filepath);
+        $fileLock->release($filepath);
+        if (!$result) {
             $this->logger->warn(
                 'ImageServer: unable to render the page {page} of the pdf media #{media_id}.', // @translate
                 ['page' => $page, 'media_id' => $media->id()]

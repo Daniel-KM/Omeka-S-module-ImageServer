@@ -57,6 +57,20 @@ function runCommand(string $command): ?array
 }
 
 /**
+ * Send an image with the cache headers of the tiles, then stop.
+ */
+function sendImage(string $filepath, string $mediaType, string $cacheStatus): void
+{
+    header('Content-Type: ' . $mediaType);
+    header('Content-Length: ' . filesize($filepath));
+    header('Cache-Control: public, max-age=86400, s-maxage=604800');
+    header('Access-Control-Allow-Origin: *');
+    header('X-IIIF-Cache: ' . $cacheStatus);
+    readfile($filepath);
+    exit;
+}
+
+/**
  * Let Omeka serve the request, as if it was rewritten to its index.
  *
  * The script names should be the ones of the index, else Laminas cannot
@@ -149,6 +163,28 @@ foreach ([$omekaPath . '/vendor/autoload.php', dirname(__DIR__, 2) . '/vendor/au
         require_once $autoloader;
     }
 }
+
+// The class FileLock of the module Common builds each cached file once and
+// atomically. Common is not registered in the autoloader without Omeka, so it
+// is loaded from the same places as in Module.php. Without it (module Common
+// missing or too old), Omeka serves the request.
+if (!class_exists('Common\Stdlib\FileLock')) {
+    foreach ([
+        $omekaPath . '/modules/Common',
+        $omekaPath . '/composer-addons/modules/Common',
+        dirname(__DIR__, 3) . '/Common',
+    ] as $commonPath) {
+        if (file_exists($commonPath . '/src/Stdlib/FileLock.php')) {
+            require_once $commonPath . '/src/Stdlib/FileLock.php';
+            break;
+        }
+    }
+    if (!class_exists('Common\Stdlib\FileLock', false)) {
+        omekaIndex($omekaPath);
+        return;
+    }
+}
+
 if (class_exists('Jcupitt\Vips\Image')) {
     try {
         \Jcupitt\Vips\Image::black(1, 1);
@@ -327,18 +363,24 @@ if ($page) {
         if (!is_dir($dirpath)) {
             @mkdir($dirpath, 0775, true);
         }
-        $tempPath = $dirpath . '/.' . $page . '.' . bin2hex(random_bytes(4)) . '.jpg';
-        try {
-            if ($vips) {
-                runCommand(\ImageServer\Mvc\Controller\Plugin\PdfPage::renderCommand($vips, $source, $page, $dpi, $tempPath));
-            } else {
-                \Jcupitt\Vips\Image::newFromFile($source, ['page' => $page - 1, 'dpi' => $dpi])
-                    ->writeToFile($tempPath, ['Q' => 90, 'strip' => true]);
+        // The tiles of a page are requested at once: the first request renders
+        // the page and the other ones wait for it.
+        $fileLock = new \Common\Stdlib\FileLock();
+        if (\ImageServer\Mvc\Controller\Plugin\PdfPage::lockOrWait($fileLock, $filepath)) {
+            $tempPath = $fileLock->tempFilepath($filepath);
+            try {
+                if ($vips) {
+                    runCommand(\ImageServer\Mvc\Controller\Plugin\PdfPage::renderCommand($vips, $source, $page, $dpi, $tempPath));
+                } else {
+                    \Jcupitt\Vips\Image::newFromFile($source, ['page' => $page - 1, 'dpi' => $dpi])
+                        ->writeToFile($tempPath, ['Q' => 90, 'strip' => true]);
+                }
+            } catch (\Throwable $e) {
             }
-        } catch (\Throwable $e) {
+            $fileLock->commit($tempPath, $filepath);
+            $fileLock->release($filepath);
         }
-        if (!is_file($tempPath) || !filesize($tempPath) || !@rename($tempPath, $filepath)) {
-            @unlink($tempPath);
+        if (!is_file($filepath)) {
             http_response_code(404);
             exit('Page not found.');
         }
@@ -375,18 +417,13 @@ $cacheFile = $cacheDir
     . '/' . $quality
     . '.' . $outputFormat;
 
-if (file_exists($cacheFile)) {
-    header('Content-Type: ' . (MEDIA_TYPES[$outputFormat] ?? 'image/jpeg'));
-    header('Content-Length: ' . filesize($cacheFile));
-    header('Cache-Control: public, max-age=86400, s-maxage=604800');
-    header('Access-Control-Allow-Origin: *');
-    header('X-IIIF-Cache: hit');
+// The cached file is always complete, because it is renamed once built.
+if (is_file($cacheFile)) {
     if (preg_match('~^(\d+),(\d+),(\d+),(\d+)$~', $region, $m)) {
         $sizeInfo = @getimagesize($filepath);
         recordAnalyticsSegment($pdo, (int) $row['media_id'], (int) $m[1], (int) $m[2], (int) $m[3], (int) $m[4], (int) ($sizeInfo[0] ?? 0), (int) ($sizeInfo[1] ?? 0));
     }
-    readfile($cacheFile);
-    exit;
+    sendImage($cacheFile, MEDIA_TYPES[$outputFormat] ?? 'image/jpeg', 'hit');
 }
 
 // ---------------------------------------------------------------------------
@@ -541,16 +578,25 @@ $pdo = null;
 $needsCrop = $rX !== 0 || $rY !== 0 || $rW !== $srcWidth || $rH !== $srcHeight;
 $needsResize = $dW !== $rW || $dH !== $rH;
 
+$cacheFileDir = dirname($cacheFile);
+if (!is_dir($cacheFileDir)) {
+    @mkdir($cacheFileDir, 0775, true);
+}
+
+// The tile is built once in a temp file, then renamed, so a reader never gets
+// a partial file. A concurrent request for the same tile waits for it, else,
+// after the timeout, builds it too.
+$fileLock = new \Common\Stdlib\FileLock();
+if (!\ImageServer\Mvc\Controller\Plugin\PdfPage::lockOrWait($fileLock, $cacheFile) && is_file($cacheFile)) {
+    sendImage($cacheFile, MEDIA_TYPES[$outputFormat] ?? 'image/jpeg', 'hit');
+}
+$tempFile = $fileLock->tempFilepath($cacheFile);
+
 // Fast path: simple crop from tiled source, no rotation/mirror/quality change.
 // Direct extract_area without autorot or temp files.
 if ($tiledPath && $needsCrop && !$needsResize && !$mirror
     && $rotDegrees == 0 && in_array($quality, ['default', 'color'])
 ) {
-    $cacheFileDir = dirname($cacheFile);
-    if (!is_dir($cacheFileDir)) {
-        @mkdir($cacheFileDir, 0775, true);
-    }
-
     // Options as filename suffix for ext-vips compatibility.
     $saveOptSuffix = [
         'gif' => '',
@@ -566,7 +612,7 @@ if ($tiledPath && $needsCrop && !$needsResize && !$mirror
         try {
             $image = \Jcupitt\Vips\Image::newFromFile($filepath . '[access=random]');
             $image = $image->extract_area($rX, $rY, $rW, $rH);
-            $image->writeToFile($cacheFile . ($saveOptSuffix[$outputFormat] ?? ''));
+            $image->writeToFile($tempFile . ($saveOptSuffix[$outputFormat] ?? ''));
             $ok = true;
         } catch (\Throwable $e) {
             // Fall through to generic processing.
@@ -584,28 +630,20 @@ if ($tiledPath && $needsCrop && !$needsResize && !$mirror
             '%s extract_area %s %s %d %d %d %d',
             escapeshellarg($vips),
             escapeshellarg($filepath),
-            escapeshellarg($cacheFile . ($formatOptionsCli[$outputFormat] ?? '[Q=85,strip]')),
+            escapeshellarg($tempFile . ($formatOptionsCli[$outputFormat] ?? '[Q=85,strip]')),
             $rX, $rY, $rW, $rH
         );
         [$output, $returnCode] = runCommand($cmd) ?? [[], 1];
-        $ok = $returnCode === 0 && file_exists($cacheFile);
+        $ok = $returnCode === 0;
     }
 
-    if ($ok) {
-        header('Content-Type: ' . (MEDIA_TYPES[$outputFormat] ?? 'image/jpeg'));
-        header('Content-Length: ' . filesize($cacheFile));
-        header('Cache-Control: public, max-age=86400, s-maxage=604800');
-        header('Access-Control-Allow-Origin: *');
-        header('X-IIIF-Cache: miss');
-        readfile($cacheFile);
-        exit;
+    if ($ok && $fileLock->commit($tempFile, $cacheFile)) {
+        $fileLock->release($cacheFile);
+        sendImage($cacheFile, MEDIA_TYPES[$outputFormat] ?? 'image/jpeg', 'miss');
     }
     // Fall through to generic processing on error.
-}
-
-$cacheFileDir = dirname($cacheFile);
-if (!is_dir($cacheFileDir)) {
-    @mkdir($cacheFileDir, 0775, true);
+    @unlink($tempFile);
+    @unlink($tempFile . ($saveOptSuffix[$outputFormat] ?? ''));
 }
 
 if ($usePhpVips) {
@@ -674,15 +712,17 @@ if ($usePhpVips) {
         // Recent ext-vips does not parse the options appended to the filename,
         // but older ones ignore the array of options (see PhpVips::vipsWrite()).
         try {
-            $image->writeToFile($cacheFile, $saveOptions[$outputFormat] ?? []);
+            $image->writeToFile($tempFile, $saveOptions[$outputFormat] ?? []);
         } catch (\Throwable $e) {
-            $image->writeToFile($cacheFile . ($saveSuffix[$outputFormat] ?? ''));
+            $image->writeToFile($tempFile . ($saveSuffix[$outputFormat] ?? ''));
         }
-        $literal = $cacheFile . ($saveSuffix[$outputFormat] ?? '');
-        if (!file_exists($cacheFile) && file_exists($literal)) {
-            @rename($literal, $cacheFile);
+        $literal = $tempFile . ($saveSuffix[$outputFormat] ?? '');
+        if (!file_exists($tempFile) && file_exists($literal)) {
+            @rename($literal, $tempFile);
         }
     } catch (\Throwable $e) {
+        @unlink($tempFile);
+        @unlink($tempFile . ($saveSuffix[$outputFormat] ?? ''));
         http_response_code(500);
         header('Content-Type: text/plain');
         echo 'Image processing failed: ' . $e->getMessage();
@@ -799,7 +839,7 @@ if ($usePhpVips) {
         '%s copy %s %s',
         escapeshellarg($vips),
         $currentInput,
-        escapeshellarg($cacheFile . $outOpt)
+        escapeshellarg($tempFile . $outOpt)
     );
 
     $fullCmd = implode(' && ', $commands);
@@ -810,7 +850,8 @@ if ($usePhpVips) {
         @unlink($f);
     }
 
-    if ($returnCode !== 0 || !file_exists($cacheFile)) {
+    if ($returnCode !== 0 || !file_exists($tempFile)) {
+        @unlink($tempFile);
         http_response_code(500);
         header('Content-Type: text/plain');
         echo 'Image processing failed: ' . implode("\n", $output);
@@ -822,10 +863,11 @@ if ($usePhpVips) {
 // 7. Serve the result
 // ---------------------------------------------------------------------------
 
-header('Content-Type: ' . (MEDIA_TYPES[$outputFormat] ?? 'image/jpeg'));
-header('Content-Length: ' . filesize($cacheFile));
-header('Cache-Control: public, max-age=86400, s-maxage=604800');
-header('Access-Control-Allow-Origin: *');
-header('X-IIIF-Cache: miss');
-readfile($cacheFile);
-exit;
+if (!$fileLock->commit($tempFile, $cacheFile)) {
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    echo 'Image processing failed.';
+    exit;
+}
+$fileLock->release($cacheFile);
+sendImage($cacheFile, MEDIA_TYPES[$outputFormat] ?? 'image/jpeg', 'miss');
