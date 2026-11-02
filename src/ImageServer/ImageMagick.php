@@ -225,7 +225,7 @@ class ImageMagick extends AbstractImager
 
             case 'rotationBy90s':
             case 'rotationArbitrary':
-                $params[] = '-rotate ' . escapeshellarg($args['rotation']['degrees']);
+                $params[] = '-rotate ' . escapeshellarg((string) $args['rotation']['degrees']);
                 break;
 
             default:

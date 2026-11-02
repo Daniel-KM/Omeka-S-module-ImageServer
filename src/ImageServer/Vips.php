@@ -282,13 +282,13 @@ class Vips extends AbstractImager
                     $chain[] = sprintf(
                         '%s similarity _input_ _output_ --angle %s',
                         $this->vipsPath,
-                        escapeshellarg($args['rotation']['degrees'])
+                        escapeshellarg((string) $args['rotation']['degrees'])
                     );
                 } else {
                     $chain[] = sprintf(
                         '%s rotate _input_ _output_ %s --background "0 0 0"',
                         $this->vipsPath,
-                        escapeshellarg($args['rotation']['degrees'])
+                        escapeshellarg((string) $args['rotation']['degrees'])
                     );
                 }
                 break;
