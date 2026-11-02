@@ -22,13 +22,18 @@
 #        source.static                      = FilesystemSource
 #        FilesystemSource.lookup_strategy   = ScriptLookupStrategy
 #   3. Set ORIGINAL_DIR below to the originals directory as seen from inside
-#      the Cantaloupe container.
+#      the Cantaloupe container, and OMEKA_HOST / OMEKA_PORT when the module
+#      Access is used (see below).
 #   4. Restart Cantaloupe.
 #
-# Coexistence with module Access: Cantaloupe loads a single delegates.rb. When
-# the Access authorization delegate is also used, merge its "pre_authorize" /
-# "fetch_decision" methods into this class (a single CustomDelegate), keeping
-# the "filesystemsource_pathname" / "source" methods below.
+# Module Access: set OMEKA_ACCESS=1 to ask Omeka, through the endpoint
+# "/access/authorize", whether the client may see the media. Add the Cantaloupe
+# container ip to the Access setting "access_ip_proxy_trusted", so the client ip
+# sent in X-Forwarded-For is used. The request is denied when Omeka does not
+# answer in time (fail-closed). Without OMEKA_ACCESS, every request is allowed.
+
+require 'net/http'
+require 'uri'
 
 class CustomDelegate
 
@@ -40,6 +45,20 @@ class CustomDelegate
   # Image extensions probed for an extension-less identifier, most frequent
   # first. Audio and video are intentionally excluded (served by Iiif Server).
   IMAGE_EXTENSIONS = %w[jpg jpeg png tif tiff jp2 gif webp].freeze
+
+  # Omeka, reachable from inside the Cantaloupe container, and its public host
+  # name when the virtual host requires it.
+  OMEKA_HOST = ENV['OMEKA_HOST'] || 'omeka.example.org'
+  OMEKA_PORT = (ENV['OMEKA_PORT'] || 80).to_i
+  OMEKA_PUBLIC_HOST = ENV['OMEKA_PUBLIC_HOST']
+
+  # Module Access: ask Omeka whether the client may see the media.
+  ACCESS_CHECK = %w[1 true yes].include?(ENV['OMEKA_ACCESS'].to_s.downcase)
+  ACCESS_TTL = 120
+  ACCESS_MAX = 2000
+
+  @@access = {}
+  @@access_mutex = Mutex.new
 
   def source(options = {})
     'FilesystemSource'
@@ -67,14 +86,68 @@ class CustomDelegate
     nil
   end
 
-  # Allow every request by default. When module Access is used, replace this
-  # with its authorization logic (see the header note about merging).
   def pre_authorize(options = {})
-    true
+    return true unless ACCESS_CHECK
+
+    filename = access_filename
+    return false if filename.nil?
+
+    key = "#{filename}|#{context['client_ip']}"
+    now = Time.now.to_i
+    @@access_mutex.synchronize do
+      hit = @@access[key]
+      return hit[:allowed] if hit && hit[:expires] > now
+    end
+
+    allowed = fetch_decision(filename)
+    # Fail-closed, without cache, so a slow Omeka does not hide free images for
+    # the whole ttl.
+    return false if allowed.nil?
+
+    @@access_mutex.synchronize do
+      @@access[key] = { allowed: allowed, expires: now + ACCESS_TTL }
+      if @@access.size > ACCESS_MAX
+        @@access.delete_if { |_, v| v[:expires] < now }
+      end
+    end
+
+    allowed
   end
 
   def authorize(options = {})
-    true
+    pre_authorize(options)
+  end
+
+  # Ask the module Access. Returns nil when Omeka is unreachable or too slow.
+  def fetch_decision(filename)
+    uri = URI::HTTP.build(
+      host: OMEKA_HOST,
+      port: OMEKA_PORT,
+      path: '/access/authorize',
+      query: URI.encode_www_form(filename: filename)
+    )
+    req = Net::HTTP::Get.new(uri)
+    req['Host'] = OMEKA_PUBLIC_HOST if OMEKA_PUBLIC_HOST
+    req['X-Forwarded-For'] = context['client_ip'] if context['client_ip']
+    cookies = context['cookies']
+    if cookies && !cookies.empty?
+      req['Cookie'] = cookies.map { |k, v| "#{k}=#{v}" }.join('; ')
+    end
+    res = Net::HTTP.start(uri.host, uri.port, open_timeout: 2, read_timeout: 3, max_retries: 0) do |http|
+      http.request(req)
+    end
+    # Only a 200 allows: Access answers 404 for a reserved media too.
+    res.code.to_i == 200
+  rescue StandardError
+    nil
+  end
+
+  # The identifier is the storage id, with or without extension.
+  def access_filename
+    identifier = context['identifier'].to_s
+    return nil if identifier.empty? || identifier.include?('..') || identifier.include?('/')
+
+    identifier
   end
 
   # Stubs required by the Cantaloupe delegate interface. Return defaults so

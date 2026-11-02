@@ -23,9 +23,11 @@
 #      "imageserver_external_resolver_ips" so the endpoint answers.
 #   5. Restart Cantaloupe.
 #
-# Coexistence with module Access: Cantaloupe loads a single delegates.rb. When
-# the Access authorization delegate is also used, merge its "pre_authorize" /
-# "fetch_decision" methods into this class, keeping the resolution methods here.
+# Module Access: set OMEKA_ACCESS=1 to ask Omeka, through the endpoint
+# "/access/authorize", whether the client may see the media. Add the Cantaloupe
+# container ip to the Access setting "access_ip_proxy_trusted", so the client ip
+# sent in X-Forwarded-For is used. The request is denied when Omeka does not
+# answer in time (fail-closed). Without OMEKA_ACCESS, every request is allowed.
 
 require 'net/http'
 require 'uri'
@@ -34,9 +36,11 @@ class CustomDelegate
 
   attr_accessor :context
 
-  # Omeka, reachable from inside the Cantaloupe container.
+  # Omeka, reachable from inside the Cantaloupe container, and its public host
+  # name when the virtual host requires it.
   OMEKA_HOST = ENV['OMEKA_HOST'] || 'omeka.example.org'
   OMEKA_PORT = (ENV['OMEKA_PORT'] || 80).to_i
+  OMEKA_PUBLIC_HOST = ENV['OMEKA_PUBLIC_HOST']
 
   # Originals directory, as mounted inside the Cantaloupe container.
   ORIGINAL_DIR = ENV['OMEKA_ORIGINAL_DIR'] || '/files/original'
@@ -51,31 +55,47 @@ class CustomDelegate
   @@cache = {}
   @@mutex = Mutex.new
 
+  # Module Access: ask Omeka whether the client may see the media.
+  ACCESS_CHECK = %w[1 true yes].include?(ENV['OMEKA_ACCESS'].to_s.downcase)
+  ACCESS_TTL = 120
+  ACCESS_MAX = 2000
+
+  @@access = {}
+  @@access_mutex = Mutex.new
+
   def source(options = {})
     'FilesystemSource'
   end
 
   def filesystemsource_pathname(options = {})
+    filename = resolve_filename
+    filename ? File.join(ORIGINAL_DIR, filename) : nil
+  end
+
+  # The storage filename of the identifier, resolved by Omeka and cached.
+  def resolve_filename
     identifier = context['identifier'].to_s
     return nil if identifier.empty?
 
     now = Time.now.to_i
     @@mutex.synchronize do
       hit = @@cache[identifier]
-      return hit[:path] if hit && hit[:expires] > now
+      return hit[:filename] if hit && hit[:expires] > now
     end
 
     filename = fetch_filename(identifier)
-    path = filename ? File.join(ORIGINAL_DIR, filename) : nil
+    # A failure is not cached, so a slow Omeka does not hide the file for the
+    # whole ttl.
+    return nil if filename.nil?
 
     @@mutex.synchronize do
-      @@cache[identifier] = { path: path, expires: now + CACHE_TTL }
+      @@cache[identifier] = { filename: filename, expires: now + CACHE_TTL }
       if @@cache.size > CACHE_MAX
         @@cache.delete_if { |_, v| v[:expires] < now }
       end
     end
 
-    path
+    filename
   end
 
   # Ask Omeka for the internal storage filename of an identifier. Returns nil on
@@ -87,8 +107,10 @@ class CustomDelegate
       path: RESOLVE_PATH,
       query: URI.encode_www_form(identifier: identifier)
     )
+    req = Net::HTTP::Get.new(uri)
+    req['Host'] = OMEKA_PUBLIC_HOST if OMEKA_PUBLIC_HOST
     res = Net::HTTP.start(uri.host, uri.port, open_timeout: 2, read_timeout: 2) do |http|
-      http.get(uri.request_uri)
+      http.request(req)
     end
     return nil unless res.is_a?(Net::HTTPSuccess)
 
@@ -102,14 +124,65 @@ class CustomDelegate
     nil
   end
 
-  # Allow every request by default. When module Access is used, replace this
-  # with its authorization logic (see the header note about merging).
   def pre_authorize(options = {})
-    true
+    return true unless ACCESS_CHECK
+
+    filename = access_filename
+    return false if filename.nil?
+
+    key = "#{filename}|#{context['client_ip']}"
+    now = Time.now.to_i
+    @@access_mutex.synchronize do
+      hit = @@access[key]
+      return hit[:allowed] if hit && hit[:expires] > now
+    end
+
+    allowed = fetch_decision(filename)
+    # Fail-closed, without cache, so a slow Omeka does not hide free images for
+    # the whole ttl.
+    return false if allowed.nil?
+
+    @@access_mutex.synchronize do
+      @@access[key] = { allowed: allowed, expires: now + ACCESS_TTL }
+      if @@access.size > ACCESS_MAX
+        @@access.delete_if { |_, v| v[:expires] < now }
+      end
+    end
+
+    allowed
   end
 
   def authorize(options = {})
-    true
+    pre_authorize(options)
+  end
+
+  # Ask the module Access. Returns nil when Omeka is unreachable or too slow.
+  def fetch_decision(filename)
+    uri = URI::HTTP.build(
+      host: OMEKA_HOST,
+      port: OMEKA_PORT,
+      path: '/access/authorize',
+      query: URI.encode_www_form(filename: filename)
+    )
+    req = Net::HTTP::Get.new(uri)
+    req['Host'] = OMEKA_PUBLIC_HOST if OMEKA_PUBLIC_HOST
+    req['X-Forwarded-For'] = context['client_ip'] if context['client_ip']
+    cookies = context['cookies']
+    if cookies && !cookies.empty?
+      req['Cookie'] = cookies.map { |k, v| "#{k}=#{v}" }.join('; ')
+    end
+    res = Net::HTTP.start(uri.host, uri.port, open_timeout: 2, read_timeout: 3, max_retries: 0) do |http|
+      http.request(req)
+    end
+    # Only a 200 allows: Access answers 404 for a reserved media too.
+    res.code.to_i == 200
+  rescue StandardError
+    nil
+  end
+
+  # The identifier is resolved first, since Access checks a storage filename.
+  def access_filename
+    resolve_filename
   end
 
   # Stubs required by the Cantaloupe delegate interface.
