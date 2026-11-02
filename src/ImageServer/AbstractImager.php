@@ -30,6 +30,7 @@
 
 namespace ImageServer\ImageServer;
 
+use Common\Stdlib\FileLock;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Omeka\File\Store\StoreInterface;
@@ -350,17 +351,16 @@ abstract class AbstractImager implements LoggerAwareInterface
             return $destination;
         }
 
+        // A fixed destination may be read during the build (tiled source of
+        // the fast tile script), so the image is written in a temp file next
+        // to it, then renamed in commitDestination().
         $destination = $this->args['destination']['filepath'];
-        if (file_exists($destination)) {
-            if (!is_writeable($destination)) {
-                $this->getLogger()->err(
-                    'Unable to save the file in the directory "{dir}".', // @translate
-                    ['dir' => $destination]
-                );
-                return null;
-            }
-            @unlink($destination);
-            return $destination;
+        if (file_exists($destination) && !is_writeable($destination)) {
+            $this->getLogger()->err(
+                'Unable to save the file in the directory "{dir}".', // @translate
+                ['dir' => $destination]
+            );
+            return null;
         }
 
         $dir = dirname($destination);
@@ -372,12 +372,28 @@ abstract class AbstractImager implements LoggerAwareInterface
                 );
                 return null;
             }
-            return $destination;
+        } elseif (!@mkdir($dir, 0775, true)) {
+            return null;
         }
 
-        $result = @mkdir($dir, 0775, true);
-        return $result
-            ? $destination
-            : null;
+        return (new FileLock())->tempFilepath($destination);
+    }
+
+    /**
+     * Get the path of the written image, renamed when the destination is fixed.
+     *
+     * @param string $destination The path from prepareDestinationPath().
+     */
+    protected function commitDestination(string $destination, bool $result): ?string
+    {
+        $filepath = $this->args['destination']['filepath'] ?? null;
+        if (empty($filepath) || $filepath === $destination) {
+            return $result ? $destination : null;
+        }
+        if ($result && (new FileLock())->commit($destination, $filepath)) {
+            return $filepath;
+        }
+        @unlink($destination);
+        return null;
     }
 }

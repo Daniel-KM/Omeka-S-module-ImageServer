@@ -294,6 +294,6 @@ class ImageMagick extends AbstractImager
 
         $this->_destroyIfFetched($image);
 
-        return $result !== false ? $destination : null;
+        return $this->commitDestination($destination, $result !== false);
     }
 }

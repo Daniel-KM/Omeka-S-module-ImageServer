@@ -212,11 +212,12 @@ class PhpVips extends AbstractImager
                 ['file' => $source, 'message' => $e->getMessage()]
             );
             $this->_destroyIfFetched($source);
+            $this->commitDestination($destination, false);
             return null;
         }
 
         $this->_destroyIfFetched($source);
-        return file_exists($destination) ? $destination : null;
+        return $this->commitDestination($destination, file_exists($destination));
     }
 
     /**

@@ -294,7 +294,7 @@ class GD extends AbstractImager
         imagedestroy($sourceGD);
         imagedestroy($destinationGD);
 
-        return $result ? $destination : null;
+        return $this->commitDestination($destination, (bool) $result);
     }
 
     /**

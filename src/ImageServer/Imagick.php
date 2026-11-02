@@ -246,7 +246,7 @@ class Imagick extends AbstractImager
 
         $imagick->clear();
 
-        return $result ? $destination : null;
+        return $this->commitDestination($destination, (bool) $result);
     }
 
     /**
