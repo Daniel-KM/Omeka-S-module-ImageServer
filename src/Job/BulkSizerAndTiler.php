@@ -169,6 +169,10 @@ class BulkSizerAndTiler extends AbstractJob
 
         if ($itemIds && !$this->shouldStop()) {
             $this->processNewMedia($itemIds, $tasks);
+            // Once closed, media saved on the items launch a new job, so a
+            // last check processes the media saved before.
+            $this->closeJob();
+            $this->processNewMedia($itemIds, $tasks);
         }
 
         // Second pass: digital objects referenced by the matched items.
@@ -229,6 +233,20 @@ class BulkSizerAndTiler extends AbstractJob
 
         ++$this->totalImages;
         $this->processResource($media, $tasks);
+    }
+
+    /**
+     * Mark the job as closed for the media saved later on the items.
+     *
+     * @see \ImageServer\Module::hasRunningSizeTileJob()
+     */
+    protected function closeJob(): void
+    {
+        $this->entityManager->getConnection()->update(
+            'job',
+            ['args' => json_encode(['closed' => true] + $this->job->getArgs())],
+            ['id' => $this->job->getId()]
+        );
     }
 
     /**
