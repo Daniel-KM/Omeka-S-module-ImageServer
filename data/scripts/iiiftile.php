@@ -365,7 +365,7 @@ if ($page) {
         }
         // The tiles of a page are requested at once: the first request renders
         // the page and the other ones wait for it.
-        $fileLock = new \Common\Stdlib\FileLock();
+        $fileLock = new \Common\Stdlib\FileLock($omekaPath . '/files/.locks');
         if (\ImageServer\Mvc\Controller\Plugin\PdfPage::lockOrWait($fileLock, $filepath)) {
             $tempPath = $fileLock->tempFilepath($filepath);
             try {
@@ -583,13 +583,10 @@ if (!is_dir($cacheFileDir)) {
     @mkdir($cacheFileDir, 0775, true);
 }
 
-// The tile is built once in a temp file, then renamed, so a reader never gets
-// a partial file. A concurrent request for the same tile waits for it, else,
-// after the timeout, builds it too.
-$fileLock = new \Common\Stdlib\FileLock();
-if (!\ImageServer\Mvc\Controller\Plugin\PdfPage::lockOrWait($fileLock, $cacheFile) && is_file($cacheFile)) {
-    sendImage($cacheFile, MEDIA_TYPES[$outputFormat] ?? 'image/jpeg', 'hit');
-}
+// The tile is built in a temp file, then renamed, so a reader never gets a
+// partial file. There is no lock: concurrent requests of the same tile are
+// rare and cheap, unlike the pdf pages, whose tiles are requested at once.
+$fileLock = new \Common\Stdlib\FileLock($omekaPath . '/files/.locks');
 $tempFile = $fileLock->tempFilepath($cacheFile);
 
 // Fast path: simple crop from tiled source, no rotation/mirror/quality change.
@@ -638,7 +635,6 @@ if ($tiledPath && $needsCrop && !$needsResize && !$mirror
     }
 
     if ($ok && $fileLock->commit($tempFile, $cacheFile)) {
-        $fileLock->release($cacheFile);
         sendImage($cacheFile, MEDIA_TYPES[$outputFormat] ?? 'image/jpeg', 'miss');
     }
     // Fall through to generic processing on error.
@@ -869,5 +865,4 @@ if (!$fileLock->commit($tempFile, $cacheFile)) {
     echo 'Image processing failed.';
     exit;
 }
-$fileLock->release($cacheFile);
 sendImage($cacheFile, MEDIA_TYPES[$outputFormat] ?? 'image/jpeg', 'miss');
