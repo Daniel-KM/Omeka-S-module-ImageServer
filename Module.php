@@ -1522,7 +1522,9 @@ class Module extends AbstractModule
             if (!$hasUnsized) {
                 return;
             }
-        } elseif ($this->hasRunningSizeTileJob($item->getId())) {
+        } elseif ($request->getOption('flushEntityManager', true)
+            && $this->hasRunningSizeTileJob($item->getId())
+        ) {
             return;
         }
 
@@ -1586,8 +1588,12 @@ class Module extends AbstractModule
         }
 
         // In auto mode, a job running on the item processes the media added
-        // during it.
-        if ($tileMode === 'auto' && $this->hasRunningSizeTileJob($media->getItem()->getId())) {
+        // during it. The media should be flushed before the check, else the job
+        // may end before.
+        if ($tileMode === 'auto'
+            && $request->getOption('flushEntityManager', true)
+            && $this->hasRunningSizeTileJob($media->getItem()->getId())
+        ) {
             return;
         }
 
@@ -1632,21 +1638,26 @@ class Module extends AbstractModule
 
     /**
      * Check if a job launched on save is pending or running for an item.
+     *
+     * A job closed by its last check is skipped, and a job started more than
+     * one hour ago too, because a killed job keeps its status.
      */
     protected function hasRunningSizeTileJob(int $itemId): bool
     {
         $args = $this->getServiceLocator()->get('Omeka\Connection')
             ->executeQuery(
-                'SELECT args FROM job WHERE class = ? AND status IN (?)',
+                'SELECT args FROM job WHERE class = ? AND status IN (?) AND started > ?',
                 [
                     \ImageServer\Job\BulkSizerAndTiler::class,
                     [\Omeka\Entity\Job::STATUS_STARTING, \Omeka\Entity\Job::STATUS_IN_PROGRESS],
+                    (new \DateTime('-1 hour'))->format('Y-m-d H:i:s'),
                 ],
-                [\PDO::PARAM_STR, \Doctrine\DBAL\Connection::PARAM_STR_ARRAY]
+                [\PDO::PARAM_STR, \Doctrine\DBAL\Connection::PARAM_STR_ARRAY, \PDO::PARAM_STR]
             )
             ->fetchFirstColumn();
         foreach ($args as $arg) {
-            $query = json_decode((string) $arg, true)['query'] ?? null;
+            $arg = json_decode((string) $arg, true) ?: [];
+            $query = empty($arg['closed']) ? $arg['query'] ?? null : null;
             if (is_array($query)
                 && array_keys($query) === ['id']
                 && in_array($itemId, array_map('intval', (array) $query['id']), true)
