@@ -48,6 +48,7 @@ Installation
 
 The installation depends on your infrastructure, your images and your rights:
 
+- with or without big images,
 - with or without external server,
 - with or without vips (fast image tiler),
 - with or without clean urls or arks identifier,
@@ -273,8 +274,7 @@ served by Iiif Server, not Cantaloupe, and the resolvers answer for images only.
   original file by probing the known image extensions with a direct stat (no
   database, no directory glob, which matters since the originals directory is
   flat and may hold hundreds of thousands of files). See the header of the
-  delegate for the install steps and for how to merge it with the module Access
-  delegate (Cantaloupe loads a single delegates.rb).
+  delegate for the install steps.
 
 * B: ark via Omeka
   Install `data/delegates/cantaloupe-resolve.rb`: it asks Omeka, through the
@@ -285,6 +285,13 @@ served by Iiif Server, not Cantaloupe, and the resolvers answer for images only.
   "External image server: trusted ips for identifier resolution"; add the
   Cantaloupe host ip there.
 
+With the module Access, both delegates can check the rights of the client: set
+the environment variable `OMEKA_ACCESS=1` in the Cantaloupe container, and add
+its ip to the Access setting "access_ip_proxy_trusted". Each image is checked
+through the endpoint `/access/authorize` and the decision is cached two minutes
+by client. When Omeka does not answer in time (2 s to connect, 3 s to answer),
+the image is denied and nothing is cached (fail-closed).
+
 * C: ark via PHP forward
   The script `data/scripts/iiifforward.php` resolves a clean or ark identifier
   to the storage filename in PHP, forwards the request to an internal Cantaloupe
@@ -292,6 +299,9 @@ served by Iiif Server, not Cantaloupe, and the resolvers answer for images only.
   filename-based and never sees the public identifier, so the internal storage
   name stays hidden. See the header of the script for the .htaccess rule and the
   environment configuration.
+
+See also the [integration of Cantaloupe with Omeka] and the notes of Cantaloupe
+about [performance] for the choice of the source formats.
 
 ### Fast tile script
 
@@ -401,7 +411,10 @@ diagnostics and displays recommendations:
 
 ### Auto-tiling
 
-Tiles are created automatically for all new images (default setting "auto").
+Tiles are created automatically for the new images bigger than the max size of
+images processed dynamically (default setting "auto"), or for all of them when
+the option to tile small images too is set or when there is no max size (see
+below).
 Existing images can be tiled in bulk via the config form. The module aggregates
 all sizing and tiling requests into a single background job per HTTP request,
 avoiding the overhead of one job per media.
@@ -438,7 +451,7 @@ images (more than 10 to 50 MB, according to your server and your public).
 
 Tiles can be created in four formats:
 
-- [DeepZoom Image] creates tile files. It is a free proprietary format from
+- [Deep Zoom Image] creates tile files. It is a free proprietary format from
   Microsoft largely supported.
 - [Zoomify] is an old format that was largely supported by proprietary image
   softwares and free viewers, like the [OpenLayers Zoom]. Nevertheless, it's
@@ -478,9 +491,19 @@ all cases, and it manages natively common formats (gif, jpeg, png, pdf, tiff).
 In case of big files, it is recommended to use vips or the command line version
 of ImageMagick, that is not limited by the php memory.
 
-Furthermore, the limit of the size (10000000 bytes by default) can be increased
-if you have enough memory, so images won't appear blurry even if they are not
-tiled. Vips bypasses this limitation.
+The option "Max size of images processed dynamically" limits the number of
+pixels (width × height) of the original images processed dynamically, whatever
+the image processor, for example 4000000 pixels (4 megapixels, about 2300 ×
+1700, so a tile is processed in about 25 ms with GD or Imagick, and about 80 ms
+for 12.5 megapixels, for each tile requested by the viewer). Beyond it, only the
+tiles and the Omeka derivatives are served, so the big images should be tiled.
+With vips, the tiled tiff and jpeg 2000 are processed dynamically too, and the
+limit may be higher or empty, because vips uses few memory. Only the images
+bigger than this limit are tiled: the smaller ones are always processed
+dynamically, so tiling them is useless and only uses time and disk space. An
+option allows to tile small images too. Without vips, the tiling of small images
+too is recommended for a limit higher than 4000000 pixels, because each tile is
+processed from the whole original image.
 
 ### Pages of pdf files
 
@@ -498,11 +521,26 @@ php library) is required, with the support of pdf (poppler or pdfium), that is
 included in the standard packages. The rendered pages are removed with the
 media.
 
+The directory `files/tile/pdf/` is protected from a direct web access with a
+file `.htaccess`, because a page may be reserved by the module [Access], while
+the image server checks the rights of the pdf. With Nginx, deny it in the config
+of the server. The pdf itself, available as a download in the manifest, is
+protected by the module Access like any original file.
+
 Performance on a scanned page (680 × 1092 at 150 dpi): about 150 ms to render a
 page with vips, then the page is processed like a jpeg, with the cache of the
 fast tile script.
 
 The character `;` must not be url-encoded, so check the rules of the proxy.
+
+### Statistics of the viewed zones
+
+With the module [Analytics] and its option to record the segments, the image
+server records the zones of the images that are requested by the viewers, in a
+grid of 16 × 16 cells by image and by month, both in Omeka and in the fast tile
+script. A request of the full image is a view, not a zone, so it is not recorded.
+The counts are stored in the table of the module Analytics. Without the module
+or the option, nothing is recorded.
 
 ### Display of standard and tiled images
 
@@ -564,7 +602,7 @@ and other viewers working. See [aws documentation].
 
 ### Vips as default thumbnailer
 
-To use vips as the default thumbnailer for Omeka S, install the module [Vips].
+To use vips as the [default thumbnailer] for Omeka S, install the module [Vips].
 It provides PHP library mode (faster) and CLI fallback, and sets itself
 automatically as the default thumbnailer. See the module [Vips] documentation
 for configuration details.
@@ -676,6 +714,7 @@ support the [Deep Zoom Image] tile format.
 [Iiif Server]: https://gitlab.com/Daniel-KM/Omeka-S-module-IiifServer
 [Iiif Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-IiifSearch
 [Access]: https://gitlab.com/Daniel-KM/Omeka-S-module-Access
+[Analytics]: https://gitlab.com/Daniel-KM/Omeka-S-module-Analytics
 [OpenSeadragon]: https://openseadragon.github.io
 [Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Mirador]: https://gitlab.com/Daniel-KM/Omeka-S-module-Mirador
@@ -697,7 +736,6 @@ support the [Deep Zoom Image] tile format.
 [Universal Viewer]: https://gitlab.com/Daniel-KM/Omeka-S-module-UniversalViewer
 [Ark]: https://github.com/BibLibre/omeka-s-module-Ark
 [Clean Url]: https://github.com/BibLibre/omeka-s-module-CleanUrl
-[Collection Tree]: https://gitlab.com/Daniel-KM/Omeka-S-module-CollectionTree
 [Deep Zoom]: https://msdn.microsoft.com/en-us/library/cc645022(v=vs.95).aspx
 [Deep Zoom Image]: https://msdn.microsoft.com/en-us/library/cc645022(v=vs.95).aspx
 [Zoomify]: http://www.zoomify.com/
@@ -705,12 +743,11 @@ support the [Deep Zoom Image] tile format.
 [tiled pyramidal tiff]: https://en.wikipedia.org/wiki/TIFF
 [integration of Cantaloupe with Omeka]: https://gitlab.com/Daniel-KM/Omeka-S-module-AdvancedResourceTemplate/-/blob/master/cantaloupe.md
 [OpenLayers]: https://openlayers.org/
-[threejs]: https://threejs.org
 [Archive Repertory]: https://gitlab.com/Daniel-KM/Omeka-S-module-ArchiveRepertory
 [Deepzoom library]: https://gitlab.com/Daniel-KM/LibraryDeepzoom
 [Zoomify library]: https://gitlab.com/Daniel-KM/LibraryZoomify
 [Deepzoom]: https://github.com/jeremytubbs/deepzoom
-[gitlab#7]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues/7
+[gitlab#7]: https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/work_items/7
 [aws documentation]: https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html
 [default thumbnailer]: https://omeka.org/s/docs/user-manual/configuration/#thumbnails
 [performance]: https://cantaloupe-project.github.io/manual/4.0/images.html
