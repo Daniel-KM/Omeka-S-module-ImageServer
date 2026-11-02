@@ -56,6 +56,28 @@ function runCommand(string $command): ?array
     return null;
 }
 
+/**
+ * Let Omeka serve the request, as if it was rewritten to its index.
+ *
+ * The script names should be the ones of the index, else Laminas cannot
+ * determine the base path and no route matches.
+ */
+function omekaIndex(string $omekaPath): void
+{
+    $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
+    $pos = strpos($scriptName, '/composer-addons/modules/');
+    if ($pos === false) {
+        $pos = strrpos($scriptName, '/modules/');
+    }
+    if ($pos !== false) {
+        $_SERVER['SCRIPT_NAME'] = substr($scriptName, 0, $pos) . '/index.php';
+        $_SERVER['PHP_SELF'] = $_SERVER['SCRIPT_NAME'];
+    }
+    $_SERVER['SCRIPT_FILENAME'] = $omekaPath . '/index.php';
+    chdir($omekaPath);
+    require $omekaPath . '/index.php';
+}
+
 // Resolve Omeka root from script location: the module is in "modules/" or, when
 // installed with composer, in "composer-addons/modules/".
 // The path of the script is used first, because __DIR__ is the real path, that
@@ -98,12 +120,10 @@ if (!$usePhpVips) {
     $result = runCommand('command -v vips');
     $vips = $result && $result[1] === 0 ? trim((string) reset($result[0])) : '';
     if (!$vips) {
-        require $omekaPath . '/index.php';
+        omekaIndex($omekaPath);
         return;
     }
 }
-
-define('OMEKA_PATH', $omekaPath);
 
 define('MEDIA_TYPES', [
     'gif' => 'image/gif',
@@ -177,9 +197,9 @@ $outputFormat = $formatAliases[$format] ?? $format;
 // 2. Resolve identifier to file path and check access
 // ---------------------------------------------------------------------------
 
-$filesPath = OMEKA_PATH . '/files';
+$filesPath = $omekaPath . '/files';
 
-$ini = parse_ini_file(OMEKA_PATH . '/config/database.ini');
+$ini = parse_ini_file($omekaPath . '/config/database.ini');
 if (!$ini) {
     http_response_code(500);
     exit('Cannot read database config.');
