@@ -252,6 +252,12 @@ class TileServer extends AbstractPlugin
                     return null;
             }
         } else {
+            // A single tile is at most one cell wide and high, so a bigger
+            // output, for example "0,0,2592,1944/1296,", is left to the dynamic
+            // processor. For "full" and "max", the size is the region.
+            if ($size['width'] > $cellSize || $size['height'] > $cellSize) {
+                return null;
+            }
             // Determine cell position from source and region.
             // The cell position depends on the region, not the size
             // feature: the size only affects how the extracted tile
