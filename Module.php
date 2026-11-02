@@ -730,7 +730,7 @@ class Module extends AbstractModule
 
         if (!$hasVips && !(int) $settings->get('imageserver_image_max_size')) {
             $message = new PsrMessage(
-                'There is no max size of images processed dynamically and vips is not available: a big image may exhaust the memory of the server. Set a max size, for example 12500000 pixels.' // @translate
+                'There is no max size of images processed dynamically and vips is not available: a big image may exhaust the memory of the server. Set a max size, for example 4000000 pixels.' // @translate
             );
             $messenger->addWarning($message);
         }

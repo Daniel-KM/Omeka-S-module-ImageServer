@@ -302,13 +302,6 @@ if (version_compare($oldVersion, '3.6.26', '<')) {
     );
     $messenger->addSuccess($message);
 
-    // The rendered pages of the pdf files are read only by the image server,
-    // that checks the rights, so the direct web access is denied.
-    $config = $services->get('Config');
-    $basePath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-    $tileDir = $settings->get('imageserver_image_tile_dir', 'tile') ?: 'tile';
-    $services->get('Common\DirectoryManager')->checkDestinationDir($basePath . '/' . $tileDir . '/pdf', true);
-
     $message = new PsrMessage(
         'The pages of the pdf files are now served as images, like Cantaloupe, with the identifier "file.pdf;2". Enable the option in the module Iiif Server to display them in the manifests, so the viewers can search in the ocr.' // @translate
     );
@@ -316,17 +309,39 @@ if (version_compare($oldVersion, '3.6.26', '<')) {
 }
 
 if (version_compare($oldVersion, '3.6.27', '<')) {
+    // The rendered pages of the pdf files are read only by the image server,
+    // that checks the rights, so the direct web access is denied.
+    $config = $services->get('Config');
+    $basePath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+    $tileDir = $settings->get('imageserver_image_tile_dir', 'tile') ?: 'tile';
+    $services->get('Common\DirectoryManager')->checkDestinationDir($basePath . '/' . $tileDir . '/pdf', true);
+
     // The max size for dynamic processing is now a number of pixels. It was
     // compared to the memory used, width × height × 4, divided by 10, so the
-    // value is converted to keep the same limit.
-    $maxSize = (int) $settings->get('imageserver_image_max_size');
-    if ($maxSize) {
-        $settings->set('imageserver_image_max_size', (int) ($maxSize * 10 / 4));
-    }
+    // value is converted to keep the same limit. It was not checked with vips,
+    // so it is removed to keep the same behavior. The option to tile small
+    // images is created with this conversion or saved with the new config form,
+    // so the conversion is done once, even when the upgrade is replayed.
+    if ($settings->get('imageserver_tile_small') === null) {
+        $maxSize = (int) $settings->get('imageserver_image_max_size');
+        $imager = $settings->get('imageserver_imager', 'Auto');
+        $isVips = in_array($imager, ['Vips', 'PhpVips'], true)
+            || ($imager === 'Auto' && ($this->isPhpVipsAvailable() || $this->vipsCliVersion() !== null));
+        $newMaxSize = $isVips || !$maxSize ? 0 : (int) ($maxSize * 10 / 4);
+        $settings->set('imageserver_image_max_size', $newMaxSize ?: '');
+        // All images were tiled, so keep it: the limit protects the memory, but
+        // it is too high to skip the tiling of the images below it without
+        // vips. The option is always set to mark the conversion.
+        $settings->set('imageserver_tile_small', (bool) $newMaxSize);
 
-    $message = new PsrMessage(
-        'The max size of images processed dynamically is now a number of pixels: the value was converted from {old} to {new}. A new option allows to tile only the images bigger than it.', // @translate
-        ['old' => $maxSize, 'new' => (int) ($maxSize * 10 / 4)]
-    );
-    $messenger->addSuccess($message);
+        $message = $newMaxSize
+            ? new PsrMessage(
+                'The max size of images processed dynamically is now a number of pixels, whatever the image processor: the value was converted from {old} to {new}. All images are still tiled, but a new option allows to tile only the images bigger than it, for example with a max size of 4000000 pixels without vips.', // @translate
+                ['old' => $maxSize, 'new' => $newMaxSize]
+            )
+            : new PsrMessage(
+                'The max size of images processed dynamically is now a number of pixels, whatever the image processor. It is unset, like before with vips, so all images are still tiled.' // @translate
+            );
+        $messenger->addSuccess($message);
+    }
 }

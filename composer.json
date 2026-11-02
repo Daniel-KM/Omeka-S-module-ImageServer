@@ -20,7 +20,7 @@
         }
     ],
     "support": {
-        "issues": "https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/issues",
+        "issues": "https://gitlab.com/Daniel-KM/Omeka-S-module-ImageServer/-/work_items",
         "forum": "https://forum.omeka.org/"
     },
     "_require (not set until Omeka S merges PR #2432)": {
