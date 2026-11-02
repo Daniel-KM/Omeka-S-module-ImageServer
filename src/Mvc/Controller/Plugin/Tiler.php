@@ -87,6 +87,18 @@ class Tiler extends AbstractPlugin
             return null;
         }
 
+        // Smaller images are processed dynamically. An image without known
+        // dimensions is tiled.
+        $pixels = empty($this->params['tile_min_size']) ? 0 : $this->countPixels($media, $sourcePath);
+        if ($pixels && $pixels <= $this->params['tile_min_size']) {
+            return [
+                'tile_dir' => null,
+                'tile_file' => null,
+                'result' => true,
+                'skipped' => true,
+            ];
+        }
+
         // When a specific store or Archive Repertory are used, the storage id
         // may contain a subdir, so it should be added. There is no change with
         // the default simple storage id.
@@ -160,5 +172,20 @@ class Tiler extends AbstractPlugin
         $mediaEntity->setData($mediaData);
         $this->entityManager->persist($mediaEntity);
         $this->entityManager->flush();
+    }
+
+    /**
+     * Get the number of pixels of an image, from its data or its file.
+     */
+    protected function countPixels(MediaRepresentation $media, string $filepath): int
+    {
+        $dimensions = $media->mediaData()['dimensions']['original'] ?? [];
+        $width = (int) ($dimensions['width'] ?? 0);
+        $height = (int) ($dimensions['height'] ?? 0);
+        if (!$width || !$height) {
+            $size = @getimagesize($filepath);
+            [$width, $height] = $size ? [(int) $size[0], (int) $size[1]] : [0, 0];
+        }
+        return $width * $height;
     }
 }

@@ -307,3 +307,19 @@ if (version_compare($oldVersion, '3.6.26', '<')) {
     );
     $messenger->addSuccess($message);
 }
+
+if (version_compare($oldVersion, '3.6.27', '<')) {
+    // The max size for dynamic processing is now a number of pixels. It was
+    // compared to the memory used, width × height × 4, divided by 10, so the
+    // value is converted to keep the same limit.
+    $maxSize = (int) $settings->get('imageserver_image_max_size');
+    if ($maxSize) {
+        $settings->set('imageserver_image_max_size', (int) ($maxSize * 10 / 4));
+    }
+
+    $message = new PsrMessage(
+        'The max size of images processed dynamically is now a number of pixels: the value was converted from {old} to {new}. A new option allows to tile only the images bigger than it.', // @translate
+        ['old' => $maxSize, 'new' => (int) ($maxSize * 10 / 4)]
+    );
+    $messenger->addSuccess($message);
+}

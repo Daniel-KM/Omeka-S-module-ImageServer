@@ -227,6 +227,14 @@ if ($page) {
     $dpi = (int) json_decode((string) $stmt->fetchColumn()) ?: 150;
 }
 
+// The max size of the originals processed dynamically, not of the pages.
+$maxSize = 0;
+if (!$page) {
+    $stmt = $pdo->prepare("SELECT `value` FROM `setting` WHERE `id` = 'imageserver_image_max_size'");
+    $stmt->execute();
+    $maxSize = (int) json_decode((string) $stmt->fetchColumn());
+}
+
 // Lookup by numeric media ID or by storage filename.
 if (ctype_digit($mediaIdentifier)) {
     $stmt = $pdo->prepare(<<<'SQL'
@@ -357,6 +365,13 @@ try {
 }
 if ($exif && !empty($exif['Orientation']) && $exif['Orientation'] >= 5) {
     [$srcWidth, $srcHeight] = [$srcHeight, $srcWidth];
+}
+
+// The processing of an original bigger than the max size is managed by Omeka,
+// that serves the tiles and the derivatives only.
+if (!$tiledPath && $maxSize && $srcWidth * $srcHeight > $maxSize) {
+    omekaIndex($omekaPath);
+    return;
 }
 
 // --- Region ---

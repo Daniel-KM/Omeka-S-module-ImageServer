@@ -299,7 +299,8 @@ return [
             'imageserver_info_rights_text' => '',
             'imageserver_tile_mode' => 'auto',
             'imageserver_imager' => 'Auto',
-            'imageserver_image_max_size' => 5000000,
+            'imageserver_image_max_size' => 12500000,
+            'imageserver_tile_small' => false,
             'imageserver_image_tile_type' => 'deepzoom',
             // Internal option to get Omeka url in background process.
             'imageserver_base_url' => '',

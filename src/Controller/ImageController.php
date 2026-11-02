@@ -432,6 +432,7 @@ class ImageController extends AbstractActionController
                 else {
                     // Pyramidal TIFF/JP2 tiled sources are only readable by
                     // vips; GD/Imagick choke on them.
+                    $tiledSource = null;
                     if ($this->isVipsImager($transform)) {
                         $tileDir = $settings->get('imageserver_image_tile_dir', 'tile');
                         $config = $this->getEvent()->getApplication()
@@ -439,7 +440,6 @@ class ImageController extends AbstractActionController
                         $basePath = $config['file_store']['local']['base_path']
                             ?: (OMEKA_PATH . '/files');
                         $storageId = $media->storageId();
-                        $tiledSource = null;
                         foreach (['.tif', '.jp2'] as $tExt) {
                             $candidate = $basePath . '/' . $tileDir . '/' . $storageId . $tExt;
                             if (file_exists($candidate)) {
@@ -453,27 +453,20 @@ class ImageController extends AbstractActionController
                             // rotation, dimensions are already correct.
                             $transform['source']['skip_autorot'] = true;
                         }
-                    } else {
-                        $maxFileSize = (int) $settings->get('imageserver_image_max_size');
-                        if ($maxFileSize) {
-                            // Use pixel dimensions if available (more
-                            // accurate than file size for memory usage),
-                            // else fall back to file size in bytes.
-                            $mediaData = $media->mediaData();
-                            $origW = $mediaData['dimensions']['original']['width'] ?? 0;
-                            $origH = $mediaData['dimensions']['original']['height'] ?? 0;
-                            // Approximate memory: width × height × 4
-                            // bytes (RGBA). Compare against max file
-                            // size as a proxy for memory budget.
-                            $tooLarge = ($origW && $origH)
-                                ? ($origW * $origH * 4 > $maxFileSize * 10)
-                                : ($media->size() > $maxFileSize);
-                            if ($tooLarge) {
-                                return $this->viewError(new PsrMessage(
+                    }
+                    // The processing of the original is limited whatever the
+                    // imager, but not the one of a tiled source with vips.
+                    if (!$tiledSource && $this->isTooLargeForDynamicProcessing($media)) {
+                        return $this->viewError(
+                            $this->tileMediaInfo($media)
+                                ? new PsrMessage(
+                                    'The image is too large to be processed dynamically: only tiles and derivatives are available.' // @translate
+                                )
+                                : new PsrMessage(
                                     'The Image server encountered an unexpected error that prevented it from fulfilling the request: the file is not tiled for dynamic processing.' // @translate
-                                ), \Laminas\Http\Response::STATUS_CODE_500);
-                            }
-                        }
+                                ),
+                            \Laminas\Http\Response::STATUS_CODE_500
+                        );
                     }
                     $imagePath = $this->imageServer()->transform($transform);
                 }
@@ -1268,6 +1261,29 @@ class ImageController extends AbstractActionController
         return $tileInfo
             ? $this->tileServer($tileInfo, $transform)
             : null;
+    }
+
+    /**
+     * Check if the image is bigger than the max size for dynamic processing.
+     *
+     * The size is the number of pixels, that determines the memory used.
+     */
+    protected function isTooLargeForDynamicProcessing(AbstractResourceEntityRepresentation $media): bool
+    {
+        $maxSize = (int) $this->settings()->get('imageserver_image_max_size');
+        if (!$maxSize) {
+            return false;
+        }
+        $dimensions = $media->mediaData()['dimensions']['original'] ?? [];
+        $width = (int) ($dimensions['width'] ?? 0);
+        $height = (int) ($dimensions['height'] ?? 0);
+        if (!$width || !$height) {
+            // Only a local file is checked, without download.
+            $filepath = $this->mediaPath($media);
+            $size = is_file($filepath) ? @getimagesize($filepath) : false;
+            [$width, $height] = $size ? [(int) $size[0], (int) $size[1]] : [0, 0];
+        }
+        return $width * $height > $maxSize;
     }
 
     /**

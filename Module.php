@@ -192,6 +192,12 @@ class Module extends AbstractModule
             ));
         }
 
+        // Vips uses few memory, so any original can be processed dynamically,
+        // even when it is tiled as deepzoom, that vips cannot read.
+        if ($hasPhpVips || $hasVipsCli) {
+            $settings->set('imageserver_image_max_size', '');
+        }
+
         // Keep deepzoom as default tile type: static files are served directly
         // and quicker by Apache without PHP.
 
@@ -721,6 +727,13 @@ class Module extends AbstractModule
             );
             $messenger->addSuccess($message);
         }
+
+        if (!$hasVips && !(int) $settings->get('imageserver_image_max_size')) {
+            $message = new PsrMessage(
+                'There is no max size of images processed dynamically and vips is not available: a big image may exhaust the memory of the server. Set a max size, for example 12500000 pixels.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
     }
 
     /**
@@ -839,12 +852,12 @@ class Module extends AbstractModule
         ) {
             $totalImages = (int) ($cached['total'] ?? 0);
             $tiledImages = (int) ($cached['tiled'] ?? 0);
-            $maxSize = (int) $settings->get('imageserver_image_max_size', 5000000);
+            $maxSize = (int) $settings->get('imageserver_image_max_size');
             $largeUntiled = (int) ($cached['large_untiled'] ?? 0);
             if (!$totalImages) {
                 return;
             }
-            $this->renderTilingStatus($messenger, $totalImages, $tiledImages, $largeUntiled, $maxSize);
+            $this->renderTilingStatus($messenger, $totalImages, $tiledImages, $largeUntiled, $maxSize, !$settings->get('imageserver_tile_small'));
             return;
         }
 
@@ -874,16 +887,18 @@ class Module extends AbstractModule
             SQL
         );
 
-        $maxSize = (int) $settings->get('imageserver_image_max_size', 5000000);
-        $largeUntiled = (int) $connection->fetchOne(<<<'SQL'
+        // The max size is a number of pixels, like in the image controller.
+        $maxSize = (int) $settings->get('imageserver_image_max_size');
+        $largeUntiled = $maxSize ? (int) $connection->fetchOne(<<<'SQL'
             SELECT COUNT(*) FROM media
             WHERE media_type LIKE 'image/%'
                 AND media_type != 'image/svg+xml'
-                AND size > ?
                 AND data NOT LIKE '%"tile":{%'
+                AND CAST(JSON_EXTRACT(data, '$.dimensions.original.width') AS UNSIGNED)
+                    * CAST(JSON_EXTRACT(data, '$.dimensions.original.height') AS UNSIGNED) > ?
             SQL,
             [$maxSize]
-        );
+        ) : 0;
 
         $settings->set('imageserver_audit_tiling_status', [
             'at' => time(),
@@ -892,7 +907,7 @@ class Module extends AbstractModule
             'large_untiled' => $largeUntiled,
         ]);
 
-        $this->renderTilingStatus($messenger, $totalImages, $tiledImages, $largeUntiled, $maxSize);
+        $this->renderTilingStatus($messenger, $totalImages, $tiledImages, $largeUntiled, $maxSize, !$settings->get('imageserver_tile_small'));
     }
 
     /**
@@ -904,45 +919,48 @@ class Module extends AbstractModule
         int $totalImages,
         int $tiledImages,
         int $largeUntiled,
-        int $maxSize
+        int $maxSize,
+        bool $onlyLarge = false
     ): void {
-        $untiled = $totalImages - $tiledImages;
-        if ($untiled === 0) {
-            $message = new PsrMessage(
-                'All {total} images are tiled.', // @translate
-                ['total' => $totalImages]
-            );
-            $messenger->addSuccess($message);
-            return;
-        }
-
-        $message = new PsrMessage(
-            '{untiled} of {total} images are not tiled. Pre-tiling improves display performance significantly. Use the bulk tiler in the config form below.', // @translate
-            ['untiled' => $untiled, 'total' => $totalImages]
-        );
-        if ($untiled > $totalImages / 2) {
-            $messenger->addWarning($message);
+        // Smaller images are processed dynamically, so only the large ones
+        // should be tiled.
+        if ($onlyLarge && $maxSize) {
+            if (!$largeUntiled) {
+                $messenger->addSuccess(new PsrMessage(
+                    'All images bigger than {size} pixels are tiled.', // @translate
+                    ['size' => $maxSize]
+                ));
+                return;
+            }
         } else {
-            $messenger->addSuccess($message);
-        }
-
-        // Warn about large untiled images.
-        if ($largeUntiled) {
-            $hasVips = $this->isPhpVipsAvailable()
-                || $this->vipsCliVersion() !== null;
-            if ($hasVips) {
+            $untiled = $totalImages - $tiledImages;
+            if ($untiled === 0) {
                 $message = new PsrMessage(
-                    '{count} large images (> {size} bytes) are not tiled. Vips handles them dynamically, but pre-tiling is recommended for best performance.', // @translate
-                    ['count' => $largeUntiled, 'size' => $maxSize]
+                    'All {total} images are tiled.', // @translate
+                    ['total' => $totalImages]
                 );
                 $messenger->addSuccess($message);
-            } else {
-                $message = new PsrMessage(
-                    '{count} large images (> {size} bytes) are not tiled and vips is not available. These images cannot be processed dynamically. Pre-tile them or install vips.', // @translate
-                    ['count' => $largeUntiled, 'size' => $maxSize]
-                );
-                $messenger->addError($message);
+                return;
             }
+
+            $message = new PsrMessage(
+                '{untiled} of {total} images are not tiled. Pre-tiling improves display performance significantly. Use the bulk tiler in the config form below.', // @translate
+                ['untiled' => $untiled, 'total' => $totalImages]
+            );
+            if ($untiled > $totalImages / 2) {
+                $messenger->addWarning($message);
+            } else {
+                $messenger->addSuccess($message);
+            }
+        }
+
+        // Warn about large untiled images, that are not processed dynamically.
+        if ($largeUntiled) {
+            $message = new PsrMessage(
+                '{count} large images (> {size} pixels) are not tiled, so they cannot be processed dynamically. Tile them with the bulk tiler below.', // @translate
+                ['count' => $largeUntiled, 'size' => $maxSize]
+            );
+            $messenger->addError($message);
         }
     }
 

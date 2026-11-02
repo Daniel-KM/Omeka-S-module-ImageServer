@@ -292,16 +292,27 @@ class ConfigForm extends Form
                 'type' => Element\Text::class,
                 'options' => [
                     'tab' => 'tiling',
-                    'label' => 'Max dynamic size for images', // @translate
+                    'label' => 'Max size of images processed dynamically (pixels)', // @translate
                     'info' => <<<'TXT'
-                        Set the maximum size in bytes for the dynamic processing of images.
-                        Beyond this limit, the plugin will require a tiled image.
-                        Let empty to allow processing of any image.
-                        With vips, this option is bypassed.
+                        Set the maximum number of pixels (width × height) of the original images processed dynamically, whatever the image processor. For example, 12500000 pixels (12.5 megapixels, about 50 MB of memory with GD or Imagick).
+                        Beyond this limit, only tiles and Omeka derivatives are served, so these images should be tiled. With vips, the tiled tiff and jpeg 2000 are processed dynamically too.
+                        Let empty to allow processing of any image, that is possible with vips, that uses few memory.
                         TXT, // @translate
                 ],
                 'attributes' => [
                     'id' => 'imageserver-image-max-size',
+                ],
+            ])
+            ->add([
+                'name' => 'imageserver_tile_small',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'tab' => 'tiling',
+                    'label' => 'Tile small images too', // @translate
+                    'info' => 'By default, only the images bigger than the max size above are tiled, because the smaller ones are processed dynamically. Without max size, all images are tiled.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'imageserver-tile-small',
                 ],
             ])
 

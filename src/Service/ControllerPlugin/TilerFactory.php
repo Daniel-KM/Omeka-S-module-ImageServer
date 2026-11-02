@@ -32,6 +32,10 @@ class TilerFactory implements FactoryInterface
         $params = [];
         $params['tile_dir'] = $tileDir;
         $params['tile_type'] = $settings->get('imageserver_image_tile_type');
+        // Smaller images are processed dynamically.
+        $params['tile_min_size'] = $settings->get('imageserver_tile_small')
+            ? 0
+            : (int) $settings->get('imageserver_image_max_size');
         $params['processor'] = $processor === 'Auto' ? '' : $processor;
         $params['convertPath'] = $this->getConvertPath($probeCli, $convertDir);
         $params['vipsPath'] = $this->getPath($probeCli, $vipsDir, Vips::VIPS_COMMAND);
