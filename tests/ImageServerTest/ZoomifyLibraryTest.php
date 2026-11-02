@@ -277,6 +277,15 @@ class ZoomifyLibraryTest extends TestCase
         if (file_exists($autoloader)) {
             require_once $autoloader;
         }
-        return class_exists('Jcupitt\Vips\Image');
+        if (!class_exists('Jcupitt\Vips\Image')) {
+            return false;
+        }
+        // The classes may be available without libvips or the right extension.
+        try {
+            \Jcupitt\Vips\Image::black(1, 1);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }

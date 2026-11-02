@@ -5,10 +5,11 @@ namespace ImageServerTest;
 use CommonTest\AbstractHttpControllerTestCase;
 
 /**
- * Tests for the upgrade script ingester/renderer conversion.
+ * Tests for the upgrade script.
  *
- * Verifies that the v3.6.22 migration correctly converts legacy "tile"
- * and "file" ingesters to "upload", and "tile" renderer to "file".
+ * Verifies that the v3.6.22 migration correctly converts legacy "tile" and
+ * "file" ingesters to "upload", and "tile" renderer to "file", and that the
+ * v3.6.27 migration converts the max size once.
  */
 class UpgradeTest extends AbstractHttpControllerTestCase
 {
@@ -180,5 +181,60 @@ class UpgradeTest extends AbstractHttpControllerTestCase
                 "Media $i renderer mismatch"
             );
         }
+    }
+
+    /**
+     * Run the real upgrade from 3.6.26 with some settings.
+     */
+    protected function upgradeFrom3626(array $settings): \Omeka\Settings\Settings
+    {
+        $services = $this->getApplicationServiceLocator();
+        $omekaSettings = $services->get('Omeka\Settings');
+        foreach ($settings as $name => $value) {
+            $value === null
+                ? $omekaSettings->delete($name)
+                : $omekaSettings->set($name, $value);
+        }
+        $module = $services->get('ModuleManager')->getModule('ImageServer');
+        $module->setServiceLocator($services);
+        $module->upgrade('3.6.26', '3.6.27', $services);
+        return $omekaSettings;
+    }
+
+    public function testMaxSizeConvertedOnceWhenReplayed(): void
+    {
+        $settings = $this->upgradeFrom3626([
+            'imageserver_imager' => 'GD',
+            'imageserver_image_max_size' => 5000000,
+            'imageserver_tile_small' => null,
+        ]);
+        $this->assertSame(12500000, (int) $settings->get('imageserver_image_max_size'));
+        $this->assertTrue($settings->get('imageserver_tile_small'));
+
+        // A replayed upgrade does not convert the value again.
+        $this->upgradeFrom3626([]);
+        $this->assertSame(12500000, (int) $settings->get('imageserver_image_max_size'));
+    }
+
+    public function testMaxSizeRemovedWithVips(): void
+    {
+        $settings = $this->upgradeFrom3626([
+            'imageserver_imager' => 'Vips',
+            'imageserver_image_max_size' => 5000000,
+            'imageserver_tile_small' => null,
+        ]);
+        $this->assertSame('', $settings->get('imageserver_image_max_size'));
+        $this->assertFalse($settings->get('imageserver_tile_small'));
+    }
+
+    public function testMaxSizeKeptWhenSavedWithNewForm(): void
+    {
+        $settings = $this->upgradeFrom3626([
+            'imageserver_imager' => 'GD',
+            'imageserver_image_max_size' => 4000000,
+            'imageserver_tile_small' => false,
+        ]);
+        $this->assertSame(4000000, (int) $settings->get('imageserver_image_max_size'));
+        $this->assertFalse($settings->get('imageserver_tile_small'));
     }
 }

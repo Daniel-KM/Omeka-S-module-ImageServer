@@ -462,4 +462,57 @@ class TileServerBugFixTest extends TestCase
         );
         $this->assertSame(0, $result['cell']['row']);
     }
+
+    // ================================================================
+    // Bug fix: a tile-aligned region bigger than a tile was redirected to a
+    // single tile of a lower level, whatever the requested size.
+    // @see https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues/14
+    // ================================================================
+
+    /**
+     * A tile-aligned region with an output bigger than a tile is not a tile.
+     */
+    public function testRegionBiggerThanTileIsNotATile(): void
+    {
+        $tileInfo = $this->makeTileInfo(5184, 3888, 256);
+        $requests = [
+            ['sizeByW', 1296, 972],
+            ['sizeByWh', 1296, 972],
+            ['full', null, null],
+            ['max', null, null],
+        ];
+        foreach ($requests as [$sizeFeature, $width, $height]) {
+            $transform = $this->makeTransform(
+                'regionByPx', [0, 0, 2592, 1944],
+                $sizeFeature, $width, $height,
+                5184, 3888
+            );
+            $this->assertNull(($this->plugin)($tileInfo, $transform), $sizeFeature);
+        }
+    }
+
+    /**
+     * Standard tiles of the pyramid are still served, edge ones too.
+     */
+    public function testTilesStillServedAfterOutputSizeCheck(): void
+    {
+        $tileInfo = $this->makeTileInfo(5184, 3888, 256);
+        $requests = [
+            [[0, 0, 1024, 1024], 'sizeByW', 256, 256, 0, 0],
+            [[0, 0, 256, 256], 'full', null, null, 0, 0],
+            [[5120, 3840, 64, 48], 'full', null, null, 20, 15],
+            [[5120, 0, 64, 1024], 'sizeByW', 16, 256, 5, 0],
+        ];
+        foreach ($requests as [$region, $sizeFeature, $width, $height, $column, $row]) {
+            $transform = $this->makeTransform(
+                'regionByPx', $region,
+                $sizeFeature, $width, $height,
+                5184, 3888
+            );
+            $result = ($this->plugin)($tileInfo, $transform);
+            $label = implode(',', $region) . '/' . $sizeFeature;
+            $this->assertNotNull($result, $label);
+            $this->assertSame([$column, $row], [$result['cell']['column'], $result['cell']['row']], $label);
+        }
+    }
 }

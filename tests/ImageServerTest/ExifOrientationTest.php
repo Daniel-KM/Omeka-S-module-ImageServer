@@ -222,4 +222,56 @@ class ExifOrientationTest extends AbstractHttpControllerTestCase
         $this->assertSame(2, $result['width']);
         $this->assertSame(3, $result['height']);
     }
+
+    /**
+     * PhpVips: a dynamic size of a jpeg with an EXIF orientation must be
+     * rotated, not fail with an "out of order read" of the sequential load.
+     *
+     * The failure occurs only with a big image upside down (orientation 3).
+     *
+     * @see https://github.com/Daniel-KM/Omeka-S-module-ImageServer/issues/13
+     */
+    public function testPhpVipsTransformExifOrientation(): void
+    {
+        $services = $this->getServiceLocator();
+        $imager = new \ImageServer\ImageServer\PhpVips(
+            $services->get('Omeka\File\TempFileFactory'),
+            $services->get('Omeka\File\Store')
+        );
+        if (!$imager->checkMediaType('image/jpeg')) {
+            $this->markTestSkipped('php-vips not available.');
+        }
+        $imager->setLogger($services->get('Omeka\Logger'));
+
+        $dir = $this->getTempPath();
+        mkdir($dir, 0775, true);
+        $bigUpsideDown = $dir . '/exif3.jpg';
+        $image = \Jcupitt\Vips\Image::xyz(5184, 3888)->extract_band(0)->cast('uchar')
+            ->bandjoin([128, 64])
+            ->copy(['interpretation' => 'srgb']);
+        $image->set('orientation', 3);
+        $image->writeToFile($bigUpsideDown);
+
+        $sources = [
+            [$this->fixtureExif6Path(), 30, 50],
+            [$bigUpsideDown, 1000, 750],
+        ];
+        foreach ($sources as [$source, $expectedWidth, $expectedHeight]) {
+            $destination = $imager->transform([
+                'version' => '3',
+                'source' => ['filepath' => $source, 'media_type' => 'image/jpeg'],
+                'region' => ['feature' => 'full'],
+                'size' => ['feature' => 'sizeByForcedWh', 'width' => $expectedWidth, 'height' => $expectedHeight],
+                'mirror' => ['feature' => 'default'],
+                'rotation' => ['feature' => 'noRotation'],
+                'quality' => ['feature' => 'default'],
+                'format' => ['feature' => 'image/jpeg'],
+            ]);
+            $this->assertNotNull($destination, basename($source));
+            $this->assertFileExists($destination);
+            [$width, $height] = getimagesize($destination);
+            @unlink($destination);
+            $this->assertSame([$expectedWidth, $expectedHeight], [$width, $height], basename($source));
+        }
+    }
 }
