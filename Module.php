@@ -1522,6 +1522,8 @@ class Module extends AbstractModule
             if (!$hasUnsized) {
                 return;
             }
+        } elseif ($this->hasRunningSizeTileJob($item->getId())) {
+            return;
         }
 
         $jobClass = $tileMode === 'auto'
@@ -1583,6 +1585,12 @@ class Module extends AbstractModule
             return;
         }
 
+        // In auto mode, a job running on the item processes the media added
+        // during it.
+        if ($tileMode === 'auto' && $this->hasRunningSizeTileJob($media->getItem()->getId())) {
+            return;
+        }
+
         $jobClass = $tileMode === 'auto'
             ? \ImageServer\Job\BulkSizerAndTiler::class
             : \ImageServer\Job\BulkSizer::class;
@@ -1620,6 +1628,33 @@ class Module extends AbstractModule
         $dimensions = $media->getData()['dimensions'] ?? [];
         return !empty($dimensions['original']['width'])
             && (!$media->hasThumbnails() || !empty($dimensions['large']['width']));
+    }
+
+    /**
+     * Check if a job launched on save is pending or running for an item.
+     */
+    protected function hasRunningSizeTileJob(int $itemId): bool
+    {
+        $args = $this->getServiceLocator()->get('Omeka\Connection')
+            ->executeQuery(
+                'SELECT args FROM job WHERE class = ? AND status IN (?)',
+                [
+                    \ImageServer\Job\BulkSizerAndTiler::class,
+                    [\Omeka\Entity\Job::STATUS_STARTING, \Omeka\Entity\Job::STATUS_IN_PROGRESS],
+                ],
+                [\PDO::PARAM_STR, \Doctrine\DBAL\Connection::PARAM_STR_ARRAY]
+            )
+            ->fetchFirstColumn();
+        foreach ($args as $arg) {
+            $query = json_decode((string) $arg, true)['query'] ?? null;
+            if (is_array($query)
+                && array_keys($query) === ['id']
+                && in_array($itemId, array_map('intval', (array) $query['id']), true)
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
