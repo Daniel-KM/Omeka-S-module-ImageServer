@@ -294,7 +294,7 @@ class ConfigForm extends Form
                     'tab' => 'tiling',
                     'label' => 'Max size of images processed dynamically (pixels)', // @translate
                     'info' => <<<'TXT'
-                        Set the maximum number of pixels (width × height) of the original images processed dynamically, whatever the image processor. For example, 12500000 pixels (12.5 megapixels, about 50 MB of memory with GD or Imagick).
+                        Set the maximum number of pixels (width × height) of the original images processed dynamically, whatever the image processor. For example, 4000000 pixels (4 megapixels, about 2300 × 1700, so a tile is processed in about 25 ms with GD or Imagick).
                         Beyond this limit, only tiles and Omeka derivatives are served, so these images should be tiled. With vips, the tiled tiff and jpeg 2000 are processed dynamically too.
                         Let empty to allow processing of any image, that is possible with vips, that uses few memory.
                         TXT, // @translate
