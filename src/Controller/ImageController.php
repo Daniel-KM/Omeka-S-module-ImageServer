@@ -395,20 +395,11 @@ class ImageController extends AbstractActionController
                 // GD and Imagick choke on them. When the effective imager
                 // is not vips, fall through to the dynamic branch (which
                 // will use the original).
-                if ($pretiled && in_array($pretiled['source']['media_type'] ?? '', ['image/tiff', 'image/jp2'], true)) {
-                    $imagerSetting = $settings->get('imageserver_imager');
-                    $effective = $imagerSetting;
-                    if ($effective === 'Auto') {
-                        $imagerObj = $this->imageServer()->getImager()->getImager($transform);
-                        if ($imagerObj instanceof \ImageServer\ImageServer\Vips
-                            || $imagerObj instanceof \ImageServer\ImageServer\PhpVips
-                        ) {
-                            $effective = 'Vips';
-                        }
-                    }
-                    if (!in_array($effective, ['Vips', 'PhpVips'], true)) {
-                        $pretiled = null;
-                    }
+                if ($pretiled
+                    && in_array($pretiled['source']['media_type'] ?? '', ['image/tiff', 'image/jp2'], true)
+                    && !$this->isVipsImager($transform)
+                ) {
+                    $pretiled = null;
                 }
                 if ($pretiled) {
                     // Warning: Currently, the tile server does not manage
@@ -439,20 +430,9 @@ class ImageController extends AbstractActionController
 
                 // The image needs to be transformed dynamically.
                 else {
-                    // Resolve the effective imager. Pyramidal TIFF/JP2 tiled
-                    // sources are only readable by vips; GD/Imagick choke on
-                    // them, so the .tif/.jp2 candidate is only used when the
-                    // selected imager is Vips/PhpVips.
-                    $imager = $settings->get('imageserver_imager');
-                    if ($imager === 'Auto') {
-                        $imagerObj = $this->imageServer()->getImager()->getImager($transform);
-                        if ($imagerObj instanceof \ImageServer\ImageServer\Vips
-                            || $imagerObj instanceof \ImageServer\ImageServer\PhpVips
-                        ) {
-                            $imager = 'Vips';
-                        }
-                    }
-                    if (in_array($imager, ['Vips', 'PhpVips'])) {
+                    // Pyramidal TIFF/JP2 tiled sources are only readable by
+                    // vips; GD/Imagick choke on them.
+                    if ($this->isVipsImager($transform)) {
                         $tileDir = $settings->get('imageserver_image_tile_dir', 'tile');
                         $config = $this->getEvent()->getApplication()
                             ->getServiceManager()->get('Config');
@@ -1288,6 +1268,22 @@ class ImageController extends AbstractActionController
         return $tileInfo
             ? $this->tileServer($tileInfo, $transform)
             : null;
+    }
+
+    /**
+     * Check if the imager used for a transformation is vips.
+     *
+     * The imager is checked, not the setting, because an imager that is not
+     * available falls back to Auto.
+     */
+    protected function isVipsImager(array $transform): bool
+    {
+        $imager = $this->imageServer()->getImager();
+        if ($imager instanceof \ImageServer\ImageServer\Auto) {
+            $imager = $imager->getImager($transform);
+        }
+        return $imager instanceof \ImageServer\ImageServer\Vips
+            || $imager instanceof \ImageServer\ImageServer\PhpVips;
     }
 
     protected function mediaPath(AbstractResourceEntityRepresentation $media, string $imageType = 'original'): string
