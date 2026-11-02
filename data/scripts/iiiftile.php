@@ -78,6 +78,48 @@ function omekaIndex(string $omekaPath): void
     require $omekaPath . '/index.php';
 }
 
+/**
+ * Aggregate the requested zone of the image when the module Analytics records
+ * the segments (heat map of the most viewed zones). Never fails the request.
+ */
+function recordAnalyticsSegment(PDO $pdo, int $mediaId, int $x, int $y, int $w, int $h, int $srcW, int $srcH): void
+{
+    static $enabled;
+    try {
+        if ($enabled === null) {
+            $stmt = $pdo->prepare("SELECT `value` FROM `setting` WHERE `id` = 'analytics_segments'");
+            $stmt->execute();
+            $enabled = (bool) json_decode((string) $stmt->fetchColumn());
+        }
+        if (!$enabled || !$mediaId
+            || $srcW <= 0 || $srcH <= 0 || $w <= 0 || $h <= 0
+            || $x < 0 || $y < 0 || $x >= $srcW || $y >= $srcH
+            // The full image is a view, not a zone.
+            || ($x === 0 && $y === 0 && $w >= $srcW && $h >= $srcH)
+        ) {
+            return;
+        }
+        // Grid of 16 × 16 cells, like Analytics\Stdlib\SegmentBucketer.
+        $grid = 16;
+        $colFirst = (int) floor($x * $grid / $srcW);
+        $colLast = (int) min($grid - 1, ceil(($x + min($w, $srcW - $x)) * $grid / $srcW) - 1);
+        $rowFirst = (int) floor($y * $grid / $srcH);
+        $rowLast = (int) min($grid - 1, ceil(($y + min($h, $srcH - $y)) * $grid / $srcH) - 1);
+        $stmt = $pdo->prepare('INSERT INTO `analytics_segment`
+            (`entity_name`, `entity_id`, `type`, `bucket`, `period`, `hits`)
+            VALUES ("media", ?, "region", ?, ?, 1)
+            ON DUPLICATE KEY UPDATE `hits` = `hits` + 1');
+        $period = (int) date('Ym');
+        for ($row = $rowFirst; $row <= $rowLast; $row++) {
+            for ($col = $colFirst; $col <= $colLast; $col++) {
+                $stmt->execute([$mediaId, $row * $grid + $col, $period]);
+            }
+        }
+    } catch (\Throwable $e) {
+        // The table may be missing (module Analytics not ready): skip silently.
+    }
+}
+
 // Resolve Omeka root from script location: the module is in "modules/" or, when
 // installed with composer, in "composer-addons/modules/".
 // The path of the script is used first, because __DIR__ is the real path, that
@@ -238,7 +280,7 @@ if (!$page) {
 // Lookup by numeric media ID or by storage filename.
 if (ctype_digit($mediaIdentifier)) {
     $stmt = $pdo->prepare(<<<'SQL'
-        SELECT m.storage_id, m.extension, r.is_public, m.media_type
+        SELECT m.id AS media_id, m.storage_id, m.extension, r.is_public, m.media_type
         FROM media m JOIN resource r ON m.id = r.id
         WHERE m.id = ? LIMIT 1
         SQL
@@ -248,7 +290,7 @@ if (ctype_digit($mediaIdentifier)) {
     // Filename identifier: strip extension to get the storage_id, or match with
     // extension.
     $stmt = $pdo->prepare(<<<'SQL'
-        SELECT m.storage_id, m.extension, r.is_public, m.media_type
+        SELECT m.id AS media_id, m.storage_id, m.extension, r.is_public, m.media_type
         FROM media m JOIN resource r ON m.id = r.id
         WHERE CONCAT(m.storage_id, '.', m.extension) = ?
            OR m.storage_id = ?
@@ -258,7 +300,6 @@ if (ctype_digit($mediaIdentifier)) {
     $stmt->execute([$mediaIdentifier, $mediaIdentifier]);
 }
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
-$pdo = null;
 
 if (!$row) {
     http_response_code(404);
@@ -340,6 +381,10 @@ if (file_exists($cacheFile)) {
     header('Cache-Control: public, max-age=86400, s-maxage=604800');
     header('Access-Control-Allow-Origin: *');
     header('X-IIIF-Cache: hit');
+    if (preg_match('~^(\d+),(\d+),(\d+),(\d+)$~', $region, $m)) {
+        $sizeInfo = @getimagesize($filepath);
+        recordAnalyticsSegment($pdo, (int) $row['media_id'], (int) $m[1], (int) $m[2], (int) $m[3], (int) $m[4], (int) ($sizeInfo[0] ?? 0), (int) ($sizeInfo[1] ?? 0));
+    }
     readfile($cacheFile);
     exit;
 }
@@ -488,6 +533,10 @@ if ($region === 'full' && $rotDegrees == 0 && !$mirror
 // ---------------------------------------------------------------------------
 // 6. Process with vips
 // ---------------------------------------------------------------------------
+
+recordAnalyticsSegment($pdo, (int) $row['media_id'], $rX, $rY, $rW, $rH, $srcWidth, $srcHeight);
+// Release the connection before the processing of the image.
+$pdo = null;
 
 $needsCrop = $rX !== 0 || $rY !== 0 || $rW !== $srcWidth || $rH !== $srcHeight;
 $needsResize = $dW !== $rW || $dH !== $rH;

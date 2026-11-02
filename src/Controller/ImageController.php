@@ -334,6 +334,10 @@ class ImageController extends AbstractActionController
 
         $settings = $this->settings();
 
+        // Aggregate the requested zone of the image when the module Analytics
+        // records the segments (heat map of the most viewed zones).
+        $this->recordAnalyticsSegment($media, $transform);
+
         // Now, process the requested transformation if needed.
         $imageUrl = '';
         $imagePath = '';
@@ -1284,6 +1288,34 @@ class ImageController extends AbstractActionController
             [$width, $height] = $size ? [(int) $size[0], (int) $size[1]] : [0, 0];
         }
         return $width * $height > $maxSize;
+    }
+
+    /**
+     * Aggregate the requested zone of the image in the module Analytics.
+     */
+    protected function recordAnalyticsSegment(AbstractResourceEntityRepresentation $media, array $transform): void
+    {
+        if (($transform['region']['feature'] ?? null) !== 'regionByPx') {
+            return;
+        }
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+        if (!$services->has('Analytics\SegmentRecorder')) {
+            return;
+        }
+        /** @var \Analytics\Stdlib\SegmentRecorder $recorder */
+        $recorder = $services->get('Analytics\SegmentRecorder');
+        if (!$recorder->isEnabled()) {
+            return;
+        }
+        $cells = (new \Analytics\Stdlib\SegmentBucketer())->regionCells(
+            (int) $transform['region']['x'],
+            (int) $transform['region']['y'],
+            (int) $transform['region']['width'],
+            (int) $transform['region']['height'],
+            (int) $transform['source']['width'],
+            (int) $transform['source']['height']
+        );
+        $recorder->record($media->resourceName(), (int) $media->id(), \Analytics\Stdlib\SegmentRecorder::TYPE_REGION, $cells);
     }
 
     /**
