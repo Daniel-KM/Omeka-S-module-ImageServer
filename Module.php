@@ -1508,6 +1508,22 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $tileMode = $services->get('Omeka\Settings')
             ->get('imageserver_tile_mode', 'auto');
+
+        // Without auto-tiling, the job only sizes images, already sized when
+        // hydrated.
+        if ($tileMode !== 'auto') {
+            $hasUnsized = false;
+            foreach ($item->getMedia() as $media) {
+                if (!$this->isSizedImage($media)) {
+                    $hasUnsized = true;
+                    break;
+                }
+            }
+            if (!$hasUnsized) {
+                return;
+            }
+        }
+
         $jobClass = $tileMode === 'auto'
             ? \ImageServer\Job\BulkSizerAndTiler::class
             : \ImageServer\Job\BulkSizer::class;
@@ -1559,6 +1575,14 @@ class Module extends AbstractModule
         // avoids launching one job per media.
         $tileMode = $services->get('Omeka\Settings')
             ->get('imageserver_tile_mode', 'auto');
+
+        // Without auto-tiling, the media is already sized when hydrated, so a
+        // job would be useless, in particular when media are saved one by one
+        // during an import.
+        if ($tileMode !== 'auto' && $this->isSizedImage($media)) {
+            return;
+        }
+
         $jobClass = $tileMode === 'auto'
             ? \ImageServer\Job\BulkSizerAndTiler::class
             : \ImageServer\Job\BulkSizer::class;
@@ -1583,6 +1607,19 @@ class Module extends AbstractModule
                 ]
             );
         }
+    }
+
+    /**
+     * Check if a media is not an image or is an image with dimensions.
+     */
+    protected function isSizedImage(\Omeka\Entity\Media $media): bool
+    {
+        if (strtok((string) $media->getMediaType(), '/') !== 'image') {
+            return true;
+        }
+        $dimensions = $media->getData()['dimensions'] ?? [];
+        return !empty($dimensions['original']['width'])
+            && (!$media->hasThumbnails() || !empty($dimensions['large']['width']));
     }
 
     /**
