@@ -240,6 +240,10 @@ class BulkTileInfo extends AbstractJob
 
         $mediaEntity = $this->mediaRepository->find($media->id());
         $mediaEntity->setData($mediaData);
+        // The modified date refreshes the cached manifests.
+        if ($mediaData != ($media->mediaData() ?: [])) {
+            $mediaEntity->setModified(new \DateTime('now'));
+        }
         $this->entityManager->persist($mediaEntity);
         // No flush here.
     }

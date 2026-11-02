@@ -234,6 +234,8 @@ class BulkTileClean extends AbstractJob
         unset($mediaData['tile']);
 
         $media->setData($mediaData);
+        // The modified date refreshes the cached manifests.
+        $media->setModified(new \DateTime('now'));
         $this->entityManager->persist($media);
         // No flush here.
     }
