@@ -37,6 +37,13 @@ class BulkSizerAndTiler extends AbstractJob
      */
     protected $tileInfo;
 
+    /**
+     * Ids of the media checked, when media may be added during the job.
+     *
+     * @var array|null
+     */
+    protected $checkedMediaIds;
+
     public function perform(): void
     {
         /** @var \Omeka\Api\Manager $api */
@@ -67,6 +74,14 @@ class BulkSizerAndTiler extends AbstractJob
         }
         $doItems = in_array('items', $scope, true);
         $doDigitalObjects = in_array('digital_objects', $scope, true);
+
+        // When the job is launched on save, media may be added to the items
+        // during the job, for example when an import saves them one by one, so
+        // they are checked at the end.
+        $itemIds = array_keys($query) === ['id'] && $doItems
+            ? array_values(array_filter(array_map('intval', (array) $query['id'])))
+            : [];
+        $this->checkedMediaIds = $itemIds ? [] : null;
 
         $response = $api->search('items', $query);
         $this->totalToProcess = $response->getTotalResults();
@@ -121,19 +136,7 @@ class BulkSizerAndTiler extends AbstractJob
                 if ($doItems) {
                     /** @var \Omeka\Api\Representation\MediaRepresentation $media */
                     foreach ($item->media() as $media) {
-                        if (strtok((string) $media->mediaType(), '/') !== 'image'
-                            // For ingester bulk_upload, wait that the process
-                            // is finished, else the thumbnails won't be
-                            // available and the size of derivative will be the
-                            // fallback ones.
-                            || $media->ingester() === 'bulk_upload'
-                        ) {
-                            unset($media);
-                            continue;
-                        }
-
-                        ++$this->totalImages;
-                        $this->processResource($media, $tasks);
+                        $this->processMedia($media, $tasks);
                         unset($media);
                     }
                 }
@@ -162,6 +165,10 @@ class BulkSizerAndTiler extends AbstractJob
 
             $this->entityManager->clear();
             $offset += self::SQL_LIMIT;
+        }
+
+        if ($itemIds && !$this->shouldStop()) {
+            $this->processNewMedia($itemIds, $tasks);
         }
 
         // Second pass: digital objects referenced by the matched items.
@@ -203,6 +210,67 @@ class BulkSizerAndTiler extends AbstractJob
                 'total_images' => $this->totalImages,
             ]
         );
+    }
+
+    protected function processMedia(MediaRepresentation $media, array $tasks): void
+    {
+        if ($this->checkedMediaIds !== null) {
+            $this->checkedMediaIds[$media->id()] = true;
+        }
+
+        if (strtok((string) $media->mediaType(), '/') !== 'image'
+            // For ingester bulk_upload, wait that the process is finished, else
+            // the thumbnails won't be available and the size of derivative will
+            // be the fallback ones.
+            || $media->ingester() === 'bulk_upload'
+        ) {
+            return;
+        }
+
+        ++$this->totalImages;
+        $this->processResource($media, $tasks);
+    }
+
+    /**
+     * Process the media added to the items during the job until none remains.
+     */
+    protected function processNewMedia(array $itemIds, array $tasks): void
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $connection = $this->entityManager->getConnection();
+        while (true) {
+            $mediaIds = $connection->executeQuery(
+                'SELECT id FROM media WHERE item_id IN (?) ORDER BY id',
+                [$itemIds],
+                [\Doctrine\DBAL\Connection::PARAM_INT_ARRAY]
+            )->fetchFirstColumn();
+            $newMediaIds = array_diff($mediaIds, array_keys($this->checkedMediaIds));
+            if (!$newMediaIds) {
+                return;
+            }
+
+            $this->logger->info(
+                'Processing {count} media added during the job.', // @translate
+                ['count' => count($newMediaIds)]
+            );
+
+            foreach (array_chunk($newMediaIds, self::SQL_LIMIT) as $chunk) {
+                foreach ($chunk as $mediaId) {
+                    if ($this->shouldStop()) {
+                        return;
+                    }
+                    try {
+                        $media = $api->read('media', (int) $mediaId)->getContent();
+                    } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                        $this->checkedMediaIds[$mediaId] = true;
+                        continue;
+                    }
+                    $this->processMedia($media, $tasks);
+                    unset($media);
+                }
+                $this->entityManager->clear();
+            }
+        }
     }
 
     /**
