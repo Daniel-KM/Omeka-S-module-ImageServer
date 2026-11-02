@@ -109,6 +109,17 @@ class PhpVips extends AbstractImager
             // read), sequential for other formats.
             $accessMode = empty($args['source']['skip_autorot'])
                 ? 'sequential' : 'random';
+            // The rotation of an image with an exif orientation reads the source
+            // out of order, that a sequential load refuses. The header is read
+            // without the pixels.
+            if ($accessMode === 'sequential') {
+                $probe = \Jcupitt\Vips\Image::newFromFile($source);
+                if ($probe->typeof('orientation')
+                    && (int) $probe->get('orientation') > 1
+                ) {
+                    $accessMode = 'random';
+                }
+            }
             $image = \Jcupitt\Vips\Image::newFromFile(
                 $source . "[access=$accessMode]"
             );

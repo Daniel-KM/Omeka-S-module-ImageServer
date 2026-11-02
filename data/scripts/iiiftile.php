@@ -530,6 +530,15 @@ if ($usePhpVips) {
         // Use random access for tiled TIFF/JP2 (direct tile read), sequential
         // for other formats (streams top-to-bottom).
         $accessMode = $tiledPath ? 'random' : 'sequential';
+        // The rotation of an image with an exif orientation reads the source
+        // out of order, that a sequential load refuses. The header is read
+        // without the pixels.
+        if ($accessMode === 'sequential') {
+            $probe = \Jcupitt\Vips\Image::newFromFile($filepath);
+            if ($probe->typeof('orientation') && (int) $probe->get('orientation') > 1) {
+                $accessMode = 'random';
+            }
+        }
         $image = \Jcupitt\Vips\Image::newFromFile($filepath . "[access=$accessMode]");
         // Skip autorot for tiled sources (no EXIF rotation).
         if (!$tiledPath) {
