@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 00:00+0000\n"
+"POT-Creation-Date: 2026-11-09 00:00+0000\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
@@ -199,6 +199,16 @@ msgstr ""
 "La taille maximale des images traitées en temps réel est désormais un nombre "
 "de pixels, quel que soit le processeur d’images. Elle est vide, comme "
 "auparavant avec vips : toutes les images restent donc tuilées."
+
+#: data/scripts/upgrade.php:352
+msgid ""
+"The optional module {link}Job Queue{link_end} can be installed to avoid "
+"running the same background jobs several times in parallel and to limit the "
+"number of heavy jobs running at the same time."
+msgstr ""
+"Le module optionnel {link}Job Queue{link_end} peut être installé pour éviter "
+"que les mêmes tâches en arrière-plan ne s'exécutent en parallèle et pour "
+"limiter les grosses tâches simultanées."
 
 #: Module.php:138 src/Service/ControllerPlugin/TileRemoverFactory.php:20
 #: src/Service/ControllerPlugin/TilerFactory.php:20

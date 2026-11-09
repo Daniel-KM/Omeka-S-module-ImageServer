@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 00:00+0000\n"
+"POT-Creation-Date: 2026-11-09 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -154,6 +154,13 @@ msgid ""
 "The max size of images processed dynamically is now a number of pixels, "
 "whatever the image processor. It is unset, like before with vips, so all "
 "images are still tiled."
+msgstr ""
+
+#: data/scripts/upgrade.php:352
+msgid ""
+"The optional module {link}Job Queue{link_end} can be installed to avoid "
+"running the same background jobs several times in parallel and to limit the "
+"number of heavy jobs running at the same time."
 msgstr ""
 
 #: Module.php:138 src/Service/ControllerPlugin/TileRemoverFactory.php:20
