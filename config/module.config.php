@@ -324,4 +324,23 @@ return [
             'imageserver_tile_fallback' => 'tile_large',
         ],
     ],
+    // Rules of the background jobs for the module Job Queue, used only when it
+    // is installed: merge the jobs dispatched again before they start and limit
+    // the number of heavy jobs running at the same time.
+    'jobqueue' => [
+        'jobs' => [
+            'ImageServer\Job\BulkSizer' => [
+                'group' => 'heavy',
+                'merge' => ['query.id'],
+            ],
+            'ImageServer\Job\BulkSizerAndTiler' => [
+                'group' => 'heavy',
+                'merge' => ['query.id'],
+            ],
+            'ImageServer\Job\BulkTiler' => [
+                'group' => 'heavy',
+                'merge' => ['query.id'],
+            ],
+        ],
+    ],
 ];
