@@ -7,6 +7,8 @@ use Omeka\Job\AbstractJob;
 
 class BulkTileInfo extends AbstractJob
 {
+    use ManifestCacheTrait;
+
     /**
      * Limit for the loop to avoid heavy sql requests.
      *
@@ -173,6 +175,7 @@ class BulkTileInfo extends AbstractJob
             // Flush one time each loop.
             $this->entityManager->flush();
             $this->entityManager->clear();
+            $this->removeOutdatedManifests();
             $offset += self::SQL_LIMIT;
         }
 
@@ -200,6 +203,7 @@ class BulkTileInfo extends AbstractJob
                 }
                 $this->entityManager->flush();
                 $this->entityManager->clear();
+                $this->removeOutdatedManifests();
             }
         }
 
@@ -240,9 +244,8 @@ class BulkTileInfo extends AbstractJob
 
         $mediaEntity = $this->mediaRepository->find($media->id());
         $mediaEntity->setData($mediaData);
-        // The modified date refreshes the cached manifests.
         if ($mediaData != ($media->mediaData() ?: [])) {
-            $mediaEntity->setModified(new \DateTime('now'));
+            $this->markManifestOutdated($mediaEntity);
         }
         $this->entityManager->persist($mediaEntity);
         // No flush here.

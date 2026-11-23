@@ -7,6 +7,8 @@ use Omeka\Api\Representation\MediaRepresentation;
 
 trait SizerTrait
 {
+    use ManifestCacheTrait;
+
     /**
      * @var \Omeka\Mvc\Controller\Plugin\Logger
      */
@@ -130,12 +132,12 @@ trait SizerTrait
         }
 
         $mediaEntity->setData($mediaData);
-        // The modified date refreshes the cached manifests.
-        if ($mediaData != ($media->mediaData() ?: [])) {
-            $mediaEntity->setModified(new \DateTime('now'));
-        }
         $this->entityManager->persist($mediaEntity);
         $this->entityManager->flush();
+        if ($mediaData != ($media->mediaData() ?: [])) {
+            $this->markManifestOutdated($mediaEntity);
+            $this->removeOutdatedManifests();
+        }
         unset($mediaEntity);
 
         ++$this->totalSucceed;
