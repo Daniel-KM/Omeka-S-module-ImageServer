@@ -47,5 +47,11 @@ class MediaTiler extends AbstractJob
 
         $this->prepareTiler();
         $this->prepareTile($media);
+        if ($this->totalFailed) {
+            throw new \Common\Job\Exception\RuntimeException(
+                'Media #{media_id}: tiling failed.', // @translate
+                ['media_id' => $media->id()]
+            );
+        }
     }
 }

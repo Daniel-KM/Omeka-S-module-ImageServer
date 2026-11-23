@@ -184,5 +184,12 @@ class BulkTiler extends AbstractJob
                 'total_images' => $this->totalImages,
             ]
         );
+
+        if ($this->totalFailed && !$this->totalSucceed) {
+            throw new \Common\Job\Exception\RuntimeException(
+                'All {total_failed} processed images failed.', // @translate
+                ['total_failed' => $this->totalFailed]
+            );
+        }
     }
 }

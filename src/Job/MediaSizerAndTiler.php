@@ -53,8 +53,15 @@ class MediaSizerAndTiler extends AbstractJob
 
         if (in_array('tile', $tasks)) {
             $this->totalSucceed = 0;
+            $this->totalFailed = 0;
             $this->prepareTiler();
             $this->prepareTile($media);
+            if ($this->totalFailed) {
+                throw new \Common\Job\Exception\RuntimeException(
+                    'Media #{media_id}: tiling failed.', // @translate
+                    ['media_id' => $media->id()]
+                );
+            }
         }
     }
 }
