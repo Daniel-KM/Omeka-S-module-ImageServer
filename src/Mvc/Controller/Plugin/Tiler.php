@@ -160,9 +160,10 @@ class Tiler extends AbstractPlugin
             $mediaData['tile'] = [];
         }
 
-        $result = $this->controllerPlugins->get('tileInfo')->__invoke($media, $params['tile_type']);
+        $tileInfo = $this->controllerPlugins->get('tileInfo');
+        $result = $tileInfo->__invoke($media, $params['tile_type']);
         if ($result) {
-            $mediaData['tile'][$params['tile_type']] = $result;
+            $mediaData['tile'][$params['tile_type']] = $tileInfo->withoutBase($result);
             // Set the new tile type the first.
             $mediaData['tile'] = array_replace([$params['tile_type'] => null], $mediaData['tile']);
         } else {

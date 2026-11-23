@@ -356,3 +356,33 @@ if (version_compare($oldVersion, '3.6.28', '<')) {
         $messenger->addNotice($message);
     }
 }
+
+if (version_compare($oldVersion, '3.6.30', '<')) {
+    // The base of the tiles depends on the server and the store, so it is set
+    // when the tile data are read. A job run from the command line stored the
+    // url of localhost.
+    $lastId = 0;
+    do {
+        $rows = $connection->executeQuery(
+            'SELECT `id`, `data` FROM `media` WHERE `id` > ? AND `data` LIKE ? ORDER BY `id` LIMIT 1000',
+            [$lastId, '%"url_base"%']
+        )->fetchAllKeyValue();
+        foreach ($rows as $id => $data) {
+            $lastId = (int) $id;
+            $mediaData = json_decode((string) $data, true);
+            if (!is_array($mediaData['tile'] ?? null)) {
+                continue;
+            }
+            foreach ($mediaData['tile'] as &$tilingData) {
+                if (is_array($tilingData)) {
+                    unset($tilingData['url_base'], $tilingData['path_base'], $tilingData['url_query']);
+                }
+            }
+            unset($tilingData);
+            $connection->executeStatement(
+                'UPDATE `media` SET `data` = ? WHERE `id` = ?',
+                [json_encode($mediaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $lastId]
+            );
+        }
+    } while (count($rows) === 1000);
+}

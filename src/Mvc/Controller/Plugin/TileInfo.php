@@ -115,6 +115,26 @@ class TileInfo extends AbstractPlugin
     }
 
     /**
+     * Set the current base of the tiles, that is not stored with the media.
+     */
+    public function withBase(array $tilingData): array
+    {
+        $tilingData['url_base'] = $this->tileBaseUrl;
+        $tilingData['path_base'] = $this->hasAmazonS3 ? $this->tileBaseUrl : $this->tileBaseDir;
+        $tilingData['url_query'] = $this->tileBaseQuery;
+        return $tilingData;
+    }
+
+    /**
+     * Remove the base of the tiles, that depends on the server and the store.
+     */
+    public function withoutBase(array $tilingData): array
+    {
+        unset($tilingData['url_base'], $tilingData['path_base'], $tilingData['url_query']);
+        return $tilingData;
+    }
+
+    /**
      * Retrieve info about the tiling of an image.
      *
      * @param MediaRepresentation $media

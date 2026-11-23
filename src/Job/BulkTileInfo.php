@@ -234,7 +234,7 @@ class BulkTileInfo extends AbstractJob
         foreach ($formats as $format) {
             $result = $this->tileInfo->__invoke($media, $format);
             if ($result) {
-                $mediaData['tile'][$format] = $result;
+                $mediaData['tile'][$format] = $this->tileInfo->withoutBase($result);
             }
         }
 

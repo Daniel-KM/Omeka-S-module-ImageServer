@@ -90,7 +90,6 @@ return [
     ],
     'controller_plugins' => [
         'invokables' => [
-            'tileMediaInfo' => Mvc\Controller\Plugin\TileMediaInfo::class,
             'tileServer' => Mvc\Controller\Plugin\TileServer::class,
             'tileServerDeepZoom' => Mvc\Controller\Plugin\TileServerDeepZoom::class,
             'tileServerNativeTiled' => Mvc\Controller\Plugin\TileServerNativeTiled::class,
@@ -103,6 +102,7 @@ return [
             'imageSize' => Service\ControllerPlugin\ImageSizeFactory::class,
             'sizer' => Service\ControllerPlugin\SizerFactory::class,
             'tileInfo' => Service\ControllerPlugin\TileInfoFactory::class,
+            'tileMediaInfo' => Service\ControllerPlugin\TileMediaInfoFactory::class,
             'tiler' => Service\ControllerPlugin\TilerFactory::class,
             'tileBuilder' => Service\ControllerPlugin\TileBuilderFactory::class,
             'tileRemover' => Service\ControllerPlugin\TileRemoverFactory::class,

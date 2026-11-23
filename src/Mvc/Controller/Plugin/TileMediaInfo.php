@@ -36,6 +36,16 @@ use Omeka\Api\Representation\MediaRepresentation;
 class TileMediaInfo extends AbstractPlugin
 {
     /**
+     * @var TileInfo
+     */
+    protected $tileInfo;
+
+    public function __construct(TileInfo $tileInfo)
+    {
+        $this->tileInfo = $tileInfo;
+    }
+
+    /**
      * Retrieve info about the tiling of an image. Accepts any resource that
      * carries the same storageId / mediaData layout, including DigitalObject
      * canvases.
@@ -48,8 +58,11 @@ class TileMediaInfo extends AbstractPlugin
         if (empty($tileData['tile'])) {
             return null;
         }
-        return $format
+        $tilingData = $format
             ? $tileData['tile'][$format] ?? null
             : reset($tileData['tile']);
+        return $tilingData
+            ? $this->tileInfo->withBase($tilingData)
+            : null;
     }
 }
