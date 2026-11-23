@@ -25,11 +25,13 @@
 #
 # Module Access: set OMEKA_ACCESS=1 to ask Omeka, through the endpoint
 # "/access/authorize", whether the client may see the media. Add the Cantaloupe
-# container ip to the Access setting "access_ip_proxy_trusted", so the client ip
-# sent in X-Forwarded-For is used. The request is denied when Omeka does not
-# answer in time (fail-closed). Without OMEKA_ACCESS, every request is allowed.
+# container ip to the trusted proxies of the main settings (module Common), so
+# the client ip sent in X-Forwarded-For is used. The request is denied when
+# Omeka does not answer in time (fail-closed). Without OMEKA_ACCESS, every
+# request is allowed.
 
 require 'net/http'
+require 'digest'
 require 'uri'
 
 class CustomDelegate
@@ -130,7 +132,10 @@ class CustomDelegate
     filename = access_filename
     return false if filename.nil?
 
-    key = "#{filename}|#{context['client_ip']}"
+    # The session is part of the key, else the decision for a logged user is
+    # reused for any anonymous visitor with the same ip during the ttl.
+    session = Digest::SHA256.hexdigest((context['cookies'] || {}).sort.map { |k, v| "#{k}=#{v}" }.join('; '))
+    key = "#{filename}|#{context['client_ip']}|#{session}"
     now = Time.now.to_i
     @@access_mutex.synchronize do
       hit = @@access[key]
