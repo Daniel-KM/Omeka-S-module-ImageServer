@@ -85,7 +85,23 @@ if ($cantaloupe === '') {
     exit('Cantaloupe url not configured.');
 }
 
-define('OMEKA_PATH', dirname(__DIR__, 4));
+// Resolve Omeka root from script location: the module is in "modules/" or, when
+// installed with composer, in "composer-addons/modules/". The path of the
+// script is used first, because __DIR__ is the real path, that is outside of
+// Omeka when the module is a symbolic link.
+// @see iiiftile.php
+$omekaPath = null;
+foreach ([dirname((string) ($_SERVER['SCRIPT_FILENAME'] ?? '')), __DIR__] as $scriptDir) {
+    $path = dirname($scriptDir, 4);
+    if (basename($path) === 'composer-addons') {
+        $path = dirname($path);
+    }
+    if (is_file($path . '/config/database.ini')) {
+        $omekaPath = $path;
+        break;
+    }
+}
+define('OMEKA_PATH', $omekaPath ?? dirname(__DIR__, 4));
 $filesPath = OMEKA_PATH . '/files';
 
 // ---------------------------------------------------------------------------
