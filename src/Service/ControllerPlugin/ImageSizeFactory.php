@@ -13,7 +13,8 @@ class ImageSizeFactory implements FactoryInterface
             $services->get('Config')['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files'),
             $services->get('Omeka\File\TempFileFactory'),
             $services->get('Omeka\ApiAdapterManager'),
-            $services->get('Omeka\Connection')
+            $services->get('Omeka\Connection'),
+            $services->get('Omeka\File\Store') instanceof \Omeka\File\Store\Local
         );
     }
 }

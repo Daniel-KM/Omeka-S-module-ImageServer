@@ -44,6 +44,11 @@ class ImageSize extends AbstractPlugin
     protected $connection;
 
     /**
+     * @var bool
+     */
+    protected $isLocalStore;
+
+    /**
      * The default output when the file is unavailable or unknown.
      *
      * @var array
@@ -57,12 +62,14 @@ class ImageSize extends AbstractPlugin
         ?string $basePath,
         TempFileFactory $tempFileFactory,
         AdapterManager $adapterManager,
-        Connection $connection
+        Connection $connection,
+        bool $isLocalStore = true
     ) {
         $this->basePath = $basePath;
         $this->tempFileFactory = $tempFileFactory;
         $this->adapterManager = $adapterManager;
         $this->connection = $connection;
+        $this->isLocalStore = $isLocalStore;
     }
 
     /**
@@ -154,19 +161,21 @@ class ImageSize extends AbstractPlugin
             }
         }
 
-        // Try local file first, fall back to URL for external storage.
+        // Try local file first, fall back to URL for external storage. A local
+        // file missing on disk is not probed by url, that points to this server
+        // (localhost from the command line) and fails slowly.
         if ($type === 'original') {
             $storagePath = $this->getStoragePath($type, $media->filename());
             $filepath = $this->basePath . DIRECTORY_SEPARATOR . $storagePath;
             $result = $this->getWidthAndHeightLocal($filepath);
-            if (!$result['width']) {
+            if (!$result['width'] && !$this->isLocalStore) {
                 $result = $this->getWidthAndHeightUrl($media->originalUrl());
             }
         } else {
             $storagePath = $this->getStoragePath($type, $media->storageId(), 'jpg');
             $filepath = $this->basePath . DIRECTORY_SEPARATOR . $storagePath;
             $result = $this->getWidthAndHeightLocal($filepath);
-            if (!$result['width']) {
+            if (!$result['width'] && !$this->isLocalStore) {
                 $result = $this->getWidthAndHeightUrl($media->thumbnailUrl($type));
             }
         }
